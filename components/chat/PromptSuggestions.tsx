@@ -3,10 +3,9 @@
 export type PromptIntent = 'plans' | 'services';
 
 const PROMPTS: Array<{ label: string; icon: string; intent: PromptIntent }> = [
-  { label: 'Find internet plans at my address', icon: '🌐', intent: 'plans' },
-  { label: 'Find digital skills training near me', icon: '💻', intent: 'services' },
-  { label: 'Low-cost or free internet options', icon: '💰', intent: 'plans' },
-  { label: 'Device access programs near me', icon: '📱', intent: 'services' },
+  { label: "Find internet plans at my client's address", icon: '🌐', intent: 'plans' },
+  { label: 'Find digital skills training near my client', icon: '💻', intent: 'services' },
+  { label: 'Find free or low-cost devices for my client', icon: '📱', intent: 'services' },
 ];
 
 interface Props {
@@ -17,12 +16,12 @@ export default function PromptSuggestions({ onSelect }: Props) {
   return (
     <div className="flex flex-col items-center gap-6 py-10">
       <div className="text-center">
-        <h2 className="text-2xl font-semibold text-slate-800">How can I help you today?</h2>
+        <h2 className="text-2xl font-semibold text-slate-800">What do you need to look up?</h2>
         <p className="text-slate-500 text-base mt-1.5">
-          Ask me about internet plans or digital resources in Clark County, NV
+          Look up internet plans or digital resources for a client in Clark County, NV
         </p>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
         {PROMPTS.map((p) => (
           <button
             key={p.label}

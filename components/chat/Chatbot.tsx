@@ -89,6 +89,7 @@ const SERVICES_PATTERNS = [
   /digital\s+(skill|equity|resource|service|literacy)/i,
   /\btraining\b/i,
   /device\s+access/i,
+  /\b(free|low[- ]cost|cheap|refurbished)\s+\w*\s*devices?\b/i,
   /computer\s+(program|access|lab)/i,
   /\blaptop\b/i,
   /tablet\s+program/i,
@@ -296,7 +297,7 @@ export default function Chatbot() {
           instructions,
           showPlans && !showServices ? 'The user only asked about internet plans — do not mention digital equity resources or training programs.' : '',
           showServices && !showPlans ? 'The user only asked about digital equity/training/device resources — do not mention internet plans or pricing.' : '',
-          isPivot ? "The user already gave their address earlier and is now asking about a different topic — don't ask them to repeat the address, just answer using the data above." : '',
+          isPivot ? "The user already gave the client's address earlier and is now asking about a different topic — don't ask them to repeat the address, just answer using the data above." : '',
           result.planGroups && showPlans ? 'The lowest-cost and fastest plan are already highlighted below your message — do not restate every plan in detail; the user will be offered the choice to see all plans or get a personalized recommendation next.' : '',
           'Keep your reply short — the card(s) below your message already show full details.',
         ].filter(Boolean).join('\n\n');
@@ -356,33 +357,33 @@ export default function Chatbot() {
     setMessages(prev => [...prev, { id: nanoid(), role: 'assistant', content: text }]);
   }, []);
 
-  const closingLine = "Thanks for using the Clark County Digital Equity Assistant — let me know if there's anything else I can help you with!";
+  const closingLine = "Let me know if you need anything else for this case.";
 
   const handleBackToMenu = useCallback(() => {
-    appendAssistantText('Sure! What would you like to do next?');
+    appendAssistantText('What would you like to do next?');
     setPlanFlow(IDLE_PLAN_FLOW);
     setServiceFlow(IDLE_SERVICE_FLOW);
     setShowMainMenu(true);
   }, [appendAssistantText]);
 
   const handleSeeAllPlans = useCallback(() => {
-    appendAssistantText(`Here are all the internet plans available at your address. ${closingLine}`);
+    appendAssistantText(`Here are all the internet plans available at the client's address. ${closingLine}`);
     setPlanFlow(f => ({ ...f, step: 'all_shown' }));
   }, [appendAssistantText]);
 
   const handleGetRecommendation = useCallback(() => {
-    appendAssistantText('Happy to help you find the right fit. First, how many people live in your household?');
+    appendAssistantText('How many people live in the client\'s household?');
     setPlanFlow(f => ({ ...f, step: 'awaiting_household' }));
   }, [appendAssistantText]);
 
   const handleHouseholdSize = useCallback((size: HouseholdSize) => {
-    appendAssistantText("Thanks! About how many devices are usually connected at once — phones, laptops, smart TVs, consoles, and so on?");
+    appendAssistantText("About how many devices are usually connected at once — phones, laptops, smart TVs, consoles, and so on?");
     setPlanFlow(f => ({ ...f, step: 'awaiting_devices', householdSize: size }));
     logSelection({ householdSize: size });
   }, [appendAssistantText]);
 
   const handleDeviceCount = useCallback((count: DeviceCount) => {
-    appendAssistantText("Got it. And which best describes how your household uses the internet?");
+    appendAssistantText("Which best describes how the household uses the internet?");
     setPlanFlow(f => ({ ...f, step: 'awaiting_usage', deviceCount: count }));
     logSelection({ deviceCount: count });
   }, [appendAssistantText]);
@@ -392,31 +393,31 @@ export default function Chatbot() {
     const { plan, metRecommendedSpeed } = recommendPlan(flattenPlans(planFlow.planGroups), planFlow.householdSize, usage, planFlow.deviceCount);
     const intro = plan
       ? metRecommendedSpeed
-        ? "Based on your household size, device count, and internet use, here's our recommended plan."
-        : "None of the available plans fully meet the ideal speed for your household, but here's the fastest option available."
-      : "We couldn't find a matching plan for your address.";
+        ? "Based on household size, device count, and internet use, here's the recommended plan."
+        : "None of the available plans fully meet the ideal speed for this household, but here's the fastest option available."
+      : "No matching plan was found for this address.";
     appendAssistantText(`${intro} ${closingLine}`);
     setPlanFlow(f => ({
       ...f,
       step: 'recommended_shown',
       recommendedPlan: plan,
-      recommendationNote: metRecommendedSpeed ? undefined : 'This plan doesn’t fully meet the ideal speed for your household, but it’s the fastest one available at your address.',
+      recommendationNote: metRecommendedSpeed ? undefined : 'This plan doesn’t fully meet the ideal speed for this household, but it’s the fastest one available at this address.',
     }));
     logSelection({ usageProfile: usage });
   }, [planFlow, appendAssistantText]);
 
   const handleSeeAllResources = useCallback(() => {
-    appendAssistantText(`Here are all the digital equity resources near you. ${closingLine}`);
+    appendAssistantText(`Here are all the digital equity resources near this address. ${closingLine}`);
     setServiceFlow(f => ({ ...f, step: 'all_shown' }));
   }, [appendAssistantText]);
 
   const handleFilterByType = useCallback(() => {
-    appendAssistantText('Which type of resource are you looking for?');
+    appendAssistantText('Which type of resource is needed?');
     setServiceFlow(f => ({ ...f, step: 'awaiting_type' }));
   }, [appendAssistantText]);
 
   const handleServiceType = useCallback((type: string) => {
-    appendAssistantText(`Here are the ${type.toLowerCase()} resources near you. ${closingLine}`);
+    appendAssistantText(`Here are the ${type.toLowerCase()} resources near this address. ${closingLine}`);
     setServiceFlow(f => ({ ...f, step: 'filtered_shown', selectedType: type }));
     logSelection({ serviceType: type });
   }, [appendAssistantText]);
@@ -439,7 +440,7 @@ export default function Chatbot() {
         >
           <div>
             <p className="text-base font-bold text-white">Clark County Digital Equity Assistant</p>
-            <p className="text-sm text-blue-100">Internet plans & digital resources in Clark County, NV</p>
+            <p className="text-sm text-blue-100">Look up internet plans & digital resources for a client in Clark County, NV</p>
           </div>
         </button>
       </header>
@@ -516,7 +517,7 @@ export default function Chatbot() {
                       <>
                         <PlansTable plans={flattenPlans(planFlow.planGroups)} address={planFlow.address} />
                         <ChoiceButtons
-                          options={[{ value: 'menu', label: 'Back to main menu', icon: '🏠' }]}
+                          options={[{ value: 'menu', label: 'Back to main menu' }]}
                           onSelect={handleBackToMenu}
                         />
                       </>
@@ -526,8 +527,8 @@ export default function Chatbot() {
                         <RecommendedPlanCard plan={planFlow.recommendedPlan} address={planFlow.address} note={planFlow.recommendationNote} />
                         <ChoiceButtons
                           options={[
-                            { value: 'all', label: 'Show me all plans', icon: '📋' },
-                            { value: 'menu', label: 'Back to main menu', icon: '🏠' },
+                            { value: 'all', label: 'Show all plans' },
+                            { value: 'menu', label: 'Back to main menu' },
                           ]}
                           onSelect={(v: 'all' | 'menu') => (v === 'all' ? handleSeeAllPlans() : handleBackToMenu())}
                         />
@@ -536,8 +537,8 @@ export default function Chatbot() {
                     {planFlow.step === 'top_shown' && (
                       <ChoiceButtons
                         options={[
-                          { value: 'all', label: 'Show me all plans', icon: '📋' },
-                          { value: 'recommend', label: 'Get a personalized recommendation', icon: '🎯' },
+                          { value: 'all', label: 'Show all plans' },
+                          { value: 'recommend', label: 'Get a recommendation for this client' },
                         ]}
                         onSelect={(v: 'all' | 'recommend') => (v === 'all' ? handleSeeAllPlans() : handleGetRecommendation())}
                       />
@@ -559,8 +560,8 @@ export default function Chatbot() {
                     {serviceFlow.step === 'top_shown' && (
                       <ChoiceButtons
                         options={[
-                          { value: 'all', label: 'Show me all resources', icon: '📋' },
-                          { value: 'filter', label: 'Filter by type', icon: '🔎' },
+                          { value: 'all', label: 'Show all resources' },
+                          { value: 'filter', label: 'Filter by type' },
                         ]}
                         onSelect={(v: 'all' | 'filter') => (v === 'all' ? handleSeeAllResources() : handleFilterByType())}
                       />
@@ -572,7 +573,7 @@ export default function Chatbot() {
                       <>
                         <ServicesTable serviceGroups={serviceFlow.serviceGroups} />
                         <ChoiceButtons
-                          options={[{ value: 'menu', label: 'Back to main menu', icon: '🏠' }]}
+                          options={[{ value: 'menu', label: 'Back to main menu' }]}
                           onSelect={handleBackToMenu}
                         />
                       </>
@@ -582,8 +583,8 @@ export default function Chatbot() {
                         <ServicesTable serviceGroups={serviceFlow.serviceGroups} initialTypeFilter={serviceFlow.selectedType} />
                         <ChoiceButtons
                           options={[
-                            { value: 'all', label: 'Show me all resources', icon: '📋' },
-                            { value: 'menu', label: 'Back to main menu', icon: '🏠' },
+                            { value: 'all', label: 'Show all resources' },
+                            { value: 'menu', label: 'Back to main menu' },
                           ]}
                           onSelect={(v: 'all' | 'menu') => (v === 'all' ? handleSeeAllResources() : handleBackToMenu())}
                         />
@@ -610,7 +611,7 @@ export default function Chatbot() {
             <input
               value={input}
               onChange={e => setInput(e.target.value)}
-              placeholder="Type your address or ask a question…"
+              placeholder="Enter the client's address or ask a question…"
               disabled={isStreaming}
               className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-base text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
             />

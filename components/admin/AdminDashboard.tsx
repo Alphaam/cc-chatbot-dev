@@ -6,22 +6,22 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 import { HOUSEHOLD_SIZE_OPTIONS, USAGE_PROFILE_OPTIONS, DEVICE_COUNT_OPTIONS } from '@/lib/plan-utils';
-import type { AddressPoint } from './AddressMap';
+import type { DistrictCount } from './DistrictMap';
 
-const AddressMap = dynamic(() => import('./AddressMap'), { ssr: false });
+const DistrictMap = dynamic(() => import('./DistrictMap'), { ssr: false });
 
 interface Analytics {
-  totals: { total_messages: string; total_sessions: string; unique_addresses: string };
+  totals: { total_messages: string; total_sessions: string; unique_zip_codes: string };
   byIntent: Array<{ intent: string; count: string }>;
   byDay: Array<{ day: string; sessions: string; messages: string }>;
   recent: Array<{
     id: number; session_id: string; created_at: string; user_message: string;
-    intent: string; address_queried: string | null;
+    intent: string; zip_code: string | null;
     num_plans_returned: number | null; num_services_returned: number | null;
   }>;
   recentSessions: Array<{
     session_id: string; started_at: string; ended_at: string; message_count: string;
-    intents: string; address_queried: string | null;
+    intents: string; zip_code: string | null;
     household_size: string | null; usage_profile: string | null; device_count: string | null;
     service_type_selected: string | null;
     num_plans_returned: number | null; num_services_returned: number | null;
@@ -31,7 +31,7 @@ interface Analytics {
   byDeviceCount: Array<{ device_count: string; count: string }>;
   byServiceType: Array<{ service_type_selected: string; count: string }>;
   byZipIntent: Array<{ zip: string; intent: string; count: string }>;
-  addressPoints: AddressPoint[];
+  districtCounts: DistrictCount[];
   districtOptions: Array<{ value: string; label: string }>;
 }
 
@@ -205,7 +205,7 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-3 gap-4">
         <MetricCard label="Total Messages" value={Number(data.totals.total_messages).toLocaleString()} />
         <MetricCard label="Unique Sessions" value={Number(data.totals.total_sessions).toLocaleString()} />
-        <MetricCard label="Unique Addresses Looked Up" value={Number(data.totals.unique_addresses).toLocaleString()} />
+        <MetricCard label="Unique ZIP Codes Looked Up" value={Number(data.totals.unique_zip_codes).toLocaleString()} />
       </div>
 
       {/* Charts row */}
@@ -353,15 +353,27 @@ export default function AdminDashboard() {
         }
       </div>
 
-      {/* Address search map */}
+      {/* Commissioner district map — aggregate counts only, no addresses or coordinates */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <p className="text-sm font-medium text-gray-700 mb-3">Address Search Locations</p>
-        {data.addressPoints.length === 0
+        <p className="text-sm font-medium text-gray-700 mb-3">Messages by Commissioner District</p>
+        {data.districtCounts.length === 0
           ? <p className="text-xs text-gray-400">No data yet</p>
           : (
-            <div className="h-96">
-              <AddressMap points={data.addressPoints} />
-            </div>
+            <>
+              <div className="h-96">
+                <DistrictMap counts={data.districtCounts} districtOptions={data.districtOptions} />
+              </div>
+              <ul className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 mt-3 text-xs text-gray-600">
+                {data.districtOptions.map(d => (
+                  <li key={d.value} className="flex justify-between gap-2">
+                    <span className="truncate">{d.label}</span>
+                    <span className="text-gray-400 shrink-0">
+                      {data.districtCounts.find(c => c.district === d.value)?.count ?? 0}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </>
           )
         }
       </div>
@@ -403,7 +415,7 @@ export default function AdminDashboard() {
                   <th className="text-left px-4 py-2 text-gray-500 font-medium">Time</th>
                   <th className="text-left px-4 py-2 text-gray-500 font-medium">Message</th>
                   <th className="text-left px-4 py-2 text-gray-500 font-medium">Intent</th>
-                  <th className="text-left px-4 py-2 text-gray-500 font-medium">Address</th>
+                  <th className="text-left px-4 py-2 text-gray-500 font-medium">ZIP Code</th>
                   <th className="text-left px-4 py-2 text-gray-500 font-medium">Plans</th>
                   <th className="px-4 py-2 w-8" />
                 </tr>
@@ -424,7 +436,7 @@ export default function AdminDashboard() {
                         {INTENT_LABELS[row.intent] ?? row.intent}
                       </span>
                     </td>
-                    <td className="px-4 py-2 text-gray-600 max-w-[150px] truncate">{row.address_queried || '—'}</td>
+                    <td className="px-4 py-2 text-gray-600">{row.zip_code || '—'}</td>
                     <td className="px-4 py-2 text-gray-500">{row.num_plans_returned ?? '—'}</td>
                     <td className="px-4 py-2">
                       <DownloadLink href={`/api/admin/export?type=message&id=${row.id}`} title="Download this message as CSV" />
@@ -440,7 +452,7 @@ export default function AdminDashboard() {
                   <th className="text-left px-4 py-2 text-gray-500 font-medium">Started</th>
                   <th className="text-left px-4 py-2 text-gray-500 font-medium">Messages</th>
                   <th className="text-left px-4 py-2 text-gray-500 font-medium">Intents</th>
-                  <th className="text-left px-4 py-2 text-gray-500 font-medium">Address</th>
+                  <th className="text-left px-4 py-2 text-gray-500 font-medium">ZIP Code</th>
                   <th className="text-left px-4 py-2 text-gray-500 font-medium">Household</th>
                   <th className="text-left px-4 py-2 text-gray-500 font-medium">Devices</th>
                   <th className="text-left px-4 py-2 text-gray-500 font-medium">Usage</th>
@@ -458,7 +470,7 @@ export default function AdminDashboard() {
                     <td className="px-4 py-2 text-gray-600 max-w-[160px] truncate">
                       {row.intents.split(', ').map(i => INTENT_LABELS[i] ?? i).join(', ')}
                     </td>
-                    <td className="px-4 py-2 text-gray-600 max-w-[150px] truncate">{row.address_queried || '—'}</td>
+                    <td className="px-4 py-2 text-gray-600">{row.zip_code || '—'}</td>
                     <td className="px-4 py-2 text-gray-500">
                       {HOUSEHOLD_SIZE_OPTIONS.find(o => o.value === row.household_size)?.label ?? row.household_size ?? '—'}
                     </td>

@@ -22,31 +22,31 @@ export type HouseholdSize = '1' | '2-3' | '4-5' | '6+';
 export type UsageProfile = 'basic' | 'streaming' | 'heavy';
 export type DeviceCount = '1-2' | '2-3' | '3-5' | '5-10' | '10-15' | '15-30' | '30+';
 
-export const HOUSEHOLD_SIZE_OPTIONS: Array<{ value: HouseholdSize; label: string; icon: string }> = [
-  { value: '1', label: 'Just me (1 person)', icon: '🧑' },
-  { value: '2-3', label: 'Small household (2-3 people)', icon: '👥' },
-  { value: '4-5', label: 'Family household (4-5 people)', icon: '👨‍👩‍👧‍👦' },
-  { value: '6+', label: 'Large household (6+ people)', icon: '🏠' },
+export const HOUSEHOLD_SIZE_OPTIONS: Array<{ value: HouseholdSize; label: string }> = [
+  { value: '1', label: '1 person' },
+  { value: '2-3', label: '2-3 people' },
+  { value: '4-5', label: '4-5 people' },
+  { value: '6+', label: '6+ people' },
 ];
 
-export const USAGE_PROFILE_OPTIONS: Array<{ value: UsageProfile; label: string; icon: string }> = [
-  { value: 'basic', label: 'Basic — browsing, email, video calls', icon: '📧' },
-  { value: 'streaming', label: 'Streaming & remote work', icon: '🎬' },
-  { value: 'heavy', label: 'Heavy use — gaming, smart home, many devices', icon: '🎮' },
+export const USAGE_PROFILE_OPTIONS: Array<{ value: UsageProfile; label: string }> = [
+  { value: 'basic', label: 'Basic — browsing, email, video calls' },
+  { value: 'streaming', label: 'Streaming & remote work' },
+  { value: 'heavy', label: 'Heavy use — gaming, smart home, many devices' },
 ];
 
 // Device counts include phones, laptops, smart TVs, consoles, and any other
 // gadget that's online at the same time — not just computers. Labels stick to
 // the count itself; usage type is asked separately in USAGE_PROFILE_OPTIONS,
 // so repeating activity descriptions here just duplicated that question.
-export const DEVICE_COUNT_OPTIONS: Array<{ value: DeviceCount; label: string; icon: string }> = [
-  { value: '1-2', label: '1-2 devices', icon: '📱' },
-  { value: '2-3', label: '2-3 devices', icon: '💻' },
-  { value: '3-5', label: '3-5 devices', icon: '📺' },
-  { value: '5-10', label: '5-10 devices', icon: '🎮' },
-  { value: '10-15', label: '10-15 devices', icon: '🕹️' },
-  { value: '15-30', label: '15-30 devices', icon: '🏠' },
-  { value: '30+', label: '30+ devices', icon: '🏢' },
+export const DEVICE_COUNT_OPTIONS: Array<{ value: DeviceCount; label: string }> = [
+  { value: '1-2', label: '1-2 devices' },
+  { value: '2-3', label: '2-3 devices' },
+  { value: '3-5', label: '3-5 devices' },
+  { value: '5-10', label: '5-10 devices' },
+  { value: '10-15', label: '10-15 devices' },
+  { value: '15-30', label: '15-30 devices' },
+  { value: '30+', label: '30+ devices' },
 ];
 
 const USAGE_BASELINE_MBPS: Record<UsageProfile, { dl: number; ul: number }> = {

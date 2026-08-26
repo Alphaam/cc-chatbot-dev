@@ -71,6 +71,13 @@ const GEOCODE_NOT_FOUND_TTL_MS = 10 * 60 * 1000;
 type GeocodeResult = { lat: number; lon: number } | null;
 const geocodeCache = createTTLCache<GeocodeResult>(GEOCODE_FOUND_TTL_MS, 2000);
 
+const nominatimSearch = async (query: string): Promise<GeocodeResult> => {
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=us`;
+  const res  = await fetch(url, { headers: { 'User-Agent': 'ClarkCountyDigitalEquityChatbot/2.0' } });
+  const data = await res.json() as Array<{ lat: string; lon: string }>;
+  return data.length > 0 ? { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) } : null;
+};
+
 export const geocodeAddress = async (addr: string, city: string | null, state: string, zip: string) => {
   const parts = [addr, city, `${state} ${zip}`.trim()].filter(Boolean);
   const cacheKey = parts.join(', ');
@@ -78,12 +85,16 @@ export const geocodeAddress = async (addr: string, city: string | null, state: s
   const cached = geocodeCache.get(cacheKey);
   if (cached !== undefined) return cached;
 
-  const q = encodeURIComponent(cacheKey);
-  const url = `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1&countrycodes=us`;
   try {
-    const res  = await fetch(url, { headers: { 'User-Agent': 'ClarkCountyDigitalEquityChatbot/2.0' } });
-    const data = await res.json() as Array<{ lat: string; lon: string }>;
-    const result: GeocodeResult = data.length > 0 ? { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) } : null;
+    let result = await nominatimSearch(cacheKey);
+    // Some Henderson/Las Vegas-area ZIPs (mailing city on the FCC dataset and
+    // USPS records) fall inside unincorporated Clark County in OSM's actual
+    // boundaries — Nominatim then can't resolve the address with that city
+    // in the query at all, even though it's a real, mapped location. Retry
+    // without the city before giving up.
+    if (!result && city) {
+      result = await nominatimSearch([addr, `${state} ${zip}`.trim()].filter(Boolean).join(', '));
+    }
     geocodeCache.set(cacheKey, result, result ? GEOCODE_FOUND_TTL_MS : GEOCODE_NOT_FOUND_TTL_MS);
     return result;
   } catch (e) {

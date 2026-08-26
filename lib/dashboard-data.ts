@@ -2,12 +2,27 @@ import sql from './db';
 import { districtForPoint } from './districts';
 import { DEVICE_COUNT_OPTIONS } from './plan-utils';
 
+const ZIP_RE = /(\d{5}) *$/;
+
+// The only place a full address should ever be turned into a ZIP — every
+// dashboard/export surface reads r.zip_code, never r.address_queried, so the
+// full address (kept in Postgres for internal use) never reaches the client.
+const zipFromAddress = (address: string | null): string | null => {
+  if (!address) return null;
+  const m = ZIP_RE.exec(address);
+  return m ? m[1] : null;
+};
+
 export interface ChatLogRow {
   id: number;
   session_id: string;
   created_at: string;
   user_message: string;
   intent: string;
+  // Full address and precise coordinates — kept for internal use only
+  // (deriving zip_code/district below). Never spread into an API response,
+  // CSV export, or component prop; downstream code should read zip_code and
+  // district instead.
   address_queried: string | null;
   lat: number | null;
   long: number | null;
@@ -17,6 +32,7 @@ export interface ChatLogRow {
   usage_profile: string | null;
   device_count: string | null;
   service_type_selected: string | null;
+  zip_code: string | null;
   district: string | null;
 }
 
@@ -44,7 +60,11 @@ export async function getEnrichedChatLogs(): Promise<ChatLogRow[]> {
     ) p ON true
     ORDER BY c.created_at DESC
   `;
-  return rows.map(r => ({ ...r, district: districtForPoint(r.lat, r.long) })) as ChatLogRow[];
+  return rows.map(r => ({
+    ...r,
+    district: districtForPoint(r.lat, r.long),
+    zip_code: zipFromAddress(r.address_queried),
+  })) as ChatLogRow[];
 }
 
 export interface DashboardFilters {
@@ -98,7 +118,7 @@ function maxOrNull(group: ChatLogRow[], field: 'num_plans_returned' | 'num_servi
   return max;
 }
 
-function mostRecentNonNull(sortedDesc: ChatLogRow[], field: 'address_queried' | 'household_size' | 'usage_profile' | 'device_count' | 'service_type_selected'): string | null {
+function mostRecentNonNull(sortedDesc: ChatLogRow[], field: 'zip_code' | 'household_size' | 'usage_profile' | 'device_count' | 'service_type_selected'): string | null {
   const hit = sortedDesc.find(r => r[field] != null);
   return hit ? (hit[field] as string) : null;
 }
@@ -109,7 +129,7 @@ export interface SessionRollup {
   ended_at: string;
   message_count: string;
   intents: string;
-  address_queried: string | null;
+  zip_code: string | null;
   household_size: string | null;
   usage_profile: string | null;
   device_count: string | null;
@@ -119,7 +139,7 @@ export interface SessionRollup {
 }
 
 // Direct JS translation of the SQL rollup this used to be (see git history of
-// lib/sessions.ts): household_size/usage_profile/service_type_selected/address
+// lib/sessions.ts): household_size/usage_profile/service_type_selected/zip_code
 // take the most-recently-set non-null value per session, since they're only
 // ever populated on one row at a time (see logSelection in lib/analytics.ts).
 export function buildSessionRollups(rows: ChatLogRow[], limit?: number): SessionRollup[] {
@@ -141,7 +161,7 @@ export function buildSessionRollups(rows: ChatLogRow[], limit?: number): Session
       ended_at: endedAt,
       message_count: String(group.length),
       intents: Array.from(new Set(group.map(r => r.intent))).join(', '),
-      address_queried: mostRecentNonNull(sortedDesc, 'address_queried'),
+      zip_code: mostRecentNonNull(sortedDesc, 'zip_code'),
       household_size: mostRecentNonNull(sortedDesc, 'household_size'),
       usage_profile: mostRecentNonNull(sortedDesc, 'usage_profile'),
       device_count: mostRecentNonNull(sortedDesc, 'device_count'),
@@ -157,11 +177,11 @@ export function buildSessionRollups(rows: ChatLogRow[], limit?: number): Session
 
 export function computeTotals(rows: ChatLogRow[]) {
   const sessions = new Set(rows.map(r => r.session_id));
-  const addresses = new Set(rows.filter(r => r.address_queried != null).map(r => r.address_queried));
+  const zips = new Set(rows.filter(r => r.zip_code != null).map(r => r.zip_code));
   return {
     total_messages: String(rows.length),
     total_sessions: String(sessions.size),
-    unique_addresses: String(addresses.size),
+    unique_zip_codes: String(zips.size),
   };
 }
 
@@ -231,15 +251,11 @@ export function groupByServiceType(rows: ChatLogRow[]) {
     .map(([service_type_selected, count]) => ({ service_type_selected, count: String(count) }));
 }
 
-const ZIP_RE = /(\d{5}) *$/;
-
 export function groupByZipIntent(rows: ChatLogRow[]) {
   const counts = new Map<string, number>();
   for (const r of rows) {
-    if (!r.address_queried) continue;
-    const m = ZIP_RE.exec(r.address_queried);
-    if (!m) continue;
-    const key = `${m[1]}|${r.intent}`;
+    if (!r.zip_code) continue;
+    const key = `${r.zip_code}|${r.intent}`;
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
   return Array.from(counts.entries())
@@ -259,22 +275,20 @@ export function recentMessages(rows: ChatLogRow[], limit = 50) {
     created_at: r.created_at,
     user_message: r.user_message,
     intent: r.intent,
-    address_queried: r.address_queried,
+    zip_code: r.zip_code,
     num_plans_returned: r.num_plans_returned,
     num_services_returned: r.num_services_returned,
   }));
 }
 
-export function addressPoints(rows: ChatLogRow[]) {
-  return rows
-    .filter(r => r.address_queried != null && r.lat != null && r.long != null)
-    .map(r => ({
-      id: r.id,
-      session_id: r.session_id,
-      created_at: r.created_at,
-      intent: r.intent,
-      address_queried: r.address_queried as string,
-      lat: r.lat as number,
-      long: r.long as number,
-    }));
+// Counts per commissioner district for the choropleth map — the map only
+// ever sees this aggregate, never the per-row lat/long/address it's derived
+// from.
+export function districtCounts(rows: ChatLogRow[]) {
+  const counts = new Map<string, number>();
+  for (const r of rows) {
+    if (!r.district) continue;
+    counts.set(r.district, (counts.get(r.district) ?? 0) + 1);
+  }
+  return Array.from(counts.entries()).map(([district, count]) => ({ district, count }));
 }

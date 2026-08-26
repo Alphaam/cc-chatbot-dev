@@ -13,9 +13,22 @@ function csvResponse<T extends object>(rows: T[], filename: string) {
 }
 
 const MESSAGE_FIELDS = [
-  'id', 'session_id', 'created_at', 'user_message', 'intent', 'address_queried',
+  'id', 'session_id', 'created_at', 'user_message', 'intent', 'zip_code',
   'num_plans_returned', 'num_services_returned', 'household_size', 'usage_profile', 'device_count', 'service_type_selected',
 ] as const;
+
+// address_queried holds the full street address kept internally for zip/district
+// derivation — selected here only so zip_code can be computed, then dropped
+// before the row is ever written to a CSV.
+interface RawLogRow extends Record<string, unknown> {
+  address_queried: string | null;
+}
+const ZIP_RE = /(\d{5}) *$/;
+const withZipOnly = (row: RawLogRow) => {
+  const { address_queried, ...rest } = row;
+  const m = address_queried ? ZIP_RE.exec(address_queried) : null;
+  return { ...rest, zip_code: m ? m[1] : null };
+};
 
 export async function GET(req: Request) {
   const params = new URL(req.url).searchParams;
@@ -45,8 +58,8 @@ export async function GET(req: Request) {
       FROM chat_logs
       WHERE session_id = ${id}
       ORDER BY created_at
-    `;
-    return csvResponse(rows, `session-${id}-${date}.csv`);
+    ` as unknown as RawLogRow[];
+    return csvResponse(rows.map(withZipOnly), `session-${id}-${date}.csv`);
   }
 
   if (type === 'message' && id && /^\d+$/.test(id)) {
@@ -55,8 +68,8 @@ export async function GET(req: Request) {
         num_plans_returned, num_services_returned, household_size, usage_profile, device_count, service_type_selected
       FROM chat_logs
       WHERE id = ${Number(id)}
-    `;
-    return csvResponse(rows, `message-${id}-${date}.csv`);
+    ` as unknown as RawLogRow[];
+    return csvResponse(rows.map(withZipOnly), `message-${id}-${date}.csv`);
   }
 
   return Response.json({ error: 'Unknown export type' }, { status: 400 });

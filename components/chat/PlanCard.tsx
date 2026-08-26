@@ -92,7 +92,7 @@ export function RecommendedPlanCard({ plan, address, note }: { plan: Plan; addre
   return (
     <div className="rounded-xl border-2 border-blue-400 bg-white shadow-sm overflow-hidden mt-3">
       <div className="px-4 py-3 bg-blue-600">
-        <p className="text-base font-semibold text-white">✓ Recommended for you</p>
+        <p className="text-base font-semibold text-white">Recommended plan</p>
         {address && <p className="text-sm text-blue-100 mt-0.5">{address}</p>}
       </div>
       {note && <p className="px-4 pt-3 text-sm text-slate-500">{note}</p>}
@@ -146,7 +146,7 @@ export default function PlanCard({ planGroups, address, mode = 'all' }: Props) {
 
         {same ? (
           <p className="px-4 py-3 text-sm text-slate-500 border-t border-slate-100">
-            This is also the fastest plan available at your address.
+            This is also the fastest plan available at this address.
           </p>
         ) : fastest && (
           <div className="border-t border-slate-100">
