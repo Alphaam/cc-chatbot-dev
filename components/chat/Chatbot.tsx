@@ -37,12 +37,23 @@ interface LookupResult {
   found: boolean;
   validated?: boolean;
   address?: string;
+  confirmAddress?: string;
   lat?: number;
   lon?: number;
   intent: Intent;
 }
 
 type ResultMap = Map<string, LookupResult>;
+
+// Holds an already-fetched lookup result while we wait for the user to
+// confirm the geocoded address, before any plans/resources are shown for it.
+interface PendingAddressConfirm {
+  assistantMsgId: string;
+  userMsgId: string;
+  intent: Intent;
+  history: Array<{ role: string; content: string }>;
+  result: Omit<LookupResult, 'intent'>;
+}
 
 // Steps 5-9 of the internet-offer flow: show the headline plans first, then
 // branch into "see everything" or a guided household-size/devices/usage recommendation.
@@ -169,6 +180,8 @@ const MarkdownContent = memo(function MarkdownContent({ text }: { text: string }
 
 const sessionId = nanoid();
 
+const PLAN_DISCLAIMER = "A quick note: this list isn't influenced by search engine optimization, advertising, or paid placement — plans are shown based on availability data only.";
+
 // Fire-and-forget: these selections happen entirely client-side (no /api/chat
 // call necessarily follows), so they're posted to their own endpoint rather
 // than piggybacked on the next chat turn, which may never come.
@@ -190,9 +203,13 @@ export default function Chatbot() {
   const [planFlow, setPlanFlow] = useState<PlanFlowState>(IDLE_PLAN_FLOW);
   const [serviceFlow, setServiceFlow] = useState<ServiceFlowState>(IDLE_SERVICE_FLOW);
   const [showMainMenu, setShowMainMenu] = useState(false);
+  const [pendingConfirm, setPendingConfirm] = useState<PendingAddressConfirm | null>(null);
   const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const lastScrolledId = useRef<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  // Tracks whether PLAN_DISCLAIMER has already been shown this session — it's
+  // a one-time note, not repeated on every subsequent plan search.
+  const shownPlanDisclaimerRef = useRef(false);
 
   // Anchor the newest message's own top edge to the viewport top, rather than
   // chasing the bottom of the chat — a tall PlanCard/ServiceCard rendered below
@@ -205,117 +222,87 @@ export default function Chatbot() {
     }
   }, [messages]);
 
-  const sendMessage = useCallback(async (text: string, intentOverride?: Intent) => {
-    if (isStreaming) return;
+  // Declared ahead of sendMessage/handleAddressConfirm — both reference it in
+  // their dependency arrays, which are evaluated as soon as those useCallback
+  // calls run, so it must already be initialized by then.
+  const appendAssistantText = useCallback((text: string) => {
+    setMessages(prev => [...prev, { id: nanoid(), role: 'assistant', content: text }]);
+  }, []);
 
-    // Any new chat turn (typed text or a fresh main-menu prompt) breaks out of
-    // the guided plan-recommendation/service-filter flows — they get re-armed
-    // below if this turn triggers a new address lookup.
-    setPlanFlow(IDLE_PLAN_FLOW);
-    setServiceFlow(IDLE_SERVICE_FLOW);
-    setShowMainMenu(false);
+  // Turns a fetched (or reused) lookup result into the LLM contextBlock and
+  // sets resultMap/planFlow/serviceFlow/lastLookup — split out of sendMessage
+  // so the address-confirmation step can defer this until the user says yes.
+  const buildLookupOutcome = useCallback((result: Omit<LookupResult, 'intent'>, intent: Intent, userMsgId: string, isPivot: boolean) => {
+    const showPlans = intent !== 'services';
+    const showServices = intent !== 'plans';
 
-    const detectedIntent = classifyIntent(text);
-    const prevIntent = activeIntent;
-    const intent = intentOverride ?? detectedIntent ?? prevIntent;
-    setActiveIntent(intent);
+    const numPlans = result.planGroups
+      ? result.planGroups.threshold.length + Object.values(result.planGroups.byProvider).reduce((sum, arr) => sum + arr.length, 0)
+      : 0;
+    const numServices = result.serviceGroups
+      ? SERVICE_TIERS.reduce((sum, [key]) => sum + result.serviceGroups![key].length, 0)
+      : 0;
 
-    const userMsgId = nanoid();
-    const assistantMsgId = nanoid();
+    const sections: string[] = [`ADDRESS RESULTS for ${result.address ?? result.confirmAddress ?? 'the address the user provided'}`];
 
-    const userMsg: Message = { id: userMsgId, role: 'user', content: text };
-    setMessages(prev => [...prev, userMsg, { id: assistantMsgId, role: 'assistant', content: '' }]);
-    setIsStreaming(true);
-
-    // Build message history for the API (include new user message)
-    const history = [...messages, userMsg].map(m => ({ role: m.role, content: m.content }));
-
-    const hasNewAddress = ADDRESS_RE.test(text);
-    // A topic pivot ("what about digital skills training?") carries no address of its
-    // own — reuse the already-fetched data for the last address instead of asking the
-    // user to repeat it. This is instant (no network call) since /api/lookup already
-    // returns both plans and services groups for an address in one shot.
-    const isPivot = !hasNewAddress && detectedIntent !== null && detectedIntent !== prevIntent;
-
-    let contextBlock = '';
-    let numPlans: number | undefined;
-    let numServices: number | undefined;
-    let lat: number | undefined;
-    let lon: number | undefined;
-
-    if (hasNewAddress || (isPivot && lastLookup)) {
-      try {
-        const result: Omit<LookupResult, 'intent'> = hasNewAddress
-          ? await (await fetch('/api/lookup', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ text }),
-            })).json()
-          : lastLookup!;
-
-        if (hasNewAddress) setLastLookup(result);
-
-        lat = result.lat;
-        lon = result.lon;
-
-        const showPlans = intent !== 'services';
-        const showServices = intent !== 'plans';
-
-        numPlans = result.planGroups
-          ? result.planGroups.threshold.length + Object.values(result.planGroups.byProvider).reduce((sum, arr) => sum + arr.length, 0)
-          : 0;
-        numServices = result.serviceGroups
-          ? SERVICE_TIERS.reduce((sum, [key]) => sum + result.serviceGroups![key].length, 0)
-          : 0;
-
-        const sections: string[] = [`ADDRESS RESULTS for ${result.address ?? 'the address the user provided'}`];
-
-        if (showPlans) {
-          sections.push(
-            result.planGroups
-              ? `MATCHED INTERNET PLANS (this is the complete, authoritative list — the UI card below shows exactly this data, nothing more or different):\n${summarizePlans(result.planGroups)}`
-              : 'MATCHED INTERNET PLANS: none found for this address in our database.'
-          );
-        }
-        if (showServices) {
-          sections.push(
-            result.serviceGroups
-              ? `NEARBY DIGITAL EQUITY RESOURCES (complete, authoritative list — matches the UI card below):\n${summarizeServices(result.serviceGroups)}`
-              : 'NEARBY DIGITAL EQUITY RESOURCES: none found.'
-          );
-        }
-
-        const instructions = result.validated === false
-          ? 'The address could not be validated against OpenStreetMap — it may be misspelled or incomplete. Ask the user to double-check the spelling or add more detail (unit number, cross street, or ZIP). Do not mention plans or resources yet.'
-          : !result.found
-          ? `No FCC broadband database record was found for this exact address, so plan matching may be incomplete — let the user know and suggest they double-check the address or try a nearby cross street.${showPlans ? ' Also suggest contacting ISPs directly (Cox, AT&T, CenturyLink, Spectrum serve Clark County).' : ''}`
-          : 'Use ONLY the data above — do not mention or invent any provider, plan, or resource that is not listed.';
-
-        contextBlock = [
-          ...sections,
-          '',
-          instructions,
-          showPlans && !showServices ? 'The user only asked about internet plans — do not mention digital equity resources or training programs.' : '',
-          showServices && !showPlans ? 'The user only asked about digital equity/training/device resources — do not mention internet plans or pricing.' : '',
-          isPivot ? "The user already gave the client's address earlier and is now asking about a different topic — don't ask them to repeat the address, just answer using the data above." : '',
-          result.planGroups && showPlans ? 'The lowest-cost and fastest plan are already highlighted below your message — do not restate every plan in detail; the user will be offered the choice to see all plans or get a personalized recommendation next.' : '',
-          'Keep your reply short — the card(s) below your message already show full details.',
-        ].filter(Boolean).join('\n\n');
-
-        setResultMap(prev => new Map(prev).set(userMsgId, { ...result, intent }));
-
-        if (showPlans && result.planGroups) {
-          setPlanFlow({ step: 'top_shown', sourceMsgId: userMsgId, planGroups: result.planGroups, address: result.address });
-        }
-        if (showServices && result.serviceGroups) {
-          setServiceFlow({ step: 'top_shown', sourceMsgId: userMsgId, serviceGroups: result.serviceGroups });
-        }
-      } catch {
-        // Lookup failed — chat continues without cards
-      }
+    if (showPlans) {
+      sections.push(
+        result.planGroups
+          ? `MATCHED INTERNET PLANS (this is the complete, authoritative list — the UI card below shows exactly this data, nothing more or different):\n${summarizePlans(result.planGroups)}`
+          : 'MATCHED INTERNET PLANS: none found for this address in our database.'
+      );
+    }
+    if (showServices) {
+      sections.push(
+        result.serviceGroups
+          ? `NEARBY DIGITAL EQUITY RESOURCES (complete, authoritative list — matches the UI card below):\n${summarizeServices(result.serviceGroups)}`
+          : 'NEARBY DIGITAL EQUITY RESOURCES: none found.'
+      );
     }
 
-    // Stream the AI response
+    const instructions = result.validated === false
+      ? 'The address could not be validated against OpenStreetMap — it may be misspelled or incomplete. Ask the user to double-check the spelling or add more detail (unit number, cross street, or ZIP). Do not mention plans or resources yet.'
+      : !result.found
+      ? `No FCC broadband database record was found for this exact address, so plan matching may be incomplete — let the user know and suggest they double-check the address or try a nearby cross street.${showPlans ? ' Also suggest contacting ISPs directly (Cox, AT&T, CenturyLink, Spectrum serve Clark County).' : ''}`
+      : 'Use ONLY the data above — do not mention or invent any provider, plan, or resource that is not listed.';
+
+    const contextBlock = [
+      ...sections,
+      '',
+      instructions,
+      showPlans && !showServices ? 'The user only asked about internet plans — do not mention digital equity resources or training programs.' : '',
+      showServices && !showPlans ? 'The user only asked about digital equity/training/device resources — do not mention internet plans or pricing.' : '',
+      isPivot ? "The user already gave the client's address earlier and is now asking about a different topic — don't ask them to repeat the address, just answer using the data above." : '',
+      result.planGroups && showPlans ? 'The lowest-cost and fastest plan are already highlighted below your message — do not restate every plan in detail; the user will be offered the choice to see all plans or get a personalized recommendation next.' : '',
+      'Keep your reply short — the card(s) below your message already show full details.',
+    ].filter(Boolean).join('\n\n');
+
+    setLastLookup(result);
+    setResultMap(prev => new Map(prev).set(userMsgId, { ...result, intent }));
+
+    if (showPlans && result.planGroups) {
+      setPlanFlow({ step: 'top_shown', sourceMsgId: userMsgId, planGroups: result.planGroups, address: result.address });
+    }
+    if (showServices && result.serviceGroups) {
+      setServiceFlow({ step: 'top_shown', sourceMsgId: userMsgId, serviceGroups: result.serviceGroups });
+    }
+
+    const showDisclaimer = showPlans && !!result.planGroups && !shownPlanDisclaimerRef.current;
+    if (showDisclaimer) shownPlanDisclaimerRef.current = true;
+
+    return { contextBlock, numPlans, numServices, lat: result.lat, lon: result.lon, showDisclaimer };
+  }, []);
+
+  const streamAssistantReply = useCallback(async (
+    history: Array<{ role: string; content: string }>,
+    assistantMsgId: string,
+    contextBlock: string,
+    intent: Intent,
+    numPlans?: number,
+    numServices?: number,
+    lat?: number,
+    lon?: number,
+  ) => {
     try {
       abortRef.current = new AbortController();
       const res = await fetch('/api/chat', {
@@ -351,11 +338,111 @@ export default function Chatbot() {
       setIsStreaming(false);
       abortRef.current = null;
     }
-  }, [isStreaming, messages, activeIntent, lastLookup]);
-
-  const appendAssistantText = useCallback((text: string) => {
-    setMessages(prev => [...prev, { id: nanoid(), role: 'assistant', content: text }]);
   }, []);
+
+  const sendMessage = useCallback(async (text: string, intentOverride?: Intent) => {
+    if (isStreaming) return;
+
+    // Any new chat turn (typed text or a fresh main-menu prompt) breaks out of
+    // the guided plan-recommendation/service-filter flows — they get re-armed
+    // below if this turn triggers a new address lookup.
+    setPlanFlow(IDLE_PLAN_FLOW);
+    setServiceFlow(IDLE_SERVICE_FLOW);
+    setShowMainMenu(false);
+    setPendingConfirm(null);
+
+    const detectedIntent = classifyIntent(text);
+    const prevIntent = activeIntent;
+    const intent = intentOverride ?? detectedIntent ?? prevIntent;
+    setActiveIntent(intent);
+
+    const userMsgId = nanoid();
+    const assistantMsgId = nanoid();
+
+    const userMsg: Message = { id: userMsgId, role: 'user', content: text };
+    setMessages(prev => [...prev, userMsg, { id: assistantMsgId, role: 'assistant', content: '' }]);
+    setIsStreaming(true);
+
+    // Build message history for the API (include new user message)
+    const history = [...messages, userMsg].map(m => ({ role: m.role, content: m.content }));
+
+    const hasNewAddress = ADDRESS_RE.test(text);
+    // A topic pivot ("what about digital skills training?") carries no address of its
+    // own — reuse the already-fetched data for the last address instead of asking the
+    // user to repeat it. This is instant (no network call) since /api/lookup already
+    // returns both plans and services groups for an address in one shot.
+    const isPivot = !hasNewAddress && detectedIntent !== null && detectedIntent !== prevIntent;
+
+    if (hasNewAddress) {
+      try {
+        const result: Omit<LookupResult, 'intent'> = await (await fetch('/api/lookup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text }),
+        })).json();
+
+        // A geocoded address can silently correct a typo, infer a missing ZIP,
+        // or resolve to a nearby street the user didn't mean — confirm it before
+        // showing any plans/resources, rather than acting on a guess.
+        if (result.validated && result.confirmAddress) {
+          setMessages(prev => prev.map(m => m.id === assistantMsgId
+            ? { ...m, content: `Did you mean **${result.confirmAddress}**?` }
+            : m
+          ));
+          setPendingConfirm({ assistantMsgId, userMsgId, intent, history, result });
+          setIsStreaming(false);
+          return;
+        }
+
+        const { contextBlock, numPlans, numServices, lat, lon, showDisclaimer } = buildLookupOutcome(result, intent, userMsgId, false);
+        await streamAssistantReply(history, assistantMsgId, contextBlock, intent, numPlans, numServices, lat, lon);
+        if (showDisclaimer) appendAssistantText(PLAN_DISCLAIMER);
+      } catch {
+        setIsStreaming(false);
+      }
+      return;
+    }
+
+    let contextBlock = '';
+    let numPlans: number | undefined;
+    let numServices: number | undefined;
+    let lat: number | undefined;
+    let lon: number | undefined;
+    let showDisclaimer = false;
+
+    if (isPivot && lastLookup) {
+      const outcome = buildLookupOutcome(lastLookup, intent, userMsgId, true);
+      contextBlock = outcome.contextBlock;
+      numPlans = outcome.numPlans;
+      numServices = outcome.numServices;
+      lat = outcome.lat;
+      lon = outcome.lon;
+      showDisclaimer = outcome.showDisclaimer;
+    }
+
+    await streamAssistantReply(history, assistantMsgId, contextBlock, intent, numPlans, numServices, lat, lon);
+    if (showDisclaimer) appendAssistantText(PLAN_DISCLAIMER);
+  }, [isStreaming, messages, activeIntent, lastLookup, buildLookupOutcome, streamAssistantReply, appendAssistantText]);
+
+  const handleAddressConfirm = useCallback(async (value: 'yes' | 'no') => {
+    if (!pendingConfirm) return;
+    const { assistantMsgId, userMsgId, intent, history, result } = pendingConfirm;
+    setPendingConfirm(null);
+
+    if (value === 'no') {
+      setMessages(prev => prev.map(m => m.id === assistantMsgId
+        ? { ...m, content: "No problem — could you retype the address? Including the city and ZIP code helps me find the right one." }
+        : m
+      ));
+      return;
+    }
+
+    setMessages(prev => prev.map(m => m.id === assistantMsgId ? { ...m, content: '' } : m));
+    setIsStreaming(true);
+    const { contextBlock, numPlans, numServices, lat, lon, showDisclaimer } = buildLookupOutcome(result, intent, userMsgId, false);
+    await streamAssistantReply(history, assistantMsgId, contextBlock, intent, numPlans, numServices, lat, lon);
+    if (showDisclaimer) appendAssistantText(PLAN_DISCLAIMER);
+  }, [pendingConfirm, buildLookupOutcome, streamAssistantReply, appendAssistantText]);
 
   const closingLine = "Let me know if you need anything else for this case.";
 
@@ -491,13 +578,25 @@ export default function Chatbot() {
                   </div>
                 )}
 
+                {/* Address confirmation gate — the lookup already ran, but its plans/
+                    resources stay hidden until the user confirms this is the right
+                    address, so a bad geocode match never gets acted on silently. */}
+                {!isUser && !isStreaming && pendingConfirm && pendingConfirm.assistantMsgId === m.id && (
+                  <div className="mt-1">
+                    <ChoiceButtons
+                      options={[{ value: 'yes', label: 'Yes' }, { value: 'no', label: 'No' }]}
+                      onSelect={handleAddressConfirm}
+                    />
+                  </div>
+                )}
+
                 {/* Follow-ups that don't repeat the address or name a topic (e.g. "what's
                     the cheapest option?") skip the lookup above entirely, since there's
                     nothing new to fetch — but the cards should still be there for the user
                     to reference. Only applies once the guided flow has released the bottom
                     slot (it renders its own cards below), and only to the reply actually
                     being read, not to every past message that lacked its own lookup. */}
-                {!isUser && !result && isLastMsg && !isStreaming && lastLookup && planFlow.step === 'idle' && serviceFlow.step === 'idle' && !showMainMenu && (
+                {!isUser && !result && isLastMsg && !isStreaming && !pendingConfirm && lastLookup && planFlow.step === 'idle' && serviceFlow.step === 'idle' && !showMainMenu && (
                   <div className="mt-1">
                     {lastLookup.planGroups && activeIntent !== 'services' && (
                       <PlanCard planGroups={lastLookup.planGroups} address={lastLookup.address} mode="top" />
@@ -624,7 +723,7 @@ export default function Chatbot() {
             </button>
           </form>
           <p className="text-xs text-slate-400 text-center mt-2">
-            For emergencies, call 911. For social services, call 211.
+            For emergencies, call 911. For mental health crisis, call 811. For social services, call 211. 
           </p>
         </div>
       </div>

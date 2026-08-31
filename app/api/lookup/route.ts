@@ -1,4 +1,4 @@
-import { extractAddress, searchPoints, geocodeAddress } from '@/lib/address';
+import { extractAddress, searchPoints, geocodeAddress, formatParsedAddress } from '@/lib/address';
 import { parseTechRules, matchPlans, groupPlans, type PlanGroups } from '@/lib/plans';
 import { getServicesNearAddress, nationalServicesOnly, type ServiceGroups } from '@/lib/services-lookup';
 import { createTTLCache } from '@/lib/cache';
@@ -11,6 +11,10 @@ interface LookupResponse {
   lat?: number;
   lon?: number;
   address?: string;
+  // The geocoder-resolved address, for a "Did you mean...?" confirmation
+  // before any plans/resources are shown — distinct from `address`, which
+  // only exists once a matching FCC dataset row is found.
+  confirmAddress?: string;
 }
 
 // Keyed by normalized address — avoids re-hitting Postgres and the external
@@ -44,11 +48,13 @@ export async function POST(req: Request) {
     return Response.json(invalid);
   }
 
+  const confirmAddress = geoResult.formatted ?? formatParsedAddress(parsed);
+
   const row = await searchPoints(parsed);
   const { lat, lon } = geoResult;
 
   if (!row) {
-    const notFound: LookupResponse = { planGroups: null, serviceGroups: nationalServicesOnly(), found: false, validated: true, lat, lon };
+    const notFound: LookupResponse = { planGroups: null, serviceGroups: nationalServicesOnly(), found: false, validated: true, lat, lon, confirmAddress };
     lookupCache.set(cacheKey, notFound, NOT_FOUND_TTL_MS);
     return Response.json(notFound);
   }
@@ -61,6 +67,7 @@ export async function POST(req: Request) {
   const response: LookupResponse = {
     planGroups, serviceGroups, found: true, validated: true, lat, lon,
     address: `${row.ADDR}, ${row.CITY}, ${row.STATE} ${row.ZIP}`,
+    confirmAddress,
   };
   lookupCache.set(cacheKey, response);
   return Response.json(response);

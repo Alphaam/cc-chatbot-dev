@@ -30,8 +30,8 @@ const stripDirectional = (addr: string) => {
 
 const SUFFIX_PAT = '(?:STREET|AVENUE|BOULEVARD|DRIVE|ROAD|LANE|COURT|PLACE|CIRCLE|HIGHWAY|PARKWAY|SQUARE|ST|AVE|BLVD|DR|RD|LN|CT|WAY|PL|CIR|HWY|PKWY|LOOP|SQ)';
 const ADDR_RE          = new RegExp(`(\\d+[\\w\\s.#-]+?\\b${SUFFIX_PAT}\\.?)[\\s,]+([A-Za-z][A-Za-z\\s]+?)[\\s,]+\\b([A-Za-z]{2})\\b(?:[\\s,]+(\\d{5}))?`, 'i');
-const CITY_NO_STATE_RE = new RegExp(`(\\d+[\\w\\s.#-]+?\\b${SUFFIX_PAT}\\.?)[\\s,]+([A-Za-z][A-Za-z\\s]+?)\\s*$`, 'i');
-const BARE_ADDR_RE     = new RegExp(`(\\d+[\\w\\s.#-]+?\\b${SUFFIX_PAT}\\.?)\\s*$`, 'i');
+const CITY_NO_STATE_RE = new RegExp(`(\\d+[\\w\\s.#-]+?\\b${SUFFIX_PAT}\\.?)[\\s,]+([A-Za-z][A-Za-z\\s]+?)(?:[\\s,]+(\\d{5}))?\\s*$`, 'i');
+const BARE_ADDR_RE     = new RegExp(`(\\d+[\\w\\s.#-]+?\\b${SUFFIX_PAT}\\.?)(?:[\\s,]+(\\d{5}))?\\s*$`, 'i');
 
 export interface ParsedAddress {
   addr: string;
@@ -50,15 +50,24 @@ export const extractAddress = (text: string): ParsedAddress | null => {
   const mc = text.match(CITY_NO_STATE_RE);
   if (mc) {
     const addr = normalizeAddr(mc[1]);
-    return { addr, addrAlt: stripDirectional(addr), city: normalizeCity(mc[2]), state: 'NV', zip: '' };
+    return { addr, addrAlt: stripDirectional(addr), city: normalizeCity(mc[2]), state: 'NV', zip: mc[3] || '' };
   }
   const bare = text.match(BARE_ADDR_RE);
   if (bare) {
     const addr = normalizeAddr(bare[1]);
-    return { addr, addrAlt: stripDirectional(addr), city: null, state: 'NV', zip: '' };
+    return { addr, addrAlt: stripDirectional(addr), city: null, state: 'NV', zip: bare[2] || '' };
   }
   return null;
 };
+
+const titleCase = (s: string) => s.toLowerCase().replace(/\b[a-z]/g, c => c.toUpperCase());
+
+// Fallback for the rare geocode match whose addressdetails don't decompose
+// into house_number/road (e.g. a place-type result) — builds the "Did you
+// mean...?" string from what we parsed out of the user's own text instead.
+export const formatParsedAddress = ({ addr, city, state, zip }: ParsedAddress): string =>
+  [titleCase(addr), [city ? titleCase(city) : '', [state, zip].filter(Boolean).join(' ')].filter(Boolean).join(', ')]
+    .filter(Boolean).join(', ');
 
 // ─── Geocode ───────────────────────────────────────────────────────────────
 
@@ -68,14 +77,39 @@ export const extractAddress = (text: string): ParsedAddress | null => {
 // caller so those repeats never leave the process.
 const GEOCODE_FOUND_TTL_MS = 24 * 60 * 60 * 1000;
 const GEOCODE_NOT_FOUND_TTL_MS = 10 * 60 * 1000;
-type GeocodeResult = { lat: number; lon: number } | null;
+type GeocodeResult = { lat: number; lon: number; formatted?: string } | null;
 const geocodeCache = createTTLCache<GeocodeResult>(GEOCODE_FOUND_TTL_MS, 2000);
 
+// Turns a full street-type word back into our short display form (e.g.
+// "Street" -> "St") using the same abbreviation table as normalizeAddr,
+// but title-cased for human display instead of upper-cased for matching.
+const abbreviateForDisplay = (str: string) => {
+  let s = str;
+  for (const [full, abbr] of Object.entries(STREET_ABBREVS)) {
+    s = s.replace(new RegExp(`\\b${full}\\b`, 'gi'), abbr.charAt(0) + abbr.slice(1).toLowerCase());
+  }
+  return s;
+};
+
+// Nominatim's addressdetails breaks a match into house_number/road/city/
+// postcode etc. — building the confirmation string from these (rather than
+// echoing the user's raw input) is what lets a missing/wrong ZIP or a
+// shorthand city name get corrected in the "Did you mean ...?" prompt.
+const formatGeocodedAddress = (a: Record<string, string>): string | undefined => {
+  if (!a.house_number || !a.road) return undefined;
+  const city = a.city || a.town || a.village || a.hamlet;
+  const stateAbbr = a['ISO3166-2-lvl4']?.split('-')[1];
+  const cityState = [city, [stateAbbr, a.postcode].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+  return [`${a.house_number} ${abbreviateForDisplay(a.road)}`, cityState].filter(Boolean).join(', ');
+};
+
 const nominatimSearch = async (query: string): Promise<GeocodeResult> => {
-  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=us`;
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=us&addressdetails=1`;
   const res  = await fetch(url, { headers: { 'User-Agent': 'ClarkCountyDigitalEquityChatbot/2.0' } });
-  const data = await res.json() as Array<{ lat: string; lon: string }>;
-  return data.length > 0 ? { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) } : null;
+  const data = await res.json() as Array<{ lat: string; lon: string; address?: Record<string, string> }>;
+  if (!data.length) return null;
+  const { lat, lon, address } = data[0];
+  return { lat: parseFloat(lat), lon: parseFloat(lon), formatted: address ? formatGeocodedAddress(address) : undefined };
 };
 
 export const geocodeAddress = async (addr: string, city: string | null, state: string, zip: string) => {
@@ -94,6 +128,19 @@ export const geocodeAddress = async (addr: string, city: string | null, state: s
     // without the city before giving up.
     if (!result && city) {
       result = await nominatimSearch([addr, `${state} ${zip}`.trim()].filter(Boolean).join(', '));
+    }
+    // A ZIP the user typed (or that we inferred) can be stale or slightly off
+    // even when the street/city/state are fine — Nominatim treats the ZIP as
+    // exact rather than inferring the correct one the way Google does. Retry
+    // without it so a good street+city still resolves.
+    if (!result && zip) {
+      result = await nominatimSearch([addr, city, state].filter(Boolean).join(', '));
+    }
+    // Last resort: street + state alone, in case the city itself is the
+    // mismatch (e.g. a mailing city that OSM doesn't recognize for this
+    // street at all).
+    if (!result && city) {
+      result = await nominatimSearch([addr, state].filter(Boolean).join(', '));
     }
     geocodeCache.set(cacheKey, result, result ? GEOCODE_FOUND_TTL_MS : GEOCODE_NOT_FOUND_TTL_MS);
     return result;
