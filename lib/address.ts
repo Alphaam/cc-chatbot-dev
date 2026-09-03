@@ -28,10 +28,48 @@ const stripDirectional = (addr: string) => {
 
 // ─── Extraction ────────────────────────────────────────────────────────────
 
-const SUFFIX_PAT = '(?:STREET|AVENUE|BOULEVARD|DRIVE|ROAD|LANE|COURT|PLACE|CIRCLE|HIGHWAY|PARKWAY|SQUARE|ST|AVE|BLVD|DR|RD|LN|CT|WAY|PL|CIR|HWY|PKWY|LOOP|SQ)';
-const ADDR_RE          = new RegExp(`(\\d+[\\w\\s.#-]+?\\b${SUFFIX_PAT}\\.?)[\\s,]+([A-Za-z][A-Za-z\\s]+?)[\\s,]+\\b([A-Za-z]{2})\\b(?:[\\s,]+(\\d{5}))?`, 'i');
-const CITY_NO_STATE_RE = new RegExp(`(\\d+[\\w\\s.#-]+?\\b${SUFFIX_PAT}\\.?)[\\s,]+([A-Za-z][A-Za-z\\s]+?)(?:[\\s,]+(\\d{5}))?\\s*$`, 'i');
-const BARE_ADDR_RE     = new RegExp(`(\\d+[\\w\\s.#-]+?\\b${SUFFIX_PAT}\\.?)(?:[\\s,]+(\\d{5}))?\\s*$`, 'i');
+// Plain Levenshtein edit distance. Suffix words and street names here are
+// always short (2-15 chars), so the unoptimized O(n*m) table is plenty fast
+// for the handful of comparisons each extraction/correction does.
+const levenshtein = (a: string, b: string): number => {
+  const dp: number[][] = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
+  for (let i = 0; i <= a.length; i++) dp[i][0] = i;
+  for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      dp[i][j] = a[i - 1] === b[j - 1]
+        ? dp[i - 1][j - 1]
+        : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+    }
+  }
+  return dp[a.length][b.length];
+};
+
+const ALL_SUFFIXES = Array.from(new Set([...Object.keys(STREET_ABBREVS), ...Object.values(STREET_ABBREVS), 'WAY']));
+
+// A misspelled street-type word (e.g. "coiurt" for "Court") used to sink
+// extraction entirely, since the old regex only recognized exact spellings.
+// Accept anything close enough by edit distance and return its canonical
+// abbreviated form, so a single typo in the suffix reads the same as a
+// correctly-spelled one.
+const fuzzyMatchSuffix = (word: string): string | null => {
+  const upper = word.toUpperCase();
+  if (ALL_SUFFIXES.includes(upper)) return STREET_ABBREVS[upper] || upper;
+  let best: string | null = null;
+  let bestDist = Infinity;
+  for (const suf of ALL_SUFFIXES) {
+    if (Math.abs(suf.length - upper.length) > 2) continue;
+    const d = levenshtein(upper, suf);
+    if (d < bestDist) { bestDist = d; best = suf; }
+  }
+  const threshold = upper.length <= 4 ? 1 : 2;
+  return best && bestDist <= threshold ? (STREET_ABBREVS[best] || best) : null;
+};
+
+const SUFFIX_WORD       = '([A-Za-z]{2,10})\\.?';
+const ADDR_RE          = new RegExp(`(\\d+[\\w\\s.#-]+?)\\s+${SUFFIX_WORD}[\\s,]+([A-Za-z][A-Za-z\\s]+?)[\\s,]+\\b([A-Za-z]{2})\\b(?:[\\s,]+(\\d{5}))?`, 'i');
+const CITY_NO_STATE_RE = new RegExp(`(\\d+[\\w\\s.#-]+?)\\s+${SUFFIX_WORD}[\\s,]+([A-Za-z][A-Za-z\\s]+?)(?:[\\s,]+(\\d{5}))?\\s*$`, 'i');
+const BARE_ADDR_RE     = new RegExp(`(\\d+[\\w\\s.#-]+?)\\s+${SUFFIX_WORD}(?:[\\s,]+(\\d{5}))?\\s*$`, 'i');
 
 export interface ParsedAddress {
   addr: string;
@@ -42,20 +80,25 @@ export interface ParsedAddress {
 }
 
 export const extractAddress = (text: string): ParsedAddress | null => {
+  const build = (street: string, suffix: string, city: string | null, state: string, zip: string): ParsedAddress => {
+    const addr = normalizeAddr(`${street} ${suffix}`);
+    return { addr, addrAlt: stripDirectional(addr), city, state, zip };
+  };
+
   const m = text.match(ADDR_RE);
   if (m) {
-    const addr = normalizeAddr(m[1]);
-    return { addr, addrAlt: stripDirectional(addr), city: normalizeCity(m[2]), state: m[3].toUpperCase(), zip: m[4] || '' };
+    const suffix = fuzzyMatchSuffix(m[2]);
+    if (suffix) return build(m[1], suffix, normalizeCity(m[3]), m[4].toUpperCase(), m[5] || '');
   }
   const mc = text.match(CITY_NO_STATE_RE);
   if (mc) {
-    const addr = normalizeAddr(mc[1]);
-    return { addr, addrAlt: stripDirectional(addr), city: normalizeCity(mc[2]), state: 'NV', zip: mc[3] || '' };
+    const suffix = fuzzyMatchSuffix(mc[2]);
+    if (suffix) return build(mc[1], suffix, normalizeCity(mc[3]), 'NV', mc[4] || '');
   }
   const bare = text.match(BARE_ADDR_RE);
   if (bare) {
-    const addr = normalizeAddr(bare[1]);
-    return { addr, addrAlt: stripDirectional(addr), city: null, state: 'NV', zip: bare[2] || '' };
+    const suffix = fuzzyMatchSuffix(bare[2]);
+    if (suffix) return build(bare[1], suffix, null, 'NV', bare[3] || '');
   }
   return null;
 };
@@ -148,6 +191,45 @@ export const geocodeAddress = async (addr: string, city: string | null, state: s
     console.error('[geocode] error:', e);
     return null;
   }
+};
+
+// ─── Fuzzy street correction ──────────────────────────────────────────────
+
+// A misspelled street name (e.g. "Sanfrd" for "Sanford") won't geocode and
+// won't exact-match the FCC dataset either — Nominatim doesn't correct
+// spelling, and searchPoints below only does `addr=`. Every point in the
+// dataset that shares a house number with the parsed address is a cheap,
+// tightly-scoped candidate set (the existing addr-leading btree index
+// supports this as a prefix scan), so rank those by edit distance in
+// process rather than needing a fuzzy-search DB extension.
+const HOUSE_NUMBER_RE = /^(\d+)\s+(.+)$/;
+
+export const fuzzyCorrectStreet = async (parsed: ParsedAddress): Promise<ParsedAddress | null> => {
+  const m = parsed.addr.match(HOUSE_NUMBER_RE);
+  if (!m) return null;
+  const [, houseNum, street] = m;
+  const prefix = `${houseNum} `;
+
+  const candidates = parsed.city
+    ? await sql`SELECT DISTINCT addr, city, zip FROM points WHERE addr LIKE ${prefix + '%'} AND state=${parsed.state} AND city=${parsed.city}`
+    : await sql`SELECT DISTINCT addr, city, zip FROM points WHERE addr LIKE ${prefix + '%'} AND state=${parsed.state}`;
+  if (!candidates.length) return null;
+
+  let best: { addr: string; city: string; zip: string } | null = null;
+  let bestDist = Infinity;
+  for (const c of candidates) {
+    const d = levenshtein(street, c.addr.slice(prefix.length));
+    if (d < bestDist) { bestDist = d; best = c as { addr: string; city: string; zip: string }; }
+  }
+  // Roughly one typo allowed per 4 characters of the street name — enough
+  // for "Sanfrd"/"Sanford" without matching two genuinely different streets.
+  const threshold = Math.max(1, Math.round(street.length / 4));
+  if (!best || bestDist === 0 || bestDist > threshold) return null;
+
+  return {
+    addr: best.addr, addrAlt: stripDirectional(best.addr),
+    city: normalizeCity(best.city), state: parsed.state, zip: best.zip || parsed.zip,
+  };
 };
 
 // ─── Points lookup ─────────────────────────────────────────────────────────

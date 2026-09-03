@@ -28,6 +28,7 @@ export const planCsvRows = (plans: Plan[]): Array<Array<string | number>> => [
 ];
 
 export const formatPlanSms = (plan: Plan, address?: string): string => {
+  const website = getProviderWebsite(plan.provider);
   const lines = [
     address ? `INTERNET AT ${address.toUpperCase()}` : 'INTERNET PLAN',
     '━━━━━━━━━━━━━━━━━━━━',
@@ -39,6 +40,7 @@ export const formatPlanSms = (plan: Plan, address?: string): string => {
   if (plan.lowIncome === 'Y') lines.push(`• Low-income discount: $${plan.liDiscount} off`);
   if (plan.contract === 'Y') lines.push(`• Contract: ${plan.contractMonths} months`);
   if (plan.installFee) lines.push(`• Install: ${plan.installFee}`);
+  if (website) lines.push(`• Sign up: ${website}`);
   lines.push('', 'Questions? clark.gov/broadband');
   return lines.join('\n');
 };

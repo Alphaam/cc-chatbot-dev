@@ -18,7 +18,9 @@ Guidelines:
 - If the address couldn't be validated against OpenStreetMap, ask the user to double-check the spelling or add more detail (unit number, cross street, or ZIP) — don't guess at plans or resources for an unvalidated address
 - If the address validated but no FCC record is found, let the user know and suggest they double-check the address or try a nearby cross street
 - Keep responses concise — the UI already shows detailed plan and service cards below your message
-- Never make up plans or resources; only reference what's in the context block`;
+- Never make up plans or resources; only reference what's in the context block
+- Never say "context block," "lookup tool," "database," or any other internal system/component name to the user — those are terms for you only, not user-facing language
+- If the user has provided what looks like an address but you receive no context block at all, don't describe why or speculate about tools — just tell them you weren't able to process that address and ask them to resend the full street address, city, and ZIP`;
 
 export async function POST(req: Request) {
   const {

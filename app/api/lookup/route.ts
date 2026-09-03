@@ -1,4 +1,4 @@
-import { extractAddress, searchPoints, geocodeAddress, formatParsedAddress } from '@/lib/address';
+import { extractAddress, searchPoints, geocodeAddress, formatParsedAddress, fuzzyCorrectStreet } from '@/lib/address';
 import { parseTechRules, matchPlans, groupPlans, type PlanGroups } from '@/lib/plans';
 import { getServicesNearAddress, nationalServicesOnly, type ServiceGroups } from '@/lib/services-lookup';
 import { createTTLCache } from '@/lib/cache';
@@ -41,16 +41,30 @@ export async function POST(req: Request) {
 
   // Validate the address against OpenStreetMap before ever touching the FCC
   // broadband dataset — an address OSM can't locate isn't worth searching for.
-  const geoResult = await geocodeAddress(parsed.addr, parsed.city, parsed.state, parsed.zip);
+  let effectiveParsed = parsed;
+  let geoResult = await geocodeAddress(parsed.addr, parsed.city, parsed.state, parsed.zip);
+  if (!geoResult) {
+    // Nominatim can't correct a misspelled street name on its own — try the
+    // closest real street at this house number in the FCC dataset before
+    // giving up on the address entirely.
+    const corrected = await fuzzyCorrectStreet(parsed);
+    if (corrected) {
+      const correctedGeo = await geocodeAddress(corrected.addr, corrected.city, corrected.state, corrected.zip);
+      if (correctedGeo) {
+        geoResult = correctedGeo;
+        effectiveParsed = corrected;
+      }
+    }
+  }
   if (!geoResult) {
     const invalid: LookupResponse = { planGroups: null, serviceGroups: null, found: false, validated: false };
     lookupCache.set(cacheKey, invalid, NOT_FOUND_TTL_MS);
     return Response.json(invalid);
   }
 
-  const confirmAddress = geoResult.formatted ?? formatParsedAddress(parsed);
+  const confirmAddress = geoResult.formatted ?? formatParsedAddress(effectiveParsed);
 
-  const row = await searchPoints(parsed);
+  const row = await searchPoints(effectiveParsed);
   const { lat, lon } = geoResult;
 
   if (!row) {
