@@ -3,8 +3,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Send, MapPin, Loader2 } from 'lucide-react';
 
 interface Suggestion {
+  mapboxId: string;
   label: string;
-  value: string;
 }
 
 interface ChatInputProps {
@@ -13,10 +13,22 @@ interface ChatInputProps {
 }
 
 const MIN_QUERY = 3;
-const DEBOUNCE_MS = 350;
+// Mapbox typeahead is fast, so a short debounce keeps it feeling instant while
+// still collapsing bursts of keystrokes into a single suggest request.
+const DEBOUNCE_MS = 150;
+
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_API_KEY;
+
+// Bias results to Clark County, NV: proximity centers ranking on Las Vegas and
+// the bbox (west,south,east,north) fences suggestions to the county area.
+const CLARK_PROXIMITY = '-115.1398,36.1699';
+const CLARK_BBOX = '-115.9,35.0,-114.0,36.85';
 
 export default function ChatInput({ onSend, disabled }: ChatInputProps) {
   const [value, setValue] = useState('');
+  // Mirrors `value` so async callbacks read the latest text without re-binding.
+  const valueRef = useRef('');
+  valueRef.current = value;
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -24,6 +36,13 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  // One Mapbox session groups all suggest calls with the retrieve that ends
+  // them, so a whole lookup bills as a single request. Regenerated after each
+  // selection so the next address search starts a fresh session.
+  const sessionRef = useRef<string>('');
+  if (!sessionRef.current && typeof crypto !== 'undefined') {
+    sessionRef.current = crypto.randomUUID();
+  }
 
   // The address query is everything typed after the most recent "@". Addresses
   // contain spaces, so the token runs to the end of the input rather than
@@ -50,14 +69,23 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
       setLoading(true);
       setOpen(true);
       try {
-        const res = await fetch('/api/address-suggest', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: q }),
-          signal: abortRef.current.signal,
-        });
+        const url = new URL('https://api.mapbox.com/search/searchbox/v1/suggest');
+        url.searchParams.set('q', q);
+        url.searchParams.set('access_token', MAPBOX_TOKEN ?? '');
+        url.searchParams.set('session_token', sessionRef.current);
+        url.searchParams.set('country', 'us');
+        url.searchParams.set('types', 'address');
+        url.searchParams.set('language', 'en');
+        url.searchParams.set('limit', '6');
+        url.searchParams.set('proximity', CLARK_PROXIMITY);
+        url.searchParams.set('bbox', CLARK_BBOX);
+        const res = await fetch(url, { signal: abortRef.current.signal });
         const data = await res.json();
-        setSuggestions(data.suggestions ?? []);
+        const items: Suggestion[] = (data.suggestions ?? []).map((s: any) => ({
+          mapboxId: s.mapbox_id,
+          label: s.full_address || [s.name, s.place_formatted].filter(Boolean).join(', '),
+        }));
+        setSuggestions(items);
         setActiveIndex(0);
       } catch (err) {
         if ((err as Error).name !== 'AbortError') setSuggestions([]);
@@ -81,15 +109,34 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
     return () => document.removeEventListener('mousedown', onDocMouseDown);
   }, [open]);
 
-  const selectSuggestion = useCallback((s: Suggestion) => {
-    setValue(prev => {
-      const at = prev.lastIndexOf('@');
-      const base = at === -1 ? prev : prev.slice(0, at);
-      return `${base}${s.value} `;
-    });
+  const selectSuggestion = useCallback(async (s: Suggestion) => {
+    // Capture the text before "@" once. Both the optimistic fill and the later
+    // retrieve fill replace from this same base, so the address is never
+    // duplicated (the "@" token is gone after the first fill).
+    const at = valueRef.current.lastIndexOf('@');
+    const base = at === -1 ? '' : valueRef.current.slice(0, at);
+
+    // Optimistically fill with the label so selection feels instant, then
+    // retrieve the canonical full address (this call closes the billing session).
+    setValue(`${base}${s.label} `);
     setOpen(false);
     setSuggestions([]);
     inputRef.current?.focus();
+
+    try {
+      const url = new URL(`https://api.mapbox.com/search/searchbox/v1/retrieve/${s.mapboxId}`);
+      url.searchParams.set('access_token', MAPBOX_TOKEN ?? '');
+      url.searchParams.set('session_token', sessionRef.current);
+      const res = await fetch(url);
+      const data = await res.json();
+      const full = data?.features?.[0]?.properties?.full_address;
+      if (full) setValue(`${base}${full} `);
+    } catch {
+      // Keep the label we already filled if retrieve fails.
+    } finally {
+      // Start a fresh session for the next address search.
+      if (typeof crypto !== 'undefined') sessionRef.current = crypto.randomUUID();
+    }
   }, []);
 
   const submit = useCallback(() => {
@@ -136,7 +183,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
           {suggestions.length > 0 ? (
             <ul className="max-h-64 overflow-y-auto py-1">
               {suggestions.map((s, i) => (
-                <li key={s.value} role="option" aria-selected={i === activeIndex}>
+                <li key={s.mapboxId} role="option" aria-selected={i === activeIndex}>
                   <button
                     type="button"
                     onMouseDown={e => e.preventDefault()}
