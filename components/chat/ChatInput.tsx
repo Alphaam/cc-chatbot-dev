@@ -4,7 +4,25 @@ import { Send, MapPin, Loader2 } from 'lucide-react';
 
 interface Suggestion {
   mapboxId: string;
+  // Pretty full address shown in the dropdown, e.g.
+  // "1700 Pinto Lane, Las Vegas, Nevada 89106, United States".
   label: string;
+  // Backend-parseable form inserted into the input. The chat's address parser
+  // (lib/address.ts) expects a 2-letter state and no country suffix, so we
+  // rebuild "street, city, ST zip" from Mapbox's structured context instead of
+  // using full_address (which spells out the state and appends the country).
+  value: string;
+}
+
+// Build the parser-friendly "street, city, ST zip" string from a Mapbox
+// context object, falling back to the suggestion's own name for the street.
+function buildInsertValue(context: any, fallbackStreet: string): string {
+  const street = context?.address?.name || fallbackStreet;
+  const city = context?.place?.name;
+  const region = context?.region?.region_code; // 2-letter, e.g. "NV"
+  const zip = context?.postcode?.name;
+  const cityState = [city, [region, zip].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+  return [street, cityState].filter(Boolean).join(', ');
 }
 
 interface ChatInputProps {
@@ -84,6 +102,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
         const items: Suggestion[] = (data.suggestions ?? []).map((s: any) => ({
           mapboxId: s.mapbox_id,
           label: s.full_address || [s.name, s.place_formatted].filter(Boolean).join(', '),
+          value: buildInsertValue(s.context, s.address || s.name || ''),
         }));
         setSuggestions(items);
         setActiveIndex(0);
@@ -116,9 +135,9 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
     const at = valueRef.current.lastIndexOf('@');
     const base = at === -1 ? '' : valueRef.current.slice(0, at);
 
-    // Optimistically fill with the label so selection feels instant, then
-    // retrieve the canonical full address (this call closes the billing session).
-    setValue(`${base}${s.label} `);
+    // Optimistically fill with the parseable value so selection feels instant,
+    // then retrieve the canonical address (this call closes the billing session).
+    setValue(`${base}${s.value} `);
     setOpen(false);
     setSuggestions([]);
     inputRef.current?.focus();
@@ -129,10 +148,12 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
       url.searchParams.set('session_token', sessionRef.current);
       const res = await fetch(url);
       const data = await res.json();
-      const full = data?.features?.[0]?.properties?.full_address;
-      if (full) setValue(`${base}${full} `);
+      const props = data?.features?.[0]?.properties;
+      if (props?.context) {
+        setValue(`${base}${buildInsertValue(props.context, props.name ?? s.value)} `);
+      }
     } catch {
-      // Keep the label we already filled if retrieve fails.
+      // Keep the value we already filled if retrieve fails.
     } finally {
       // Start a fresh session for the next address search.
       if (typeof crypto !== 'undefined') sessionRef.current = crypto.randomUUID();
