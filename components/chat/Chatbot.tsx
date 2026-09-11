@@ -700,7 +700,7 @@ export default function Chatbot() {
       <div className="bg-white border-t border-slate-200 px-4 py-3 shrink-0">
         <div className="max-w-2xl mx-auto">
           <ChatInput onSend={(text, o) => sendMessage(text, undefined, o)} disabled={isStreaming} />
-          <p className="text-xs text-slate-400 text-center mt-2">
+          <p className="text-xs text-chat-secondary-foreground text-center mt-2">
             For emergencies, call 911. For mental health crisis, call 811. For social services, call 211. 
           </p>
         </div>
