@@ -883,7 +883,7 @@ export default function Chatbot() {
         </div>
       </div>
 
-        {showJump && <div className="absolute right-4 bottom-4"><Button variant="outline" size="icon" className="rounded-full shadow-sm" aria-label="Jump to latest" title="Jump to latest" onClick={jumpToLatest}><ArrowDown aria-hidden="true" className="animate-pulse motion-reduce:animate-none" /></Button></div>}
+        {showJump && <div className="absolute right-[max(1.5rem,calc((100%_-_42rem)/2_-_4rem))] bottom-4"><Button variant="outline" size="icon" className="size-12 rounded-full shadow-sm [&_svg]:size-6" aria-label="Jump to latest" title="Jump to latest" onClick={jumpToLatest}><ArrowDown aria-hidden="true" className="animate-pulse motion-reduce:animate-none" /></Button></div>}
       </div>
 
       {/* Input */}
