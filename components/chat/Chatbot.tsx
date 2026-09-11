@@ -339,7 +339,7 @@ export default function Chatbot() {
     }
   }, []);
 
-  const sendMessage = useCallback(async (text: string, intentOverride?: Intent) => {
+  const sendMessage = useCallback(async (text: string, intentOverride?: Intent, opts?: { addressConfirmed?: boolean }) => {
     if (isStreaming) return;
 
     // Any new chat turn (typed text or a fresh main-menu prompt) breaks out of
@@ -382,8 +382,10 @@ export default function Chatbot() {
 
         // A geocoded address can silently correct a typo, infer a missing ZIP,
         // or resolve to a nearby street the user didn't mean — confirm it before
-        // showing any plans/resources, rather than acting on a guess.
-        if (result.validated && result.confirmAddress) {
+        // showing any plans/resources, rather than acting on a guess. This is
+        // redundant when the user picked the address from the autocomplete
+        // dropdown (already an exact, verified match), so skip it in that case.
+        if (result.validated && result.confirmAddress && !opts?.addressConfirmed) {
           setMessages(prev => prev.map(m => m.id === assistantMsgId
             ? { ...m, content: `Did you mean **${result.confirmAddress}**?` }
             : m
@@ -697,7 +699,7 @@ export default function Chatbot() {
       {/* Input */}
       <div className="bg-white border-t border-slate-200 px-4 py-3 shrink-0">
         <div className="max-w-2xl mx-auto">
-          <ChatInput onSend={sendMessage} disabled={isStreaming} />
+          <ChatInput onSend={(text, o) => sendMessage(text, undefined, o)} disabled={isStreaming} />
           <p className="text-xs text-slate-400 text-center mt-2">
             For emergencies, call 911. For mental health crisis, call 811. For social services, call 211. 
           </p>

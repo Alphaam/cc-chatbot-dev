@@ -26,7 +26,7 @@ function buildInsertValue(context: any, fallbackStreet: string): string {
 }
 
 interface ChatInputProps {
-  onSend: (text: string) => void;
+  onSend: (text: string, opts?: { addressConfirmed?: boolean }) => void;
   disabled?: boolean;
 }
 
@@ -54,6 +54,10 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  // The exact address string most recently inserted from the dropdown. If the
+  // submitted text still contains it verbatim, the user picked (didn't hand-type)
+  // the address, so the downstream "Did you mean?" confirmation is redundant.
+  const selectedAddressRef = useRef<string | null>(null);
   // One Mapbox session groups all suggest calls with the retrieve that ends
   // them, so a whole lookup bills as a single request. Regenerated after each
   // selection so the next address search starts a fresh session.
@@ -137,6 +141,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
 
     // Optimistically fill with the parseable value so selection feels instant,
     // then retrieve the canonical address (this call closes the billing session).
+    selectedAddressRef.current = s.value;
     setValue(`${base}${s.value} `);
     setOpen(false);
     setSuggestions([]);
@@ -150,7 +155,9 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
       const data = await res.json();
       const props = data?.features?.[0]?.properties;
       if (props?.context) {
-        setValue(`${base}${buildInsertValue(props.context, props.name ?? s.value)} `);
+        const canonical = buildInsertValue(props.context, props.name ?? s.value);
+        selectedAddressRef.current = canonical;
+        setValue(`${base}${canonical} `);
       }
     } catch {
       // Keep the value we already filled if retrieve fails.
@@ -163,10 +170,14 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
   const submit = useCallback(() => {
     const text = value.trim();
     if (!text || disabled) return;
+    // Treat the address as pre-confirmed only if a dropdown selection is still
+    // present verbatim in the submitted text (the user didn't edit it after).
+    const addressConfirmed = !!selectedAddressRef.current && text.includes(selectedAddressRef.current);
     setValue('');
     setOpen(false);
     setSuggestions([]);
-    onSend(text);
+    selectedAddressRef.current = null;
+    onSend(text, { addressConfirmed });
   }, [value, disabled, onSend]);
 
   const menuOpen = open && (loading || suggestions.length > 0 || (mentionQuery !== null && mentionQuery.trim().length < MIN_QUERY));
