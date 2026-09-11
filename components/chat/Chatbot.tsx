@@ -653,7 +653,15 @@ export default function Chatbot() {
           )}
           <div className="max-w-2xl mx-auto min-w-0 flex-1">
             <h1 className="text-base font-bold text-white">Clark County Digital Equity Assistant</h1>
-            <p className="text-sm text-blue-100">Look up internet plans & digital resources for a client in Clark County, NV</p>
+            <p className="text-sm text-blue-100">
+              {messages.length > 0 && !showMainMenu && workflow
+                ? workflow.intent === 'plans'
+                  ? 'Find internet plans in Clark County'
+                  : workflow.prompt.includes('devices')
+                    ? 'Find free or low-cost devices in Clark County'
+                    : 'Find digital skills training in Clark County'
+                : 'Look up internet plans & digital resources for a client in Clark County, NV'}
+            </p>
           </div>
         </div>
       </header>
