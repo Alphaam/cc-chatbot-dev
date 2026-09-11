@@ -220,6 +220,8 @@ export default function Chatbot() {
   const [pendingConfirm, setPendingConfirm] = useState<RequestJob | null>(null);
   const [workflow, setWorkflow] = useState<{ prompt: string; intent: PromptIntent } | null>(null);
   const [resetAction, setResetAction] = useState<'home' | 'new' | null>(null);
+  const [skipResetConfirmation, setSkipResetConfirmation] = useState(false);
+  const [dontShowResetAgain, setDontShowResetAgain] = useState(false);
   const [inputKey, setInputKey] = useState(0);
   const [hasDraft, setHasDraft] = useState(false);
   const [changingAddress, setChangingAddress] = useState(false);
@@ -301,12 +303,14 @@ export default function Chatbot() {
     focusInput();
   }, [invalidateRequest, workflow, focusInput]);
   const requestReset = useCallback((destination: 'home' | 'new') => {
-    if (messages.length || hasDraft || lastLookup || isStreaming || changingAddress) {
+    const skipConfirmation = skipResetConfirmation || document.cookie.split('; ').includes('cc-skip-reset-confirmation=1');
+    if (!skipConfirmation && (messages.length || hasDraft || lastLookup || isStreaming || changingAddress)) {
       resetFocus.current = document.activeElement as HTMLElement;
       resetConfirmed.current = false;
+      setDontShowResetAgain(false);
       setResetAction(destination);
     } else resetClient(destination);
-  }, [messages.length, hasDraft, lastLookup, isStreaming, changingAddress, resetClient]);
+  }, [messages.length, hasDraft, lastLookup, isStreaming, changingAddress, resetClient, skipResetConfirmation]);
 
   // Declared ahead of sendMessage/handleAddressConfirm — both reference it in
   // their dependency arrays, which are evaluated as soon as those useCallback
@@ -666,7 +670,15 @@ export default function Chatbot() {
         </div>
       </header>
 
-      <ResetConfirmation action={resetAction} onCancel={() => setResetAction(null)} onConfirm={() => { if (resetAction) { resetConfirmed.current = true; resetClient(resetAction); } }} onClosed={() => { if (resetConfirmed.current) focusInput(); else resetFocus.current?.focus(); }} />
+      <ResetConfirmation action={resetAction} dontShowAgain={dontShowResetAgain} onDontShowAgainChange={setDontShowResetAgain} onCancel={() => setResetAction(null)} onConfirm={() => {
+        if (!resetAction) return;
+        if (dontShowResetAgain) {
+          setSkipResetConfirmation(true);
+          document.cookie = `cc-skip-reset-confirmation=1; Path=/; Max-Age=31536000; SameSite=Lax${window.location.protocol === 'https:' ? '; Secure' : ''}`;
+        }
+        resetConfirmed.current = true;
+        resetClient(resetAction);
+      }} onClosed={() => { if (resetConfirmed.current) focusInput(); else resetFocus.current?.focus(); }} />
       <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">{announcement}</div>
       {lastLookup?.validated && (
         <div className="border-b border-border bg-background text-foreground px-4 py-2">

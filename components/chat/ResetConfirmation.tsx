@@ -2,8 +2,10 @@
 import { AlertDialog } from '@base-ui/react/alert-dialog';
 import { Button } from '@/components/ui/button';
 
-export default function ResetConfirmation({ action, onCancel, onConfirm, onClosed }: {
+export default function ResetConfirmation({ action, dontShowAgain, onDontShowAgainChange, onCancel, onConfirm, onClosed }: {
   action: 'home' | 'new' | null;
+  dontShowAgain: boolean;
+  onDontShowAgainChange: (checked: boolean) => void;
   onCancel: () => void;
   onConfirm: () => void;
   onClosed: () => void;
@@ -16,8 +18,12 @@ export default function ResetConfirmation({ action, onCancel, onConfirm, onClose
           <div className="flex flex-col gap-3">
             <AlertDialog.Title className="text-lg font-semibold">Clear this client&apos;s conversation?</AlertDialog.Title>
             <AlertDialog.Description className="text-sm leading-relaxed text-muted-foreground">
-              This clears the conversation, draft, address, answers, and results from this screen. {action === 'home' ? 'Home will show the three starting options.' : 'New client will restart your current workflow.'} Previously saved logs are not deleted.
+              This clears the conversation, draft, address, answers, and results from this screen. {action === 'home' ? 'Home will show the three starting options.' : 'New client will restart your current workflow.'}
             </AlertDialog.Description>
+            <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm">
+              <input type="checkbox" checked={dontShowAgain} onChange={event => onDontShowAgainChange(event.target.checked)} className="size-4 accent-primary" />
+              Don&apos;t show me again
+            </label>
             <div className="flex justify-end gap-2">
               <AlertDialog.Close render={<Button variant="outline" />}>Cancel</AlertDialog.Close>
               <Button onClick={onConfirm}>Clear and continue</Button>
