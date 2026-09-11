@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useRef, useState, useMemo, Fragment, memo } from 'react';
 import { nanoid } from 'nanoid';
-import { ArrowDown, House, UserPlus } from 'lucide-react';
+import { ArrowDown, House, MessageCircle, RotateCcw } from 'lucide-react';
 import ChatInput, { type SendOptions } from './ChatInput';
 import ResetConfirmation from './ResetConfirmation';
 import { Button } from '@/components/ui/button';
@@ -642,18 +642,18 @@ export default function Chatbot() {
     <div className="flex flex-col h-screen bg-slate-50">
       {/* Header */}
       <header className="bg-blue-700 px-4 py-4 shrink-0 shadow-sm">
-        <div className="max-w-2xl mx-auto flex flex-col gap-3">
-          <div>
+        <div className="flex items-center gap-3">
+          {messages.length > 0 && !showMainMenu && (
+            <nav aria-label="Client navigation" className="flex shrink-0 items-center text-primary-foreground">
+              <button type="button" className="flex size-11 items-center justify-center rounded-lg hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-2" aria-label="Home" title="Home" onClick={() => requestReset('home')}><House aria-hidden="true" className="size-6 fill-current" /></button>
+              <button type="button" className="flex size-11 items-center justify-center rounded-lg hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-2" aria-label="New client" title="New client" onClick={() => requestReset('new')}><MessageCircle aria-hidden="true" className="size-6 fill-current" /></button>
+            </nav>
+          )}
+          <div className="max-w-2xl mx-auto min-w-0 flex-1">
             <h1 className="text-base font-bold text-white">Clark County Digital Equity Assistant</h1>
             <p className="text-sm text-blue-100">Look up internet plans & digital resources for a client in Clark County, NV</p>
           </div>
         </div>
-        {messages.length > 0 && !showMainMenu && (
-          <nav aria-label="Client navigation" className="mt-3 flex items-center gap-2 text-foreground">
-            <Button variant="outline" size="icon" aria-label="Home" title="Home" onClick={() => requestReset('home')}><House aria-hidden="true" /></Button>
-            <Button variant="outline" size="icon" aria-label="New client" title="New client" onClick={() => requestReset('new')}><UserPlus aria-hidden="true" /></Button>
-          </nav>
-        )}
       </header>
 
       <ResetConfirmation action={resetAction} onCancel={() => setResetAction(null)} onConfirm={() => { if (resetAction) { resetConfirmed.current = true; resetClient(resetAction); } }} onClosed={() => { if (resetConfirmed.current) focusInput(); else resetFocus.current?.focus(); }} />
@@ -865,23 +865,16 @@ export default function Chatbot() {
         <div className="max-w-2xl mx-auto">
           <div ref={composerRef} className="flex flex-col gap-3">
             {showJump && <div className="flex justify-center"><Button variant="outline" size="icon" className="rounded-full" aria-label="Jump to latest" title="Jump to latest" onClick={jumpToLatest}><ArrowDown aria-hidden="true" className="animate-pulse motion-reduce:animate-none" /></Button></div>}
-            <div aria-label="Request recovery">
-              {error && <p className="text-sm text-foreground leading-relaxed">{error}</p>}
-              <div className="flex items-center gap-2">
-                {isStreaming && <Button variant="outline" onClick={stopRequest}>Stop</Button>}
-                {retryJob && !isStreaming && <Button variant="outline" onClick={() => { nearBottom.current = true; void runRequest(retryJob); }}>Retry</Button>}
-              </div>
-            </div>
-            {changingAddress && (
-              <div className="flex flex-col gap-2 text-foreground">
-                <div className="flex items-center justify-between gap-2"><p className="text-sm font-medium">Change client address</p><Button variant="outline" onClick={cancelAddressChange}>Cancel address change</Button></div>
-                <p className="text-sm text-chat-secondary-foreground">Your current address and answers are kept until the replacement is verified.</p>
+            {(error || (retryJob && !isStreaming)) && (
+              <div aria-label="Request recovery" className="flex items-center gap-2">
+                {error && <p className="text-sm text-foreground leading-relaxed">{error}</p>}
+                {retryJob && !isStreaming && <Button variant="outline" size="icon" aria-label="Retry" title="Retry" onClick={() => { nearBottom.current = true; void runRequest(retryJob); }}><RotateCcw aria-hidden="true" /></Button>}
               </div>
             )}
             <div hidden={changingAddress}>
-              <ChatInput key={inputKey} onSend={(text, o) => sendMessage(text, undefined, o)} onDraftChange={setHasDraft} disabled={isStreaming || !!pendingConfirm || changingAddress} />
+              <ChatInput key={inputKey} onSend={(text, o) => sendMessage(text, undefined, o)} onDraftChange={setHasDraft} onStop={isStreaming ? stopRequest : undefined} disabled={isStreaming || !!pendingConfirm || changingAddress} />
             </div>
-            {changingAddress && <ChatInput autoFocus onSend={(text, o) => sendMessage(text, undefined, o)} onDraftChange={setHasDraft} disabled={isStreaming || !!pendingConfirm} placeholder="Enter the replacement address, or type @ to search…" />}
+            {changingAddress && <ChatInput autoFocus onSend={(text, o) => sendMessage(text, undefined, o)} onDraftChange={setHasDraft} onStop={isStreaming ? stopRequest : undefined} onCancel={cancelAddressChange} disabled={isStreaming || !!pendingConfirm} placeholder="Enter the replacement address, or type @ to search…" />}
           </div>
           <p className="text-xs text-chat-secondary-foreground text-center mt-2">
             For emergencies, call 911. For mental health crisis, call or text 988. For social services, call 211.

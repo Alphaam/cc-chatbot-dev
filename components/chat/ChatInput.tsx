@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
-import { Send, MapPin, Loader2 } from 'lucide-react';
+import { Send, MapPin, Loader2, Square, X } from 'lucide-react';
 
 interface AddressContext {
   address?: { name?: string };
@@ -33,6 +33,8 @@ interface ChatInputProps {
   onDraftChange?: (hasDraft: boolean) => void;
   placeholder?: string;
   autoFocus?: boolean;
+  onStop?: () => void;
+  onCancel?: () => void;
 }
 type SearchState = 'idle' | 'short' | 'loading' | 'success' | 'empty' | 'unavailable' | 'outside';
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_API_KEY;
@@ -42,7 +44,7 @@ const DEBOUNCE_MS = 150;
 const CLARK_PROXIMITY = '-115.1398,36.1699';
 const CLARK_BBOX = '-115.9,35.0,-114.0,36.85';
 
-export default function ChatInput({ onSend, disabled, onDraftChange, placeholder = 'Type @ to search an address, or ask a question…', autoFocus }: ChatInputProps) {
+export default function ChatInput({ onSend, disabled, onDraftChange, placeholder = 'Type @ to search an address, or ask a question…', autoFocus, onStop, onCancel }: ChatInputProps) {
   const [value, setValue] = useState('');
   const valueRef = useRef('');
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -209,9 +211,10 @@ export default function ChatInput({ onSend, disabled, onDraftChange, placeholder
           }}
           placeholder={placeholder} disabled={disabled} role="combobox" aria-label={placeholder} aria-expanded={open}
           aria-controls={open ? listId : undefined} aria-activedescendant={open && suggestions.length ? `${listId}-${activeIndex}` : undefined} aria-autocomplete="list"
-          className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-base text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50" />
-        <button type="submit" aria-label="Send message" disabled={disabled || !value.trim()} className="w-11 h-11 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 flex items-center justify-center transition-colors motion-reduce:transition-none">
-          <Send size={18} className="text-white" />
+          className="min-w-0 flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-base text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50" />
+        {onCancel && <button type="button" aria-label="Cancel address change" title="Cancel address change" onClick={onCancel} className="flex size-11 shrink-0 items-center justify-center rounded-xl text-chat-secondary-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"><X aria-hidden="true" size={20} /></button>}
+        <button type={onStop ? 'button' : 'submit'} aria-label={onStop ? 'Stop' : 'Send message'} title={onStop ? 'Stop' : 'Send message'} onClick={onStop} disabled={!onStop && (disabled || !value.trim())} className="size-11 shrink-0 rounded-xl bg-blue-600 hover:bg-blue-700 text-primary-foreground disabled:opacity-40 flex items-center justify-center transition-colors motion-reduce:transition-none">
+          {onStop ? <Square aria-hidden="true" size={18} className="fill-current" /> : <Send aria-hidden="true" size={18} />}
         </button>
       </form>
     </div>
