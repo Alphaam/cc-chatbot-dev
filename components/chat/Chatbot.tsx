@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useRef, useState, useMemo, Fragment, memo } from 'react';
 import { nanoid } from 'nanoid';
-import { ArrowDown, House, MessageCircle, RotateCcw } from 'lucide-react';
+import { ArrowDown, House, MessageSquarePlus, RotateCcw } from 'lucide-react';
 import ChatInput, { type SendOptions } from './ChatInput';
 import ResetConfirmation from './ResetConfirmation';
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,7 @@ interface Message {
   answerKey?: 'household' | 'devices' | 'usage' | 'service' | 'recommendation';
   stopped?: boolean;
   suppressResults?: boolean;
+  resultsReady?: boolean;
   addressChange?: boolean;
 }
 
@@ -390,7 +391,7 @@ export default function Chatbot() {
     setError(null);
     setRetryJob(null);
     setIsStreaming(true);
-    setMessages(prev => prev.map(m => m.id === job.assistantMsgId ? { ...m, content: '', stopped: false } : m));
+    setMessages(prev => prev.map(m => m.id === job.assistantMsgId ? { ...m, content: '', stopped: false, resultsReady: false } : m));
     setAnnouncement(stage === 'lookup' ? 'Looking up the address.' : 'Preparing a reply.');
     try {
       if (job.needsLookup && !job.result) {
@@ -458,6 +459,7 @@ export default function Chatbot() {
         appendAssistantText(PLAN_DISCLAIMER);
         job.outcome.showDisclaimer = false;
       }
+      setMessages(prev => prev.map(m => m.id === job.assistantMsgId ? { ...m, resultsReady: true } : m));
       setAnnouncement('Reply complete.');
     } catch {
       if (!current()) return;
@@ -645,8 +647,8 @@ export default function Chatbot() {
         <div className="flex items-center gap-3">
           {messages.length > 0 && !showMainMenu && (
             <nav aria-label="Client navigation" className="flex shrink-0 items-center text-primary-foreground">
-              <button type="button" className="flex size-11 items-center justify-center rounded-lg hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-2" aria-label="Home" title="Home" onClick={() => requestReset('home')}><House aria-hidden="true" className="size-6 fill-current" /></button>
-              <button type="button" className="flex size-11 items-center justify-center rounded-lg hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-2" aria-label="New client" title="New client" onClick={() => requestReset('new')}><MessageCircle aria-hidden="true" className="size-6 fill-current" /></button>
+              <button type="button" className="flex size-11 items-center justify-center rounded-lg hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-2" aria-label="Home" title="Home" onClick={() => requestReset('home')}><House aria-hidden="true" className="size-6" strokeWidth={2.5} /></button>
+              <button type="button" className="flex size-11 items-center justify-center rounded-lg hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-2" aria-label="New client" title="New client" onClick={() => requestReset('new')}><MessageSquarePlus aria-hidden="true" className="size-6" strokeWidth={2.5} /></button>
             </nav>
           )}
           <div className="max-w-2xl mx-auto min-w-0 flex-1">
@@ -667,6 +669,7 @@ export default function Chatbot() {
         </div>
       )}
       {/* Messages */}
+      <div className="relative flex flex-1 min-h-0 flex-col">
       <div ref={viewportRef} role="region" aria-label="Conversation" onScroll={() => {
         const viewport = viewportRef.current;
         if (!viewport) return;
@@ -710,7 +713,7 @@ export default function Chatbot() {
                 </div>
 
                 {m.stopped && <p className="text-sm text-chat-secondary-foreground mt-1">Incomplete — request stopped or interrupted</p>}
-                {!isUser && !m.archived && result && (
+                {!isUser && !m.archived && m.resultsReady && result && (
                   <div className="mt-1">
                     {result.planGroups && result.intent !== 'services' && (
                       <PlanCard planGroups={result.planGroups} address={result.address} mode="top" />
@@ -739,7 +742,7 @@ export default function Chatbot() {
                     to reference. Only applies once the guided flow has released the bottom
                     slot (it renders its own cards below), and only to the reply actually
                     being read, not to every past message that lacked its own lookup. */}
-                {!isUser && !m.archived && !m.suppressResults && !changingAddress && !retryJob && !result && isLastMsg && !isStreaming && !pendingConfirm && lastLookup && planFlow.step === 'idle' && serviceFlow.step === 'idle' && !showMainMenu && (
+                {!isUser && !m.archived && !m.stopped && !m.suppressResults && !changingAddress && !retryJob && !result && isLastMsg && !isStreaming && !pendingConfirm && lastLookup && planFlow.step === 'idle' && serviceFlow.step === 'idle' && !showMainMenu && (
                   <div className="mt-1">
                     {lastLookup.planGroups && activeIntent !== 'services' && (
                       <PlanCard planGroups={lastLookup.planGroups} address={lastLookup.address} mode="top" />
@@ -753,7 +756,7 @@ export default function Chatbot() {
                 {/* The guided flow's cards/controls always attach to the message the
                     user is currently reading (the bottom of the chat), not to the
                     original lookup reply — that message may be long scrolled past. */}
-                {!isUser && !changingAddress && !pendingConfirm && isLastMsg && !isStreaming && planFlow.step !== 'idle' && (
+                {!isUser && !m.stopped && !changingAddress && !pendingConfirm && isLastMsg && !isStreaming && planFlow.step !== 'idle' && (
                   <div className="mt-1">
                     {planFlow.step.startsWith('awaiting_') && <Button variant="outline" onClick={handleGuidedBack}>Back</Button>}
                     {planFlow.step === 'recommended_shown' && (
@@ -804,7 +807,7 @@ export default function Chatbot() {
                   </div>
                 )}
 
-                {!isUser && !changingAddress && !pendingConfirm && isLastMsg && !isStreaming && serviceFlow.step !== 'idle' && (
+                {!isUser && !m.stopped && !changingAddress && !pendingConfirm && isLastMsg && !isStreaming && serviceFlow.step !== 'idle' && (
                   <div className="mt-1">
                     {serviceFlow.step === 'awaiting_type' && <Button variant="outline" onClick={() => { setServiceFlow(f => ({ ...f, step: 'top_shown' })); appendAssistantText('Show all resources or choose a resource type.'); }}>Back</Button>}
                     {serviceFlow.step === 'filtered_shown' && (
@@ -860,11 +863,13 @@ export default function Chatbot() {
         </div>
       </div>
 
+        {showJump && <div className="absolute right-4 bottom-4"><Button variant="outline" size="icon" className="rounded-full shadow-sm" aria-label="Jump to latest" title="Jump to latest" onClick={jumpToLatest}><ArrowDown aria-hidden="true" className="animate-pulse motion-reduce:animate-none" /></Button></div>}
+      </div>
+
       {/* Input */}
       <div className="bg-white border-t border-slate-200 px-4 py-3 shrink-0">
         <div className="max-w-2xl mx-auto">
           <div ref={composerRef} className="flex flex-col gap-3">
-            {showJump && <div className="flex justify-center"><Button variant="outline" size="icon" className="rounded-full" aria-label="Jump to latest" title="Jump to latest" onClick={jumpToLatest}><ArrowDown aria-hidden="true" className="animate-pulse motion-reduce:animate-none" /></Button></div>}
             {(error || (retryJob && !isStreaming)) && (
               <div aria-label="Request recovery" className="flex items-center gap-2">
                 {error && <p className="text-sm text-foreground leading-relaxed">{error}</p>}
