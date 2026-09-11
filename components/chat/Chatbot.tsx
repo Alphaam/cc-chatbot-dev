@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useRef, useState, useMemo, Fragment, memo } from 'react';
-import { Send } from 'lucide-react';
 import { nanoid } from 'nanoid';
+import ChatInput from './ChatInput';
 import PromptSuggestions, { type PromptIntent } from './PromptSuggestions';
 import PlanCard, { RecommendedPlanCard } from './PlanCard';
 import PlansTable from './PlansTable';
@@ -195,7 +195,6 @@ function logSelection(fields: { householdSize?: string; usageProfile?: string; d
 
 export default function Chatbot() {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [resultMap, setResultMap] = useState<ResultMap>(new Map());
   const [activeIntent, setActiveIntent] = useState<Intent>('both');
@@ -509,14 +508,6 @@ export default function Chatbot() {
     logSelection({ serviceType: type });
   }, [appendAssistantText]);
 
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || isStreaming) return;
-    const text = input.trim();
-    setInput('');
-    sendMessage(text);
-  };
-
   return (
     <div className="flex flex-col h-screen bg-slate-50">
       {/* Header */}
@@ -706,22 +697,7 @@ export default function Chatbot() {
       {/* Input */}
       <div className="bg-white border-t border-slate-200 px-4 py-3 shrink-0">
         <div className="max-w-2xl mx-auto">
-          <form onSubmit={handleFormSubmit} className="flex items-center gap-2">
-            <input
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              placeholder="Enter the client's address or ask a question…"
-              disabled={isStreaming}
-              className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-base text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
-            />
-            <button
-              type="submit"
-              disabled={isStreaming || !input.trim()}
-              className="w-11 h-11 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 flex items-center justify-center transition-colors"
-            >
-              <Send size={18} className="text-white" />
-            </button>
-          </form>
+          <ChatInput onSend={sendMessage} disabled={isStreaming} />
           <p className="text-xs text-slate-400 text-center mt-2">
             For emergencies, call 911. For mental health crisis, call 811. For social services, call 211. 
           </p>
