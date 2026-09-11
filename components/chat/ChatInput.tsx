@@ -156,15 +156,6 @@ export default function ChatInput({ onSend, disabled, onDraftChange, placeholder
     }
   };
 
-  const manualEntry = () => {
-    invalidate();
-    selectedText.current = null;
-    const at = valueRef.current.lastIndexOf('@');
-    updateValue(at < 0 ? valueRef.current : valueRef.current.slice(0, at) + valueRef.current.slice(at + 1));
-    setOpen(false);
-    setState('idle');
-    inputRef.current?.focus();
-  };
   const submit = () => {
     const text = valueRef.current.trim();
     if (!text || disabled) return;
@@ -179,9 +170,9 @@ export default function ChatInput({ onSend, disabled, onDraftChange, placeholder
   };
   const feedback = state === 'short' ? 'Keep typing the address to see matches…'
     : state === 'loading' ? 'Searching addresses…'
-    : state === 'unavailable' ? 'Address search is temporarily unavailable. You can enter the address manually.'
-    : state === 'outside' ? 'This address is outside the supported Clark County, Nevada area. You can enter an address manually to double-check it.'
-    : state === 'empty' ? 'No matching address found. Check the spelling or enter the address manually.'
+    : state === 'unavailable' ? 'Address search is temporarily unavailable.'
+    : state === 'outside' ? 'This address is outside Clark County, Nevada.'
+    : state === 'empty' ? 'No matching address found. Check the spelling.'
     : state === 'success' ? `${suggestions.length} address suggestions available. Use the arrow keys to select.` : '';
 
   return (
@@ -203,9 +194,6 @@ export default function ChatInput({ onSend, disabled, onDraftChange, placeholder
             ))}
           </ul>
           {!suggestions.length && <p className="px-3 py-3 text-sm text-chat-secondary-foreground">{feedback}</p>}
-          <div className="border-t border-border px-3 py-2">
-            <button type="button" onClick={manualEntry} className="text-sm text-foreground underline underline-offset-4">Enter address manually</button>
-          </div>
         </div>
       )}
       <form onSubmit={e => { e.preventDefault(); submit(); }} className="flex items-center gap-2">

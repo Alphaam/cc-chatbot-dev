@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useEffect, useRef, useState, useMemo, Fragment, memo } from 'react';
 import { nanoid } from 'nanoid';
+import { ArrowDown, House, UserPlus } from 'lucide-react';
 import ChatInput, { type SendOptions } from './ChatInput';
 import ResetConfirmation from './ResetConfirmation';
 import { Button } from '@/components/ui/button';
@@ -646,11 +647,13 @@ export default function Chatbot() {
             <h1 className="text-base font-bold text-white">Clark County Digital Equity Assistant</h1>
             <p className="text-sm text-blue-100">Look up internet plans & digital resources for a client in Clark County, NV</p>
           </div>
-          <nav aria-label="Client navigation" className="flex gap-2 text-foreground">
-            <Button variant="outline" title="Clear this client and show the three starting options" onClick={() => requestReset('home')}>Home</Button>
-            <Button variant="outline" title="Clear this client and restart the same workflow" onClick={() => requestReset('new')}>New client</Button>
-          </nav>
         </div>
+        {messages.length > 0 && !showMainMenu && (
+          <nav aria-label="Client navigation" className="mt-3 flex items-center gap-2 text-foreground">
+            <Button variant="outline" size="icon" aria-label="Home" title="Home" onClick={() => requestReset('home')}><House aria-hidden="true" /></Button>
+            <Button variant="outline" size="icon" aria-label="New client" title="New client" onClick={() => requestReset('new')}><UserPlus aria-hidden="true" /></Button>
+          </nav>
+        )}
       </header>
 
       <ResetConfirmation action={resetAction} onCancel={() => setResetAction(null)} onConfirm={() => { if (resetAction) { resetConfirmed.current = true; resetClient(resetAction); } }} onClosed={() => { if (resetConfirmed.current) focusInput(); else resetFocus.current?.focus(); }} />
@@ -683,9 +686,9 @@ export default function Chatbot() {
 
             return (
               <div key={m.id} data-archived={m.archived || undefined} inert={changingAddress && !m.addressChange} ref={isLastMsg ? guidanceRef : undefined} tabIndex={isLastMsg ? -1 : undefined} className="outline-none">
-                {m.archived && !messages[i - 1]?.archived && <p className="text-sm text-chat-secondary-foreground py-2">Earlier address context — historical only</p>}
-                {!m.archived && messages[i - 1]?.archived && <p className="text-sm font-medium text-chat-secondary-foreground py-2">Current address conversation</p>}
-                {m.superseded && <p className="text-sm text-chat-secondary-foreground">Superseded — not used for the current recommendation</p>}
+                {m.archived && !messages[i - 1]?.archived && <p className="sr-only">Earlier address context — historical only</p>}
+                {!m.archived && messages[i - 1]?.archived && <p className="sr-only">Current address conversation</p>}
+                {m.superseded && <p className="sr-only">Superseded — not used for the current recommendation</p>}
                 <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-base leading-relaxed whitespace-pre-wrap ${
                     isUser
@@ -695,7 +698,11 @@ export default function Chatbot() {
                     {m.content
                       ? (isUser ? m.content : <MarkdownContent text={m.content} />)
                       : (isStreaming && isLastMsg && !isUser
-                        ? <span className="text-chat-secondary-foreground">Working…</span>
+                        ? <span aria-hidden="true" className="inline-flex gap-1 text-chat-secondary-foreground">
+                            <span className="animate-bounce motion-reduce:animate-none" style={{ animationDelay: '0ms' }}>•</span>
+                            <span className="animate-bounce motion-reduce:animate-none" style={{ animationDelay: '150ms' }}>•</span>
+                            <span className="animate-bounce motion-reduce:animate-none" style={{ animationDelay: '300ms' }}>•</span>
+                          </span>
                         : null
                       )
                     }
@@ -857,7 +864,7 @@ export default function Chatbot() {
       <div className="bg-white border-t border-slate-200 px-4 py-3 shrink-0">
         <div className="max-w-2xl mx-auto">
           <div ref={composerRef} className="flex flex-col gap-3">
-            {showJump && <div className="flex justify-center"><Button variant="outline" onClick={jumpToLatest}>Jump to latest</Button></div>}
+            {showJump && <div className="flex justify-center"><Button variant="outline" size="icon" className="rounded-full" aria-label="Jump to latest" title="Jump to latest" onClick={jumpToLatest}><ArrowDown aria-hidden="true" className="animate-pulse motion-reduce:animate-none" /></Button></div>}
             <div aria-label="Request recovery">
               {error && <p className="text-sm text-foreground leading-relaxed">{error}</p>}
               <div className="flex items-center gap-2">
@@ -877,7 +884,7 @@ export default function Chatbot() {
             {changingAddress && <ChatInput autoFocus onSend={(text, o) => sendMessage(text, undefined, o)} onDraftChange={setHasDraft} disabled={isStreaming || !!pendingConfirm} placeholder="Enter the replacement address, or type @ to search…" />}
           </div>
           <p className="text-xs text-chat-secondary-foreground text-center mt-2">
-            For emergencies, call 911. For mental health crisis, call 811. For social services, call 211. 
+            For emergencies, call 911. For mental health crisis, call or text 988. For social services, call 211.
           </p>
         </div>
       </div>
