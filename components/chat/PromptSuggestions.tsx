@@ -1,5 +1,5 @@
 'use client';
-import { Globe, GraduationCap, Laptop, ArrowRight, MapPin, ShieldCheck, HeartHandshake, type LucideIcon } from 'lucide-react';
+import { Globe, GraduationCap, Laptop, ArrowRight, MousePointerClick, MapPin, ListChecks, type LucideIcon } from 'lucide-react';
 
 export type PromptIntent = 'plans' | 'services';
 
@@ -9,10 +9,10 @@ const PROMPTS: Array<{ label: string; description: string; prompt: string; Icon:
   { label: 'Free or low-cost devices', description: 'Find computers and tablets for your client', prompt: 'Find free or low-cost devices for my client', Icon: Laptop, intent: 'services' },
 ];
 
-const ABOUT_POINTS: Array<{ Icon: LucideIcon; title: string; body: string }> = [
-  { Icon: MapPin, title: 'Address-aware', body: 'Results are matched to your client’s exact location in Clark County.' },
-  { Icon: ShieldCheck, title: 'Trusted sources', body: 'Plans and resources are drawn from verified public and provider data.' },
-  { Icon: HeartHandshake, title: 'Built for caseworkers', body: 'Designed to help staff connect residents to affordable internet, devices, and skills.' },
+const HOW_TO_STEPS: Array<{ Icon: LucideIcon; title: string; body: string }> = [
+  { Icon: MousePointerClick, title: 'Pick a topic', body: 'Choose Internet plans, digital-skills training, or devices from the cards above to start.' },
+  { Icon: MapPin, title: 'Confirm the address', body: 'Enter or confirm your client’s Clark County address so results match where they live.' },
+  { Icon: ListChecks, title: 'Review & filter results', body: 'Browse the matches, use the in-section search and filters, and share the options that fit best.' },
 ];
 
 interface Props {
@@ -72,23 +72,25 @@ export default function PromptSuggestions({ onSelect, showAbout = false }: Props
             <div className="flex flex-col gap-5 p-6 sm:p-8">
               <div className="flex flex-col gap-2.5">
                 <span className="inline-flex w-fit items-center rounded-full bg-brand-muted px-2.5 py-0.5 text-xs font-medium text-brand-muted-foreground">
-                  Digital Equity Program
+                  How it works
                 </span>
                 <h3 id="about-heading" className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground text-balance">
-                  Closing the digital divide, one household at a time
+                  Three steps to connect a client
                 </h3>
                 <p className="text-sm sm:text-base leading-relaxed text-muted-foreground text-pretty">
-                  This assistant helps county staff and community partners quickly connect residents to
-                  affordable broadband, free or low-cost devices, and digital-skills support — all tailored
-                  to where each client lives.
+                  This assistant helps county staff and partners find affordable broadband, free or low-cost
+                  devices, and digital-skills support for residents. Here&apos;s how to use it.
                 </p>
               </div>
 
-              <ul className="flex flex-col gap-4">
-                {ABOUT_POINTS.map(({ Icon, title, body }) => (
+              <ol className="flex flex-col gap-4">
+                {HOW_TO_STEPS.map(({ Icon, title, body }, i) => (
                   <li key={title} className="flex items-start gap-3">
-                    <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground ring-1 ring-primary/10">
+                    <span className="relative mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground ring-1 ring-primary/10">
                       <Icon aria-hidden="true" className="size-5" strokeWidth={2.25} />
+                      <span className="absolute -right-1.5 -top-1.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
+                        {i + 1}
+                      </span>
                     </span>
                     <span className="flex flex-col gap-0.5">
                       <span className="text-sm font-semibold text-foreground">{title}</span>
@@ -96,7 +98,7 @@ export default function PromptSuggestions({ onSelect, showAbout = false }: Props
                     </span>
                   </li>
                 ))}
-              </ul>
+              </ol>
             </div>
           </div>
         </section>
