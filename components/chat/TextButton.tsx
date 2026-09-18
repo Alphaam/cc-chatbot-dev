@@ -14,7 +14,7 @@ export default function TextButton({ text, className = '' }: Props) {
     <a
       href={`sms:?body=${encodeURIComponent(text)}`}
       title="Text this to me"
-      className={`inline-flex items-center gap-1 text-sm text-chat-secondary-foreground hover:text-blue-600 transition-colors ${className}`}
+      className={`inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors ${className}`}
     >
       <MessageSquareText size={13} />
       Text

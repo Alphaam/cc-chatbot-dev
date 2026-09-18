@@ -35,32 +35,32 @@ export const serviceCsvRows = (services: ServiceWithDistance[]): Array<Array<str
 function ServiceRow({ service }: { service: ServiceWithDistance }) {
   const mapUrl = getMapUrl(service);
   return (
-    <div className="border-b last:border-0 py-3 px-4">
-      <div className="flex items-start justify-between gap-2">
+    <div className="border-b border-border last:border-0 py-3.5 px-4">
+      <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <p className="text-base font-medium text-slate-800">{service.name}</p>
-          <p className="text-sm text-slate-500 mt-0.5">{service.type}</p>
+          <p className="text-base font-semibold text-foreground">{service.name}</p>
+          <p className="text-sm text-muted-foreground mt-0.5">{service.type}</p>
           {service.description && (
-            <p className="text-sm text-slate-500 mt-1 line-clamp-2">{service.description}</p>
+            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{service.description}</p>
           )}
         </div>
         {service.distanceMiles != null && (
-          <span className="text-sm text-slate-400 shrink-0">{service.distanceMiles.toFixed(1)} mi</span>
+          <span className="shrink-0 rounded-full bg-resource-muted px-2 py-0.5 text-xs font-medium text-resource-muted-foreground tabular-nums">{service.distanceMiles.toFixed(1)} mi</span>
         )}
       </div>
-      <div className="flex items-center gap-3 mt-2">
+      <div className="flex flex-wrap items-center gap-3 mt-2.5">
         {service.phone && (
-          <a href={`tel:${service.phone}`} className="text-sm text-blue-600 hover:underline">{service.phone}</a>
+          <a href={`tel:${service.phone}`} className="text-sm font-medium text-primary hover:underline">{service.phone}</a>
         )}
         {service.url && (
           <a href={service.url} target="_blank" rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
+            className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
             Website <ExternalLink size={11} />
           </a>
         )}
         {mapUrl && (
           <a href={mapUrl} target="_blank" rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
+            className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
             <MapPin size={11} /> Map
           </a>
         )}
@@ -80,9 +80,9 @@ export default function ServiceCard({ services, title = 'Digital Equity Resource
   if (!services.length) return null;
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden mt-3">
-      <div className="px-4 py-3 bg-green-50 border-b border-green-100 flex items-start justify-between gap-2">
-        <p className="text-base font-semibold text-green-800">{title}</p>
+    <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden mt-3">
+      <div className="px-4 py-3 bg-resource-muted border-b border-border flex items-start justify-between gap-2">
+        <p className="text-base font-semibold text-resource-muted-foreground">{title}</p>
         <DownloadCsvButton filename="digital-resources.csv" rows={serviceCsvRows(services)} className="shrink-0" />
       </div>
       {services.map((s, i) => <ServiceRow key={i} service={s} />)}

@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useRef, useState, useMemo, Fragment, memo } from 'react';
 import { nanoid } from 'nanoid';
-import { ArrowDown, House, MessageSquarePlus, RotateCcw } from 'lucide-react';
+import { ArrowDown, House, MapPin, MessageSquarePlus, RotateCcw, Wifi } from 'lucide-react';
 import ChatInput, { type SendOptions } from './ChatInput';
 import ResetConfirmation from './ResetConfirmation';
 import { Button } from '@/components/ui/button';
@@ -172,7 +172,7 @@ const MarkdownContent = memo(function MarkdownContent({ text }: { text: string }
   return (
     <>
       {lines.map((line, i) => {
-        if (line.trim() === '---') return <hr key={i} className="border-gray-200 my-2" />;
+        if (line.trim() === '---') return <hr key={i} className="border-border my-2" />;
         return <span key={i}>{i > 0 && '\n'}{renderInline(line)}</span>;
       })}
     </>
@@ -645,27 +645,32 @@ export default function Chatbot() {
   }, [recordAnswer]);
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50">
+    <div className="flex flex-col h-screen bg-background">
       {/* Header */}
-      <header className="bg-blue-700 px-4 py-4 shrink-0 shadow-sm">
-        <div className="flex items-center gap-3">
+      <header className="bg-primary text-primary-foreground shrink-0 shadow-sm ring-1 ring-black/5">
+        <div className="max-w-3xl mx-auto flex items-center gap-3 px-4 py-3.5 sm:px-6">
           {messages.length > 0 && !showMainMenu && (
-            <nav aria-label="Client navigation" className="flex shrink-0 items-center text-primary-foreground">
-              <button type="button" className="flex size-11 items-center justify-center rounded-lg hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-2" aria-label="Home" title="Home" onClick={() => requestReset('home')}><House aria-hidden="true" className="size-6" strokeWidth={2.5} /></button>
-              <button type="button" className="flex size-11 items-center justify-center rounded-lg hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-2" aria-label="New client" title="New client" onClick={() => requestReset('new')}><MessageSquarePlus aria-hidden="true" className="size-6" strokeWidth={2.5} /></button>
+            <nav aria-label="Client navigation" className="flex shrink-0 items-center gap-1 -ml-1.5">
+              <button type="button" className="flex size-11 items-center justify-center rounded-xl hover:bg-primary-foreground/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground transition-colors" aria-label="Home" title="Home" onClick={() => requestReset('home')}><House aria-hidden="true" className="size-5" strokeWidth={2.25} /></button>
+              <button type="button" className="flex size-11 items-center justify-center rounded-xl hover:bg-primary-foreground/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground transition-colors" aria-label="New client" title="New client" onClick={() => requestReset('new')}><MessageSquarePlus aria-hidden="true" className="size-5" strokeWidth={2.25} /></button>
             </nav>
           )}
-          <div className="max-w-2xl mx-auto min-w-0 flex-1">
-            <h1 className="text-base font-bold text-white">Clark County Digital Equity Assistant</h1>
-            <p className="text-sm text-blue-100">
-              {messages.length > 0 && !showMainMenu && workflow
-                ? workflow.intent === 'plans'
-                  ? 'Find internet plans in Clark County'
-                  : workflow.prompt.includes('devices')
-                    ? 'Find free or low-cost devices in Clark County'
-                    : 'Find digital skills training in Clark County'
-                : 'Look up internet plans & digital resources for a client in Clark County, NV'}
-            </p>
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <span aria-hidden="true" className="hidden sm:flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary-foreground/12 ring-1 ring-primary-foreground/20">
+              <Wifi className="size-5" strokeWidth={2.25} />
+            </span>
+            <div className="min-w-0">
+              <h1 className="text-[0.95rem] sm:text-base font-semibold tracking-tight text-balance leading-tight">Clark County Digital Equity Assistant</h1>
+              <p className="text-xs sm:text-sm text-primary-foreground/75 leading-snug truncate">
+                {messages.length > 0 && !showMainMenu && workflow
+                  ? workflow.intent === 'plans'
+                    ? 'Find internet plans in Clark County'
+                    : workflow.prompt.includes('devices')
+                      ? 'Find free or low-cost devices in Clark County'
+                      : 'Find digital skills training in Clark County'
+                  : 'Internet plans & digital resources for Clark County, NV'}
+              </p>
+            </div>
           </div>
         </div>
       </header>
@@ -681,10 +686,14 @@ export default function Chatbot() {
       }} onClosed={() => { if (resetConfirmed.current) focusInput(); else resetFocus.current?.focus(); }} />
       <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">{announcement}</div>
       {lastLookup?.validated && (
-        <div className="border-b border-border bg-background text-foreground px-4 py-2">
-          <div className="max-w-2xl mx-auto flex items-center justify-between gap-3">
-            <p className="text-sm"><strong>Current address:</strong> {lastLookup.address ?? lastLookup.confirmAddress}</p>
-            <Button variant="outline" disabled={changingAddress || isStreaming || !!pendingConfirm} onClick={startAddressChange}>Change</Button>
+        <div className="border-b border-border bg-card/70 backdrop-blur-sm text-foreground px-4 py-2.5 sm:px-6">
+          <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
+            <p className="flex items-center gap-2 text-sm min-w-0">
+              <MapPin aria-hidden="true" className="size-4 shrink-0 text-primary" />
+              <span className="text-muted-foreground shrink-0">Current address</span>
+              <span className="font-medium truncate">{lastLookup.address ?? lastLookup.confirmAddress}</span>
+            </p>
+            <Button variant="outline" size="sm" className="shrink-0" disabled={changingAddress || isStreaming || !!pendingConfirm} onClick={startAddressChange}>Change</Button>
           </div>
         </div>
       )}
@@ -695,8 +704,8 @@ export default function Chatbot() {
         if (!viewport) return;
         nearBottom.current = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight < 80;
         setShowJump(!nearBottom.current);
-      }} className="flex-1 min-h-0 overflow-y-auto px-4 py-4">
-        <div className="max-w-2xl mx-auto flex flex-col gap-4">
+      }} className="flex-1 min-h-0 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6">
+        <div className="max-w-3xl mx-auto flex flex-col gap-4">
           {messages.length === 0 && (
             <PromptSuggestions onSelect={selectWorkflow} />
           )}
@@ -713,15 +722,15 @@ export default function Chatbot() {
                 {!m.archived && messages[i - 1]?.archived && <p className="sr-only">Current address conversation</p>}
                 {m.superseded && <p className="sr-only">Superseded — not used for the current recommendation</p>}
                 <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-base leading-relaxed whitespace-pre-wrap ${
+                  <div className={`max-w-[88%] sm:max-w-[85%] px-4 py-3 text-[0.95rem] sm:text-base leading-relaxed whitespace-pre-wrap ${
                     isUser
-                      ? 'bg-blue-600 text-white rounded-br-sm shadow-sm'
-                      : 'bg-white border border-slate-200 text-slate-800 rounded-bl-sm shadow-sm'
+                      ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-md shadow-sm'
+                      : 'bg-card border border-border text-card-foreground rounded-2xl rounded-bl-md shadow-sm'
                   }`}>
                     {m.content
                       ? (isUser ? m.content : <MarkdownContent text={m.content} />)
                       : (isStreaming && isLastMsg && !isUser
-                        ? <span aria-hidden="true" className="inline-flex gap-1 text-chat-secondary-foreground">
+                        ? <span aria-hidden="true" className="inline-flex gap-1 text-muted-foreground">
                             <span className="animate-bounce motion-reduce:animate-none" style={{ animationDelay: '0ms' }}>•</span>
                             <span className="animate-bounce motion-reduce:animate-none" style={{ animationDelay: '150ms' }}>•</span>
                             <span className="animate-bounce motion-reduce:animate-none" style={{ animationDelay: '300ms' }}>•</span>
@@ -732,7 +741,7 @@ export default function Chatbot() {
                   </div>
                 </div>
 
-                {m.stopped && <p className="text-sm text-chat-secondary-foreground mt-1">Incomplete — request stopped or interrupted</p>}
+                {m.stopped && <p className="text-sm text-muted-foreground mt-1.5">Incomplete — request stopped or interrupted</p>}
                 {!isUser && !m.archived && m.resultsReady && result && (
                   <div className="mt-1">
                     {result.planGroups && result.intent !== 'services' && (
@@ -883,17 +892,17 @@ export default function Chatbot() {
         </div>
       </div>
 
-        {showJump && <div className="absolute right-[max(1.5rem,calc((100%_-_42rem)/2_-_4rem))] bottom-4"><Button variant="outline" size="icon" className="size-12 rounded-full shadow-sm [&_svg]:size-6" aria-label="Jump to latest" title="Jump to latest" onClick={jumpToLatest}><ArrowDown aria-hidden="true" className="animate-pulse motion-reduce:animate-none" /></Button></div>}
+        {showJump && <div className="absolute right-[max(1rem,calc((100%_-_48rem)/2_+_0.5rem))] bottom-4"><Button variant="outline" size="icon" className="size-11 rounded-full bg-card shadow-md [&_svg]:size-5" aria-label="Jump to latest" title="Jump to latest" onClick={jumpToLatest}><ArrowDown aria-hidden="true" className="animate-pulse motion-reduce:animate-none" /></Button></div>}
       </div>
 
       {/* Input */}
-      <div className="bg-white border-t border-slate-200 px-4 py-3 shrink-0">
-        <div className="max-w-2xl mx-auto">
+      <div className="bg-card border-t border-border px-4 py-3 sm:px-6 sm:py-4 shrink-0">
+        <div className="max-w-3xl mx-auto">
           <div ref={composerRef} className="flex flex-col gap-3">
             {(error || (retryJob && !isStreaming)) && (
-              <div aria-label="Request recovery" className="flex items-center gap-2">
-                {error && <p className="text-sm text-foreground leading-relaxed">{error}</p>}
-                {retryJob && !isStreaming && <Button variant="outline" size="icon" aria-label="Retry" title="Retry" onClick={() => { nearBottom.current = true; void runRequest(retryJob); }}><RotateCcw aria-hidden="true" /></Button>}
+              <div aria-label="Request recovery" className="flex items-center gap-2 rounded-xl border border-destructive/25 bg-destructive/10 px-3 py-2">
+                {error && <p className="flex-1 text-sm text-foreground leading-relaxed">{error}</p>}
+                {retryJob && !isStreaming && <Button variant="outline" size="icon" className="bg-card shrink-0" aria-label="Retry" title="Retry" onClick={() => { nearBottom.current = true; void runRequest(retryJob); }}><RotateCcw aria-hidden="true" /></Button>}
               </div>
             )}
             <div hidden={changingAddress}>
@@ -901,8 +910,8 @@ export default function Chatbot() {
             </div>
             {changingAddress && <ChatInput autoFocus onSend={(text, o) => sendMessage(text, undefined, o)} onDraftChange={setHasDraft} onStop={isStreaming ? stopRequest : undefined} onCancel={cancelAddressChange} disabled={isStreaming || !!pendingConfirm} placeholder="Enter the replacement address, or type @ to search…" />}
           </div>
-          <p className="text-xs text-chat-secondary-foreground text-center mt-2">
-            For emergencies, call 911. For mental health crisis, call or text 988. For social services, call 211.
+          <p className="text-xs text-muted-foreground text-center mt-2.5 text-balance">
+            For emergencies, call 911 · Mental health crisis, call or text 988 · Social services, call 211
           </p>
         </div>
       </div>

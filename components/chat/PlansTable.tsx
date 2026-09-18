@@ -41,9 +41,9 @@ export default function PlansTable({ plans, address }: Props) {
 
   const columns: Array<Column<Plan>> = [
     { key: 'plan', header: 'Plan', sortValue: p => p.planName || p.provider, render: p => (
-      <div>
-        <p className="font-medium text-slate-800">{p.planName || p.provider}</p>
-        <p className="text-xs text-slate-500">{p.provider} · {p.technology}</p>
+      <div className="min-w-[9rem]">
+        <p className="font-semibold text-foreground">{p.planName || p.provider}</p>
+        <p className="text-xs text-muted-foreground">{p.provider} · {p.technology}</p>
       </div>
     ) },
     { key: 'price', header: 'Price/mo', sortValue: p => toNumber(p.price) ?? Infinity, render: p => formatPrice(p.price) },
@@ -54,7 +54,7 @@ export default function PlansTable({ plans, address }: Props) {
     { key: 'website', header: 'Website', render: p => {
       const website = getProviderWebsite(p.provider);
       return website ? (
-        <a href={website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-600 hover:underline">
+        <a href={website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-medium text-primary hover:underline">
           Visit <ExternalLink size={11} />
         </a>
       ) : '—';
@@ -84,38 +84,38 @@ export default function PlansTable({ plans, address }: Props) {
   };
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden mt-3">
-      <div className="px-4 py-3 bg-blue-50 border-b border-blue-100 flex items-start justify-between gap-2">
+    <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden mt-3">
+      <div className="px-4 py-3 bg-brand-muted border-b border-border flex items-start justify-between gap-2">
         <div>
-          <p className="text-base font-semibold text-blue-800">Compare All Plans</p>
-          {address && <p className="text-sm text-blue-600 mt-0.5">{address}</p>}
+          <p className="text-base font-semibold text-brand-muted-foreground">Compare all plans</p>
+          {address && <p className="text-sm text-brand-muted-foreground/80 mt-0.5">{address}</p>}
         </div>
         <DownloadCsvButton filename="internet-plans.csv" rows={planCsvRows(sorted)} className="shrink-0 mt-0.5" />
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 border-b border-slate-100 bg-slate-50/50 text-sm">
-        <select value={provider} onChange={e => setProvider(e.target.value)} className="rounded-lg border border-slate-200 px-2 py-1.5 bg-white text-slate-700">
+      <div className="flex flex-wrap items-center gap-2 px-4 py-3 border-b border-border bg-muted/40 text-sm">
+        <select value={provider} onChange={e => setProvider(e.target.value)} className="rounded-lg border border-input px-2.5 py-1.5 bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
           <option value="">All providers</option>
           {providers.map(p => <option key={p} value={p}>{p}</option>)}
         </select>
         <input
           type="number" placeholder="Max price" value={maxPrice} onChange={e => setMaxPrice(e.target.value)}
-          className="w-24 rounded-lg border border-slate-200 px-2 py-1.5 text-slate-700 placeholder-slate-400"
+          className="w-24 rounded-lg border border-input px-2.5 py-1.5 bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         />
         <input
           type="number" placeholder="Min Mbps" value={minDownload} onChange={e => setMinDownload(e.target.value)}
-          className="w-24 rounded-lg border border-slate-200 px-2 py-1.5 text-slate-700 placeholder-slate-400"
+          className="w-24 rounded-lg border border-input px-2.5 py-1.5 bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         />
         <input
           type="text" placeholder="Search plan/provider" value={search} onChange={e => setSearch(e.target.value)}
-          className="flex-1 min-w-[140px] rounded-lg border border-slate-200 px-2 py-1.5 text-slate-700 placeholder-slate-400"
+          className="flex-1 min-w-[140px] rounded-lg border border-input px-2.5 py-1.5 bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         />
-        <label className="inline-flex items-center gap-1.5 text-slate-600">
-          <input type="checkbox" checked={noContractOnly} onChange={e => setNoContractOnly(e.target.checked)} />
+        <label className="inline-flex items-center gap-1.5 text-muted-foreground">
+          <input type="checkbox" checked={noContractOnly} onChange={e => setNoContractOnly(e.target.checked)} className="size-4 accent-primary" />
           No contract
         </label>
-        <label className="inline-flex items-center gap-1.5 text-slate-600">
-          <input type="checkbox" checked={lowIncomeOnly} onChange={e => setLowIncomeOnly(e.target.checked)} />
+        <label className="inline-flex items-center gap-1.5 text-muted-foreground">
+          <input type="checkbox" checked={lowIncomeOnly} onChange={e => setLowIncomeOnly(e.target.checked)} className="size-4 accent-primary" />
           Low-income discount
         </label>
       </div>
