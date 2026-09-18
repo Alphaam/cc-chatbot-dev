@@ -1,5 +1,5 @@
 'use client';
-import { Globe, GraduationCap, Laptop, ArrowRight, type LucideIcon } from 'lucide-react';
+import { Globe, GraduationCap, Laptop, ArrowRight, MapPin, ShieldCheck, HeartHandshake, type LucideIcon } from 'lucide-react';
 
 export type PromptIntent = 'plans' | 'services';
 
@@ -9,11 +9,18 @@ const PROMPTS: Array<{ label: string; description: string; prompt: string; Icon:
   { label: 'Free or low-cost devices', description: 'Find computers and tablets for your client', prompt: 'Find free or low-cost devices for my client', Icon: Laptop, intent: 'services' },
 ];
 
+const ABOUT_POINTS: Array<{ Icon: LucideIcon; title: string; body: string }> = [
+  { Icon: MapPin, title: 'Address-aware', body: 'Results are matched to your client’s exact location in Clark County.' },
+  { Icon: ShieldCheck, title: 'Trusted sources', body: 'Plans and resources are drawn from verified public and provider data.' },
+  { Icon: HeartHandshake, title: 'Built for caseworkers', body: 'Designed to help staff connect residents to affordable internet, devices, and skills.' },
+];
+
 interface Props {
   onSelect: (prompt: string, intent: PromptIntent) => void;
+  showAbout?: boolean;
 }
 
-export default function PromptSuggestions({ onSelect }: Props) {
+export default function PromptSuggestions({ onSelect, showAbout = false }: Props) {
   return (
     <div className="flex flex-col gap-7 py-6 sm:py-10">
       <div className="text-center max-w-xl mx-auto">
@@ -24,7 +31,7 @@ export default function PromptSuggestions({ onSelect }: Props) {
           What can I help this client find?
         </h2>
         <p className="mt-2.5 text-base leading-relaxed text-muted-foreground text-pretty">
-          Choose a starting point below, or type a question. I&apos;ll use the client&apos;s address to
+          Choose a starting point below. I&apos;ll use the client&apos;s address to
           show the internet plans and digital-equity resources available to them.
         </p>
       </div>
@@ -49,6 +56,51 @@ export default function PromptSuggestions({ onSelect }: Props) {
           </button>
         ))}
       </div>
+
+      {showAbout && (
+        <section aria-labelledby="about-heading" className="mt-3 overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+          <div className="grid md:grid-cols-2">
+            <div className="relative min-h-56 sm:min-h-72 md:min-h-full">
+              <img
+                src="/images/clark-county-valley.png"
+                alt="The Las Vegas valley in Clark County, Nevada at golden hour, with neighborhoods below desert mountains"
+                className="absolute inset-0 size-full object-cover"
+              />
+              <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-primary/25 via-transparent to-transparent md:bg-gradient-to-r md:from-transparent md:to-card/40" />
+            </div>
+
+            <div className="flex flex-col gap-5 p-6 sm:p-8">
+              <div className="flex flex-col gap-2.5">
+                <span className="inline-flex w-fit items-center rounded-full bg-brand-muted px-2.5 py-0.5 text-xs font-medium text-brand-muted-foreground">
+                  Digital Equity Program
+                </span>
+                <h3 id="about-heading" className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground text-balance">
+                  Closing the digital divide, one household at a time
+                </h3>
+                <p className="text-sm sm:text-base leading-relaxed text-muted-foreground text-pretty">
+                  This assistant helps county staff and community partners quickly connect residents to
+                  affordable broadband, free or low-cost devices, and digital-skills support — all tailored
+                  to where each client lives.
+                </p>
+              </div>
+
+              <ul className="flex flex-col gap-4">
+                {ABOUT_POINTS.map(({ Icon, title, body }) => (
+                  <li key={title} className="flex items-start gap-3">
+                    <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground ring-1 ring-primary/10">
+                      <Icon aria-hidden="true" className="size-5" strokeWidth={2.25} />
+                    </span>
+                    <span className="flex flex-col gap-0.5">
+                      <span className="text-sm font-semibold text-foreground">{title}</span>
+                      <span className="text-sm leading-relaxed text-muted-foreground">{body}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

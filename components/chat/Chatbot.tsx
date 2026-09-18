@@ -644,6 +644,11 @@ export default function Chatbot() {
     logSelection(sessionRef.current, { serviceType: type });
   }, [recordAnswer]);
 
+  // The free-text composer only belongs inside an active workflow. On the
+  // landing screen and the main menu, the cards (and in-section filters) drive
+  // navigation, so the composer is hidden there.
+  const atMenu = messages.length === 0 || showMainMenu;
+
   return (
     <div className="flex flex-col h-screen bg-background">
       {/* Header */}
@@ -707,7 +712,7 @@ export default function Chatbot() {
       }} className="flex-1 min-h-0 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6">
         <div className="max-w-3xl mx-auto flex flex-col gap-4">
           {messages.length === 0 && (
-            <PromptSuggestions onSelect={selectWorkflow} />
+            <PromptSuggestions onSelect={selectWorkflow} showAbout />
           )}
 
           {messages.map((m, i) => {
@@ -898,19 +903,21 @@ export default function Chatbot() {
       {/* Input */}
       <div className="bg-card border-t border-border px-4 py-3 sm:px-6 sm:py-4 shrink-0">
         <div className="max-w-3xl mx-auto">
-          <div ref={composerRef} className="flex flex-col gap-3">
-            {(error || (retryJob && !isStreaming)) && (
-              <div aria-label="Request recovery" className="flex items-center gap-2 rounded-xl border border-destructive/25 bg-destructive/10 px-3 py-2">
-                {error && <p className="flex-1 text-sm text-foreground leading-relaxed">{error}</p>}
-                {retryJob && !isStreaming && <Button variant="outline" size="icon" className="bg-card shrink-0" aria-label="Retry" title="Retry" onClick={() => { nearBottom.current = true; void runRequest(retryJob); }}><RotateCcw aria-hidden="true" /></Button>}
+          {!atMenu && (
+            <div ref={composerRef} className="flex flex-col gap-3">
+              {(error || (retryJob && !isStreaming)) && (
+                <div aria-label="Request recovery" className="flex items-center gap-2 rounded-xl border border-destructive/25 bg-destructive/10 px-3 py-2">
+                  {error && <p className="flex-1 text-sm text-foreground leading-relaxed">{error}</p>}
+                  {retryJob && !isStreaming && <Button variant="outline" size="icon" className="bg-card shrink-0" aria-label="Retry" title="Retry" onClick={() => { nearBottom.current = true; void runRequest(retryJob); }}><RotateCcw aria-hidden="true" /></Button>}
+                </div>
+              )}
+              <div hidden={changingAddress}>
+                <ChatInput key={inputKey} onSend={(text, o) => sendMessage(text, undefined, o)} onDraftChange={setHasDraft} onStop={isStreaming ? stopRequest : undefined} disabled={isStreaming || !!pendingConfirm || changingAddress} />
               </div>
-            )}
-            <div hidden={changingAddress}>
-              <ChatInput key={inputKey} onSend={(text, o) => sendMessage(text, undefined, o)} onDraftChange={setHasDraft} onStop={isStreaming ? stopRequest : undefined} disabled={isStreaming || !!pendingConfirm || changingAddress} />
+              {changingAddress && <ChatInput autoFocus onSend={(text, o) => sendMessage(text, undefined, o)} onDraftChange={setHasDraft} onStop={isStreaming ? stopRequest : undefined} onCancel={cancelAddressChange} disabled={isStreaming || !!pendingConfirm} placeholder="Enter the replacement address, or type @ to search…" />}
             </div>
-            {changingAddress && <ChatInput autoFocus onSend={(text, o) => sendMessage(text, undefined, o)} onDraftChange={setHasDraft} onStop={isStreaming ? stopRequest : undefined} onCancel={cancelAddressChange} disabled={isStreaming || !!pendingConfirm} placeholder="Enter the replacement address, or type @ to search…" />}
-          </div>
-          <p className="text-xs text-muted-foreground text-center mt-2.5 text-balance">
+          )}
+          <p className={`text-xs text-muted-foreground text-center text-balance ${atMenu ? '' : 'mt-2.5'}`}>
             For emergencies, call 911 · Mental health crisis, call or text 988 · Social services, call 211
           </p>
         </div>
