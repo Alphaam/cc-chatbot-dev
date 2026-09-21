@@ -664,7 +664,7 @@ export default function Chatbot() {
   const atMenu = messages.length === 0 || showMainMenu;
 
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="flex flex-col h-dvh bg-background">
       {/* Header */}
       <header className="bg-primary text-primary-foreground shrink-0 shadow-sm ring-1 ring-black/5">
         <div className="max-w-3xl mx-auto flex flex-wrap items-center gap-3 px-4 py-3.5 sm:px-6">
@@ -676,7 +676,7 @@ export default function Chatbot() {
           )}
           <div className="min-w-0 basis-full sm:flex-1 sm:basis-0">
             <h1 className="text-base font-semibold tracking-tight text-balance leading-tight">{t('Clark County Digital Equity Assistant')}</h1>
-            <p className="text-sm text-primary-foreground/75 leading-snug mt-1">
+            <p className="text-sm text-primary-foreground leading-snug mt-1">
               {t(messages.length > 0 && !showMainMenu && workflow
                 ? workflow.intent === 'plans'
                   ? 'Find internet plans in Clark County'
@@ -713,13 +713,13 @@ export default function Chatbot() {
         </div>
       )}
       {/* Messages */}
-      <div className="relative flex flex-1 min-h-0 flex-col">
-      <div ref={viewportRef} role="region" aria-label={t('Conversation')} onScroll={() => {
+      <main className="relative flex flex-1 min-h-0 flex-col">
+      <div ref={viewportRef} tabIndex={0} role="region" aria-label={t('Conversation')} onScroll={() => {
         const viewport = viewportRef.current;
         if (!viewport) return;
         nearBottom.current = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight < 80;
         setShowJump(!nearBottom.current);
-      }} className="flex-1 min-h-0 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6">
+      }} className="flex-1 min-h-0 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring">
         <div className="max-w-3xl mx-auto flex flex-col gap-4">
           {messages.length === 0 && (
             <PromptSuggestions onSelect={selectWorkflow} showAbout />
@@ -911,7 +911,7 @@ export default function Chatbot() {
       </div>
 
         {showJump && <div className="absolute right-[max(1rem,calc((100%_-_48rem)/2_+_0.5rem))] bottom-4"><Button variant="outline" size="icon" className="size-11 rounded-full bg-card shadow-md [&_svg]:size-5" aria-label={t('Jump to latest')} title={t('Jump to latest')} onClick={jumpToLatest}><ArrowDown aria-hidden="true" className="animate-pulse motion-reduce:animate-none" /></Button></div>}
-      </div>
+      </main>
 
       {/* Input */}
       <div className="bg-card border-t border-border px-4 py-3 sm:px-6 sm:py-4 shrink-0">
@@ -930,7 +930,7 @@ export default function Chatbot() {
               {changingAddress && <ChatInput autoFocus onSend={(text, o) => sendMessage(text, undefined, o)} onDraftChange={setHasDraft} onStop={isStreaming ? stopRequest : undefined} onCancel={cancelAddressChange} disabled={isStreaming || !!pendingConfirm} placeholder="Enter the replacement address, or type @ to search…" />}
             </div>
           )}
-          <p className={`text-xs text-muted-foreground text-center text-balance ${atMenu ? '' : 'mt-2.5'}`}>
+          <p className={`text-sm leading-relaxed text-muted-foreground text-center text-balance ${atMenu ? '' : 'mt-2.5'}`}>
             {t('For emergencies, call 911 · Mental health crisis, call or text 988 · Social services, call 211')}
           </p>
         </div>

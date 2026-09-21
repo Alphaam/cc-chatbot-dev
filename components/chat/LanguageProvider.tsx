@@ -41,7 +41,7 @@ export function LanguageToggle() {
         const next = event.target.value;
         if (next === 'en' || next === 'es') setLocale(next);
       }}
-      className="min-h-10 cursor-pointer rounded-md border-0 bg-transparent px-2 py-2 text-sm font-normal text-primary-foreground/80 transition-colors hover:text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground"
+      className="min-h-11 cursor-pointer rounded-md border-0 bg-transparent px-2 py-2 text-base font-normal text-primary-foreground transition-colors hover:text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground"
     >
       <option value="en" lang="en" className="bg-popover text-popover-foreground">English</option>
       <option value="es" lang="es" className="bg-popover text-popover-foreground">Español</option>

@@ -26,13 +26,13 @@ export default function PromptSuggestions({ onSelect, showAbout = false }: Props
   return (
     <div className="flex flex-col gap-7 py-6 sm:py-10">
       <div className="text-center max-w-xl mx-auto">
-        <span className="inline-flex items-center rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground">
+        <span className="inline-flex items-center rounded-full border border-border bg-card px-3 py-1 text-sm font-medium text-muted-foreground">
           {t('Clark County, Nevada')}
         </span>
-        <h2 className="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight text-foreground text-balance">
+        <h2 className="mt-4 text-3xl sm:text-4xl leading-tight font-semibold tracking-tight text-foreground text-balance">
           {t('What can I help this client find?')}
         </h2>
-        <p className="mt-2.5 text-base leading-relaxed text-muted-foreground text-pretty">
+        <p className="mt-3 text-lg leading-relaxed text-muted-foreground text-pretty">
           {t("Choose a starting point below. I'll use the client's address to show the internet plans and digital-equity resources available to them.")}
         </p>
       </div>
@@ -52,7 +52,7 @@ export default function PromptSuggestions({ onSelect, showAbout = false }: Props
                 {t(label)}
                 <ArrowRight aria-hidden="true" className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary motion-reduce:transition-none" />
               </span>
-              <span className="text-sm leading-relaxed text-muted-foreground">{t(description)}</span>
+              <span className="text-base leading-relaxed text-muted-foreground">{t(description)}</span>
             </span>
           </button>
         ))}
@@ -72,13 +72,13 @@ export default function PromptSuggestions({ onSelect, showAbout = false }: Props
 
             <div className="flex flex-col gap-5 p-6 sm:p-8">
               <div className="flex flex-col gap-2.5">
-                <span className="inline-flex w-fit items-center rounded-full bg-brand-muted px-2.5 py-0.5 text-xs font-medium text-brand-muted-foreground">
+                <span className="inline-flex w-fit items-center rounded-full bg-brand-muted px-2.5 py-0.5 text-sm font-medium text-brand-muted-foreground">
                   {t('How it works')}
                 </span>
                 <h3 id="about-heading" className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground text-balance">
                   {t('Three steps to connect a client')}
                 </h3>
-                <p className="text-sm sm:text-base leading-relaxed text-muted-foreground text-pretty">
+                <p className="text-base leading-relaxed text-muted-foreground text-pretty">
                   {t("This assistant helps county staff and partners find affordable broadband, free or low-cost devices, and digital-skills support for residents. Here's how to use it.")}
                 </p>
               </div>
@@ -88,13 +88,13 @@ export default function PromptSuggestions({ onSelect, showAbout = false }: Props
                   <li key={title} className="flex items-start gap-3">
                     <span className="relative mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground ring-1 ring-primary/10">
                       <Icon aria-hidden="true" className="size-5" strokeWidth={2.25} />
-                      <span className="absolute -right-1.5 -top-1.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
+                      <span aria-hidden="true" className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
                         {i + 1}
                       </span>
                     </span>
                     <span className="flex flex-col gap-0.5">
-                      <span className="text-sm font-semibold text-foreground">{t(title)}</span>
-                      <span className="text-sm leading-relaxed text-muted-foreground">{t(body)}</span>
+                      <span className="text-base font-semibold text-foreground">{t(title)}</span>
+                      <span className="text-base leading-relaxed text-muted-foreground">{t(body)}</span>
                     </span>
                   </li>
                 ))}
