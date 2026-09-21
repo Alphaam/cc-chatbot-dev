@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import { Albert_Sans } from "next/font/google";
 import { Presentation } from "@/components/presentation/presentation";
 import "./editorial.css";
+import "./rebuilt.css";
 
 const albert = Albert_Sans({ subsets: ["latin"], variable: "--font-presentation", display: "swap" });
 
 export const metadata: Metadata = {
   title: "Custom products. Expertly built. | HR&A Tech & Society Studio",
-  description: "HR&A Tech & Society Studio's original 10-slide custom products presentation, preserved exactly, alongside the Clark County and Studio + tools editions.",
+  description: "HR&A Tech & Society Studio's 10-slide custom products presentation, rebuilt with native text and layouts for selectable-text PDF export, alongside the Clark County and Studio + tools editions.",
   robots: { index: false, follow: false },
 };
 

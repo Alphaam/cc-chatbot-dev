@@ -63,12 +63,11 @@ const originalPages: { kind: SlideKind; chapter: string; title: string; transcri
   },
 ];
 
-export const originalSlides: SlideContent[] = originalPages.map((page, index) => ({
+export const originalSlides: SlideContent[] = originalPages.map((page) => ({
   kind: page.kind,
   chapter: page.chapter,
   title: page.title,
-  image: `/presentation/original-slide-${String(index + 1).padStart(2, "0")}.png`,
   transcript: page.transcript,
-  notes: `${page.transcript}\n\nOriginal PDF artwork, preserved without edits. Product illustrations and figures are reproduced as supplied, not independently verified. This edition uses flattened artwork, not editable text or live product interfaces.`,
+  notes: `${page.transcript}\n\nRebuilt from the original PDF with native text, shapes, and layout elements. Device illustrations remain separate images from the source. Figures and illustrative interfaces are reproduced as supplied, not independently verified. Download the rebuilt PDF for selectable text; edit the slide components to change the source.`,
   sources: [{ label: "Original 10-slide PDF", url: "/presentation/studio-original.pdf" }],
 }));
