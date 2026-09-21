@@ -240,7 +240,7 @@ def main():
     typography = json.loads(captured.stdout)
     with pymupdf.open(args.source) as document, tempfile.TemporaryDirectory(prefix='studio-pptx-') as temporary:
         directory = Path(temporary)
-        assert len(document) == len(typography) == 10
+        assert len(document) == len(typography) and len(document) > 0
         weights = {node['weight'] for nodes in typography for node in nodes}
         font_directory = args.font_directory or directory
         font_directory.mkdir(parents=True, exist_ok=True)
