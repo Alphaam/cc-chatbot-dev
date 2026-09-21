@@ -158,27 +158,44 @@ def prepare_fonts(directory, weights):
 
 
 def embed_fonts(output, fonts):
+    # Inject via targeted string edits: ElementTree re-serialization rewrites the
+    # OPC .rels and [Content_Types].xml default namespace to an "ns0:" prefix,
+    # which PowerPoint and LibreOffice reject when opening the package.
     with ZipFile(output) as source:
         parts = {name: source.read(name) for name in source.namelist()}
-    presentation = ET.fromstring(parts['ppt/presentation.xml'])
-    presentation.set('embedTrueTypeFonts', '1')
-    presentation.set('saveSubsetFonts', '0')
-    listing = ET.Element(f'{{{NS["p"]}}}embeddedFontLst')
-    notes = presentation.find('p:notesSz', NS)
-    presentation.insert(list(presentation).index(notes) + 1, listing)
-    rels = ET.fromstring(parts['ppt/_rels/presentation.xml.rels'])
-    types = ET.fromstring(parts['[Content_Types].xml'])
-    ET.SubElement(types, f'{{{CT_NS}}}Default', {'Extension': 'fntdata', 'ContentType': 'application/x-fontdata'})
+    entries, relationships = '', ''
     for index, font in enumerate(fonts.values(), 1):
         rid = f'rIdEditableFont{index}'
         file_name = f'fonts/font{index}.fntdata'
         parts['ppt/' + file_name] = font['path'].read_bytes()
-        ET.SubElement(rels, f'{{{REL_NS}}}Relationship', {'Id': rid, 'Type': NS['r'] + '/font', 'Target': file_name})
-        entry = ET.SubElement(listing, f'{{{NS["p"]}}}embeddedFont')
-        ET.SubElement(entry, f'{{{NS["p"]}}}font', {'typeface': font['family'], 'pitchFamily': '34', 'charset': '0'})
-        ET.SubElement(entry, f'{{{NS["p"]}}}regular', {f'{{{NS["r"]}}}id': rid})
-    for name, element in [('ppt/presentation.xml', presentation), ('ppt/_rels/presentation.xml.rels', rels), ('[Content_Types].xml', types)]:
-        parts[name] = ET.tostring(element, encoding='utf-8', xml_declaration=True)
+        typeface = font['family'].replace('&', '&amp;').replace('"', '&quot;')
+        entries += (f'<p:embeddedFont><p:font typeface="{typeface}" pitchFamily="34" charset="0"/>'
+                    f'<p:regular r:id="{rid}"/></p:embeddedFont>')
+        relationships += (f'<Relationship Id="{rid}" '
+                          f'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/font" '
+                          f'Target="{file_name}"/>')
+
+    presentation = parts['ppt/presentation.xml'].decode()
+    assert 'embedTrueTypeFonts' not in presentation
+    # pptxgenjs already emits saveSubsetFonts; normalize it and add embedding.
+    presentation = re.sub(r'\ssaveSubsetFonts="[^"]*"', '', presentation, count=1)
+    presentation = presentation.replace('<p:presentation ', '<p:presentation embedTrueTypeFonts="1" saveSubsetFonts="0" ', 1)
+    listing = f'<p:embeddedFontLst>{entries}</p:embeddedFontLst>'
+    if '</p:notesSz>' in presentation:
+        presentation = presentation.replace('</p:notesSz>', '</p:notesSz>' + listing, 1)
+    else:
+        presentation = re.sub(r'(<p:notesSz\b[^>]*/>)', r'\1' + listing, presentation, count=1)
+    assert listing in presentation, 'Failed to insert embeddedFontLst'
+    parts['ppt/presentation.xml'] = presentation.encode()
+
+    rels = parts['ppt/_rels/presentation.xml.rels'].decode()
+    parts['ppt/_rels/presentation.xml.rels'] = rels.replace('</Relationships>', relationships + '</Relationships>', 1).encode()
+
+    types = parts['[Content_Types].xml'].decode()
+    assert 'Extension="fntdata"' not in types
+    default = '<Default Extension="fntdata" ContentType="application/x-fontdata"/>'
+    parts['[Content_Types].xml'] = types.replace('</Types>', default + '</Types>', 1).encode()
+
     with ZipFile(output, 'w', ZIP_DEFLATED) as target:
         for name, data in parts.items():
             target.writestr(name, data)
