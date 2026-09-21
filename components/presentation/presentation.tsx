@@ -44,6 +44,12 @@ export function Presentation({ version = "chatbot" }: { version?: DeckVersion })
     return () => window.removeEventListener("keydown", onKey);
   }, [go, index, overview, slides.length]);
 
+  useEffect(() => {
+    if (overview) return;
+    window.scrollTo({ top: 0, behavior: "instant" });
+    root.current?.scrollTo({ top: 0, behavior: "instant" });
+  }, [index, overview]);
+
   async function fullscreen() {
     try {
       if (document.fullscreenElement) await document.exitFullscreen();

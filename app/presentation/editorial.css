@@ -142,10 +142,10 @@
 .case-intro-copy > p:not(.eyebrow) { font-size: max(16px, 1.7cqw); }
 .case-intro-screen { width: 43%; bottom: 0; }
 .editorial .device-screen { position: relative; border-width: .65cqw; padding: 0; }
-.editorial .device-screen img { width: 100%; height: 100%; object-fit: contain; transform: none; }
-.editorial .device-desktop .device-screen { aspect-ratio: 16 / 10; height: auto; border-bottom-width: 1.2cqw; border-radius: .75cqw; }
-.editorial .device-tablet .device-screen { aspect-ratio: 820 / 1100; height: auto; border-radius: 1.5cqw; border-block-width: 1.2cqw; }
-.editorial .device-phone .device-screen { aspect-ratio: 390 / 844; height: auto; border-radius: 1.7cqw; border-block-width: 1.1cqw; }
+.editorial .device-screen img { display: block; width: 100%; height: auto; object-fit: contain; transform: none; }
+.editorial .device-desktop .device-screen { aspect-ratio: auto; height: auto; border-bottom-width: 1.2cqw; border-radius: .75cqw; }
+.editorial .device-tablet .device-screen { aspect-ratio: auto; height: auto; border-radius: 1.5cqw; border-block-width: 1.2cqw; }
+.editorial .device-phone .device-screen { aspect-ratio: auto; height: auto; border-radius: 1.7cqw; border-block-width: 1.1cqw; }
 .device-hardware { filter: drop-shadow(0 .5cqw 1cqw color-mix(in srgb, var(--deck-ink) 12%, transparent)); }
 .editorial .device-screen { box-shadow: none; }
 .monitor-stand { display: flex; flex-direction: column; align-items: center; }
@@ -168,7 +168,7 @@
 .mhm-intro-layout { grid-template-columns: .9fr 1.2fr; gap: 2.5cqw; }
 .mhm-intro-layout h2 { font-size: 5.5cqw; }
 .network-hero { height: auto; overflow: visible; }
-.network-hero .device-screen img { width: 100%; height: 100%; object-fit: contain; transform: none; }
+.network-hero .device-screen img { width: 100%; height: auto; object-fit: contain; transform: none; }
 .capture-context { font-size: 14px; line-height: 1.5; color: var(--deck-muted); text-align: center; margin-top: 1.4cqw; }
 .mhm-detail-layout { grid-template-columns: 1.4fr 1fr; align-items: center; gap: 4cqw; margin-top: 1.2cqw; }
 .mhm-detail-layout > .device { max-width: 34cqw; justify-self: center; }
@@ -182,6 +182,47 @@
 .case-rationale-copy p { font-size: max(14px, 1.55cqw); line-height: 1.5; color: var(--deck-muted); }
 .case-rationale-layout > .device { width: 43%; flex-shrink: 0; }
 .case-rationale-boundary { font-size: 14px; line-height: 1.5; color: var(--deck-muted); }
+.browser-capture { min-width: 0; overflow: hidden; border: 1px solid color-mix(in srgb, var(--deck-muted) 25%, transparent); border-radius: .8cqw; background: var(--deck-white); color: var(--deck-ink); box-shadow: 0 .5cqw 1.5cqw color-mix(in srgb, var(--deck-ink) 8%, transparent); }
+.browser-capture figcaption { display: flex; align-items: center; justify-content: space-between; padding: .7cqw 1cqw; background: var(--deck-paper); color: var(--deck-muted); font-size: 14px; line-height: 1.4; }
+.browser-capture img { display: block; width: 100%; height: auto; }
+.product-feature-stage { container-type: size; }
+.paired-devices { max-width: min(100%, calc((100cqh - 4cqw) * 1.44 / .86)); }
+.paired-devices > .browser-capture { width: 86%; }
+.paired-phone { width: 21%; left: auto; right: 0; bottom: 0; }
+.paired-phone .device-label { white-space: normal; }
+.mhm-intro-layout, .mhm-detail-layout { container-type: size; }
+.network-hero { width: min(100%, calc((100cqh - 8cqw - 64px) * 1.44)); justify-self: center; }
+.mhm-detail-layout { grid-template-columns: 1.8fr 1fr; }
+.mhm-detail-layout > .browser-capture { width: 100%; max-width: min(40cqw, calc((100cqh - 4cqw) * 1.44)); justify-self: center; }
+.editorial-evidence { display: grid; grid-template-columns: 1fr 1fr; column-gap: 5cqw; grid-template-rows: auto 1fr auto; }
+.editorial-evidence > .slide-top, .editorial-evidence > .slide-bottom { grid-column: 1 / -1; }
+.editorial-evidence > .editorial-heading { align-self: center; }
+.evidence-pipeline { display: flex; flex-direction: column; justify-content: center; margin: 0; gap: 0; }
+.evidence-pipeline > div { position: relative; display: grid; grid-template-columns: 1fr auto; align-items: center; padding-block: 1.5cqw; border-bottom: 1px solid color-mix(in srgb, var(--deck-muted) 20%, transparent); }
+.evidence-pipeline > div:last-child { border-bottom: 0; }
+.evidence-pipeline h3 { grid-column: 1; grid-row: 1; margin: 0; }
+.evidence-pipeline p { grid-column: 1; grid-row: 2; margin-top: .5cqw; }
+.evidence-sheets { grid-column: 2; grid-row: 1 / 3; height: auto; padding: .6cqw .9cqw; border-radius: .5cqw; box-shadow: none; font-size: 14px; }
+.editorial-custom { display: grid; grid-template-columns: 1fr 1fr; column-gap: 5cqw; grid-template-rows: auto 1fr auto; }
+.editorial-custom > .slide-top, .editorial-custom > .slide-bottom { grid-column: 1 / -1; }
+.editorial-custom > .editorial-heading { align-self: center; }
+.custom-grid { display: flex; flex-direction: column; justify-content: center; margin: 0; gap: 2.5cqw; }
+.custom-grid > div { background: transparent; border-radius: 0; padding: 0 0 2cqw; border-bottom: 1px dashed color-mix(in srgb, var(--deck-muted) 35%, transparent); }
+.custom-grid > div:last-child { border: 0; padding-bottom: 0; }
+.custom-grid p { margin-top: .7cqw; }
+.editorial-clark-people { display: grid; grid-template-columns: .9fr 1.1fr; column-gap: 4cqw; grid-template-rows: auto 1fr auto auto; }
+.editorial-clark-people > .slide-top, .editorial-clark-people > .slide-bottom { grid-column: 1 / -1; }
+.editorial-clark-people > .context-heading { align-items: center; }
+.editorial-clark-people > .human-product { grid-column: 2; grid-row: 2 / 4; margin: 0; }
+.editorial-clark-people > .editorial-tags { grid-column: 1; flex-wrap: wrap; font-size: 14px; gap: 1cqw; }
+.editorial-clark-people .human-photo { width: 88%; height: 90%; }
+.editorial-clark-people .human-product-device { width: min(42%, calc((100cqh - 12cqw - 28px) * .462)); right: 0; bottom: 4cqw; }
+.editorial-clark-people > .editorial-tags { align-items: flex-start; flex-direction: column; }
+.editorial-clark-people > .editorial-tags span + span { padding: 0; border: 0; }
+.human-product-monitor > .human-photo { width: 38%; height: 100%; left: auto; right: 0; object-position: 60% center; }
+.human-product-monitor .human-product-device { left: 0; right: auto; bottom: 2.8cqw; width: min(58%, calc((100cqh - 8cqw) * 1.44)); }
+.editorial-closing { background: var(--deck-ink); color: var(--deck-white); }
+.editorial-closing :is(.eyebrow, h2 span, .slide-top > span:last-child, .slide-bottom, p:last-child) { color: var(--deck-white); }
 @media (max-width: 900px) {
   .deck-brand > span { display: none; }
   .edition-switch { margin-right: 4px; }
@@ -282,7 +323,8 @@
   .monitor-stand > div { height: 18px; }
   .monitor-stand > span { height: 4px; }
   .device-label { margin-top: 8px; }
-  .paired-devices { width: 100%; }
+  .product-feature-stage { container-type: normal; }
+  .paired-devices { width: 100%; max-width: none; }
   .paired-devices > .device { width: 84%; max-width: none; }
   .paired-phone { width: 24%; left: auto; right: 0; }
   .paired-phone .device-label { white-space: normal; }
@@ -292,6 +334,25 @@
   .editorial-mhm-people .context-heading h2, .editorial-mhm-detail h2 { font-size: 36px; }
   .network-hero { height: auto; }
   .capture-context { margin-top: 16px; }
+  .editorial-evidence, .editorial-custom, .editorial-clark-people { display: flex; flex-direction: column; }
+  .evidence-pipeline { display: flex; margin-top: 28px; }
+  .evidence-pipeline > div { padding-block: 16px; }
+  .evidence-pipeline h3 { margin: 0; }
+  .evidence-pipeline p { margin-top: 6px; }
+  .evidence-sheets { height: auto; padding: 8px; }
+  .custom-grid { margin-block: 28px; gap: 24px; }
+  .custom-grid > div { padding: 0 0 20px; }
+  .editorial-clark-people > .human-product { flex: none; height: 330px; margin-top: 24px; }
+  .editorial-clark-people .human-product-device { width: 38%; bottom: 36px; }
+  .editorial-clark-people > .editorial-tags { gap: 12px; }
+  .human-product-monitor .human-product-device { width: 62%; bottom: 42px; }
+  .human-product-monitor > .human-photo { width: 38%; height: 82%; }
+  .browser-capture { border-radius: 8px; }
+  .browser-capture figcaption { padding: 8px; }
+  .browser-capture figcaption > span:last-child { display: none; }
+  .mhm-intro-layout, .mhm-detail-layout { container-type: normal; }
+  .network-hero { width: 100%; }
+  .mhm-detail-layout > .browser-capture { max-width: 100%; }
 }
 @media print {
   .print-deck .editorial { padding: .48in .65in .4in; }
