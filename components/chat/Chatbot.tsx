@@ -675,7 +675,7 @@ export default function Chatbot() {
             </nav>
           )}
           <div className="min-w-0 basis-full sm:flex-1 sm:basis-0">
-            <h1 className="text-base font-semibold tracking-tight text-balance leading-tight">{t('Clark County Digital Equity Assistant')}</h1>
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-balance leading-tight">{t('Clark County Digital Equity Assistant')}</h1>
           </div>
           <div className="order-3 ml-auto"><LanguageToggle /></div>
         </div>
