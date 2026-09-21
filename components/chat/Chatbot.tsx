@@ -667,7 +667,7 @@ export default function Chatbot() {
     <div className="flex flex-col h-dvh bg-background">
       {/* Header */}
       <header className="bg-primary text-primary-foreground shrink-0 shadow-sm ring-1 ring-black/5 px-4 sm:px-6">
-        <div className="max-w-3xl mx-auto flex flex-wrap items-center gap-3 py-3.5">
+        <div className="max-w-3xl mx-auto flex flex-wrap items-center gap-3 py-3.5 text-sm">
           {messages.length > 0 && !showMainMenu && (
             <nav aria-label={t('Client navigation')} className="order-2 flex shrink-0 items-center gap-1 sm:order-first">
               <button type="button" className="flex size-11 items-center justify-center rounded-xl hover:bg-primary-foreground/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground transition-colors" aria-label={t('Home')} title={t('Home')} onClick={() => requestReset('home')}><House aria-hidden="true" className="size-5" strokeWidth={2.25} /></button>
@@ -675,7 +675,7 @@ export default function Chatbot() {
             </nav>
           )}
           <div className="min-w-0 basis-full sm:flex-1 sm:basis-0">
-            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-balance leading-tight">{t('Clark County Digital Equity Assistant')}</h1>
+            <h1 className="text-xl sm:text-xl font-semibold tracking-tight text-balance leading-tight">{t('Clark County Digital Equity Assistant')}</h1>
           </div>
           <div className="order-3 ml-auto"><LanguageToggle /></div>
         </div>
