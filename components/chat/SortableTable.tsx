@@ -28,12 +28,12 @@ interface Props<T> {
 export default function SortableTable<T>({ columns, rows, rowKey, sort, onSortChange, emptyMessage = 'No results match your filters.' }: Props<T>) {
   const { t } = useLanguage();
   return (
-    <div className="max-h-[420px] overflow-y-auto overflow-x-auto">
+    <div className="isolate max-h-[420px] overflow-y-auto overflow-x-auto">
       <table className="w-full text-sm">
         <thead className="sticky top-0 bg-muted z-10">
           <tr className="border-b border-border">
             {columns.map(col => (
-              <th key={col.key} className={`text-left px-3 py-2.5 font-semibold text-muted-foreground ${col.className ?? ''}`}>
+              <th key={col.key} scope="col" aria-sort={col.sortValue ? (sort?.key === col.key ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none') : undefined} className={`text-left px-3 py-2.5 font-semibold text-muted-foreground ${col.className ?? ''}`}>
                 {col.sortValue ? (
                   <button
                     onClick={() => onSortChange(col.key)}

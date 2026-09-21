@@ -53,7 +53,7 @@ export default function ServicesTable({ serviceGroups, initialTypeFilter }: Prop
       </div>
     ) },
     { key: 'distance', header: 'Distance', sortValue: s => s.distanceMiles ?? Infinity, render: s => <span className="whitespace-nowrap tabular-nums">{s.distanceMiles != null ? `${s.distanceMiles.toFixed(1)} mi` : t(TIER_LABELS[s.tier])}</span> },
-    { key: 'phone', header: 'Phone', render: s => s.phone ? <a href={`tel:${s.phone}`} className="font-medium text-primary hover:underline">{s.phone}</a> : '–' },
+    { key: 'phone', header: 'Phone', render: s => s.phone ? <a href={`tel:${s.phone}`} className="font-medium text-primary hover:underline">{t(s.phone)}</a> : '–' },
     { key: 'website', header: 'Website', render: s => s.url ? (
       <a href={s.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-medium text-primary hover:underline">
         {t('Visit')} <ExternalLink size={11} />

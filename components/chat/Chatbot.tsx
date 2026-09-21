@@ -152,6 +152,9 @@ function describeService(s: ServiceWithDistance): string {
   const bits = [s.name, `(${s.type})`];
   if (s.distanceMiles != null) bits.push(`${s.distanceMiles.toFixed(1)} mi`);
   if (s.phone) bits.push(s.phone);
+  if (s.description) bits.push(`Source description: ${s.description}`);
+  if (s.languages) bits.push(`Listed service languages: ${s.languages}`);
+  if (s.url) bits.push(`Website: ${s.url}`);
   return `- ${bits.join(', ')}`;
 }
 
