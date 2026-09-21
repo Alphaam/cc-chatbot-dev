@@ -1,4 +1,5 @@
 'use client';
+import { useLanguage } from './LanguageProvider';
 import { Globe, GraduationCap, Laptop, ArrowRight, MousePointerClick, MapPin, ListChecks, type LucideIcon } from 'lucide-react';
 
 export type PromptIntent = 'plans' | 'services';
@@ -21,18 +22,18 @@ interface Props {
 }
 
 export default function PromptSuggestions({ onSelect, showAbout = false }: Props) {
+  const { t } = useLanguage();
   return (
     <div className="flex flex-col gap-7 py-6 sm:py-10">
       <div className="text-center max-w-xl mx-auto">
         <span className="inline-flex items-center rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground">
-          Clark County, Nevada
+          {t('Clark County, Nevada')}
         </span>
         <h2 className="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight text-foreground text-balance">
-          What can I help this client find?
+          {t('What can I help this client find?')}
         </h2>
         <p className="mt-2.5 text-base leading-relaxed text-muted-foreground text-pretty">
-          Choose a starting point below. I&apos;ll use the client&apos;s address to
-          show the internet plans and digital-equity resources available to them.
+          {t("Choose a starting point below. I'll use the client's address to show the internet plans and digital-equity resources available to them.")}
         </p>
       </div>
 
@@ -48,10 +49,10 @@ export default function PromptSuggestions({ onSelect, showAbout = false }: Props
             </span>
             <span className="flex flex-col gap-1">
               <span className="flex items-center gap-1.5 text-base font-semibold text-foreground">
-                {label}
+                {t(label)}
                 <ArrowRight aria-hidden="true" className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary motion-reduce:transition-none" />
               </span>
-              <span className="text-sm leading-relaxed text-muted-foreground">{description}</span>
+              <span className="text-sm leading-relaxed text-muted-foreground">{t(description)}</span>
             </span>
           </button>
         ))}
@@ -63,7 +64,7 @@ export default function PromptSuggestions({ onSelect, showAbout = false }: Props
             <div className="relative min-h-56 sm:min-h-72 md:min-h-full">
               <img
                 src="/images/clark-county-valley.png"
-                alt="The Las Vegas valley in Clark County, Nevada at golden hour, with neighborhoods below desert mountains"
+                alt={t('The Las Vegas valley in Clark County, Nevada at golden hour, with neighborhoods below desert mountains')}
                 className="absolute inset-0 size-full object-cover"
               />
               <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-primary/25 via-transparent to-transparent md:bg-gradient-to-r md:from-transparent md:to-card/40" />
@@ -72,14 +73,13 @@ export default function PromptSuggestions({ onSelect, showAbout = false }: Props
             <div className="flex flex-col gap-5 p-6 sm:p-8">
               <div className="flex flex-col gap-2.5">
                 <span className="inline-flex w-fit items-center rounded-full bg-brand-muted px-2.5 py-0.5 text-xs font-medium text-brand-muted-foreground">
-                  How it works
+                  {t('How it works')}
                 </span>
                 <h3 id="about-heading" className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground text-balance">
-                  Three steps to connect a client
+                  {t('Three steps to connect a client')}
                 </h3>
                 <p className="text-sm sm:text-base leading-relaxed text-muted-foreground text-pretty">
-                  This assistant helps county staff and partners find affordable broadband, free or low-cost
-                  devices, and digital-skills support for residents. Here&apos;s how to use it.
+                  {t("This assistant helps county staff and partners find affordable broadband, free or low-cost devices, and digital-skills support for residents. Here's how to use it.")}
                 </p>
               </div>
 
@@ -93,8 +93,8 @@ export default function PromptSuggestions({ onSelect, showAbout = false }: Props
                       </span>
                     </span>
                     <span className="flex flex-col gap-0.5">
-                      <span className="text-sm font-semibold text-foreground">{title}</span>
-                      <span className="text-sm leading-relaxed text-muted-foreground">{body}</span>
+                      <span className="text-sm font-semibold text-foreground">{t(title)}</span>
+                      <span className="text-sm leading-relaxed text-muted-foreground">{t(body)}</span>
                     </span>
                   </li>
                 ))}

@@ -1,4 +1,7 @@
 'use client';
+import { useLanguage } from './LanguageProvider';
+import { translateServiceType } from '@/lib/i18n';
+import { resourceSpanish } from '@/lib/resource-translations';
 import { useMemo, useState } from 'react';
 import { ExternalLink, MapPin } from 'lucide-react';
 import SortableTable, { type Column, type SortState } from './SortableTable';
@@ -24,6 +27,7 @@ interface Props {
 }
 
 export default function ServicesTable({ serviceGroups, initialTypeFilter }: Props) {
+  const { locale, t } = useLanguage();
   const allRows = useMemo(() => flattenServiceGroups(serviceGroups), [serviceGroups]);
 
   const [type, setType] = useState(initialTypeFilter ?? '');
@@ -36,37 +40,37 @@ export default function ServicesTable({ serviceGroups, initialTypeFilter }: Prop
     return allRows.filter(s => {
       if (type && !s.type.split(',').map(t => t.trim()).includes(type)) return false;
       if (tier && s.tier !== tier) return false;
-      if (q && !`${s.name} ${s.description ?? ''}`.toLowerCase().includes(q)) return false;
+      if (q && !`${s.name} ${s.description ?? ''} ${s.type} ${translateServiceType(locale, s.type)} ${s.description ? resourceSpanish[s.description] ?? '' : ''}`.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [allRows, type, tier, search]);
+  }, [allRows, type, tier, search, locale]);
 
   const columns: Array<Column<Row>> = [
     { key: 'name', header: 'Name', sortValue: s => s.name, render: s => (
       <div className="min-w-[9rem]">
         <p className="font-semibold text-foreground">{s.name}</p>
-        <p className="text-xs text-muted-foreground">{s.type}</p>
+        <p className="text-xs text-muted-foreground">{translateServiceType(locale, s.type)}</p>
       </div>
     ) },
-    { key: 'distance', header: 'Distance', sortValue: s => s.distanceMiles ?? Infinity, render: s => <span className="whitespace-nowrap tabular-nums">{s.distanceMiles != null ? `${s.distanceMiles.toFixed(1)} mi` : TIER_LABELS[s.tier]}</span> },
-    { key: 'phone', header: 'Phone', render: s => s.phone ? <a href={`tel:${s.phone}`} className="font-medium text-primary hover:underline">{s.phone}</a> : '—' },
+    { key: 'distance', header: 'Distance', sortValue: s => s.distanceMiles ?? Infinity, render: s => <span className="whitespace-nowrap tabular-nums">{s.distanceMiles != null ? `${s.distanceMiles.toFixed(1)} mi` : t(TIER_LABELS[s.tier])}</span> },
+    { key: 'phone', header: 'Phone', render: s => s.phone ? <a href={`tel:${s.phone}`} className="font-medium text-primary hover:underline">{s.phone}</a> : '–' },
     { key: 'website', header: 'Website', render: s => s.url ? (
       <a href={s.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-medium text-primary hover:underline">
-        Visit <ExternalLink size={11} />
+        {t('Visit')} <ExternalLink size={11} />
       </a>
-    ) : '—' },
+    ) : '–' },
     { key: 'map', header: 'Map', render: s => {
       const mapUrl = getMapUrl(s);
       return mapUrl ? (
         <a href={mapUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-medium text-primary hover:underline">
-          <MapPin size={11} /> Map
+          <MapPin size={11} /> {t('Map')}
         </a>
-      ) : '—';
+      ) : '–';
     } },
     { key: 'copy', header: '', render: s => (
       <div className="flex items-center gap-3">
-        <CopyButton text={formatServiceSms(s)} />
-        <TextButton text={formatServiceSms(s)} />
+        <CopyButton text={formatServiceSms(s, locale)} />
+        <TextButton text={formatServiceSms(s, locale)} />
       </div>
     ) },
   ];
@@ -90,21 +94,21 @@ export default function ServicesTable({ serviceGroups, initialTypeFilter }: Prop
   return (
     <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden mt-3">
       <div className="px-4 py-3 bg-resource-muted border-b border-border flex items-start justify-between gap-2">
-        <p className="text-base font-semibold text-resource-muted-foreground">Compare all digital equity resources</p>
-        <DownloadCsvButton filename="digital-resources.csv" rows={serviceCsvRows(sorted)} className="shrink-0" />
+        <p className="text-base font-semibold text-resource-muted-foreground">{t('Compare all digital equity resources')}</p>
+        <DownloadCsvButton filename="digital-resources.csv" rows={serviceCsvRows(sorted, locale)} className="shrink-0" />
       </div>
 
       <div className="flex flex-wrap items-center gap-2 px-4 py-3 border-b border-border bg-muted/40 text-sm">
-        <select value={type} onChange={e => setType(e.target.value)} className="rounded-lg border border-input px-2.5 py-1.5 bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
-          <option value="">All types</option>
-          {SERVICE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+        <select aria-label={t('Type')} value={type} onChange={e => setType(e.target.value)} className="rounded-lg border border-input px-2.5 py-1.5 bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+          <option value="">{t('All types')}</option>
+          {SERVICE_TYPES.map(type => <option key={type} value={type}>{t(type)}</option>)}
         </select>
-        <select value={tier} onChange={e => setTier(e.target.value)} className="rounded-lg border border-input px-2.5 py-1.5 bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
-          <option value="">Any distance</option>
-          {(Object.entries(TIER_LABELS) as Array<[ServiceTier, string]>).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+        <select aria-label={t('Distance')} value={tier} onChange={e => setTier(e.target.value)} className="rounded-lg border border-input px-2.5 py-1.5 bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+          <option value="">{t('Any distance')}</option>
+          {(Object.entries(TIER_LABELS) as Array<[ServiceTier, string]>).map(([k, label]) => <option key={k} value={k}>{t(label)}</option>)}
         </select>
         <input
-          type="text" placeholder="Search name/description" value={search} onChange={e => setSearch(e.target.value)}
+          type="text" placeholder={t('Search name/description')} aria-label={t('Search name/description')} value={search} onChange={e => setSearch(e.target.value)}
           className="flex-1 min-w-[160px] rounded-lg border border-input px-2.5 py-1.5 bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         />
       </div>
