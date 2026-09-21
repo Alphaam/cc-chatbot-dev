@@ -1,8 +1,6 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Toggle } from '@base-ui/react/toggle';
-import { ToggleGroup } from '@base-ui/react/toggle-group';
 import { translate, type Locale, type TranslationValues } from '@/lib/i18n';
 
 const LanguageContext = createContext({
@@ -35,15 +33,18 @@ export function useLanguage() { return useContext(LanguageContext); }
 export function LanguageToggle() {
   const { locale, setLocale, t } = useLanguage();
   return (
-    <ToggleGroup aria-label={t('Language')} value={[locale]} onValueChange={values => {
-      const next = values[0];
-      if (next === 'en' || next === 'es') setLocale(next);
-    }} className="flex shrink-0 rounded-xl border border-primary-foreground/30 p-1">
-      {(['en', 'es'] as const).map(value => (
-        <Toggle key={value} value={value} lang={value} className="min-h-9 rounded-lg px-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-foreground/15 data-pressed:bg-primary-foreground data-pressed:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground">
-          {value === 'en' ? 'English' : 'Español'}
-        </Toggle>
-      ))}
-    </ToggleGroup>
+    <select
+      aria-label={t('Language')}
+      value={locale}
+      lang={locale}
+      onChange={event => {
+        const next = event.target.value;
+        if (next === 'en' || next === 'es') setLocale(next);
+      }}
+      className="min-h-10 cursor-pointer rounded-md border-0 bg-transparent px-2 py-2 text-sm font-normal text-primary-foreground/80 transition-colors hover:text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground"
+    >
+      <option value="en" lang="en" className="bg-popover text-popover-foreground">English</option>
+      <option value="es" lang="es" className="bg-popover text-popover-foreground">Español</option>
+    </select>
   );
 }
