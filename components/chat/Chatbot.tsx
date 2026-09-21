@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useRef, useState, useMemo, Fragment, memo } from 'react';
 import { nanoid } from 'nanoid';
-import { ArrowDown, House, MapPin, MessageSquarePlus, RotateCcw, Wifi } from 'lucide-react';
+import { ArrowDown, House, MapPin, MessageSquarePlus, RotateCcw } from 'lucide-react';
 import ChatInput, { type SendOptions } from './ChatInput';
 import ResetConfirmation from './ResetConfirmation';
 import { Button } from '@/components/ui/button';
@@ -660,11 +660,8 @@ export default function Chatbot() {
               <button type="button" className="flex size-11 items-center justify-center rounded-xl hover:bg-primary-foreground/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground transition-colors" aria-label="New client" title="New client" onClick={() => requestReset('new')}><MessageSquarePlus aria-hidden="true" className="size-5" strokeWidth={2.25} /></button>
             </nav>
           )}
-          <div className="flex items-center gap-3 min-w-0 flex-1">
-            <span aria-hidden="true" className="hidden sm:flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary-foreground/12 ring-1 ring-primary-foreground/20">
-              <Wifi className="size-5" strokeWidth={2.25} />
-            </span>
-            <div className="min-w-0">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="min-w-0">
               <h1 className="text-[0.95rem] sm:text-base font-semibold tracking-tight text-balance leading-tight">Clark County Digital Equity Assistant</h1>
               <p className="text-xs sm:text-sm text-primary-foreground/75 leading-snug truncate">
                 {messages.length > 0 && !showMainMenu && workflow
