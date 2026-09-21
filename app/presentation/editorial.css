@@ -69,7 +69,7 @@
 .case-intro-visual { position: relative; min-height: 0; }
 .case-intro-visual > .human-photo { position: absolute; inset: 0; width: 100%; height: 65%; object-position: center 40%; border-radius: 1cqw; }
 .case-intro-screen { position: absolute; width: 47%; right: 3cqw; bottom: -1cqw; transform: rotate(4deg); }
-.case-intro-screen .device-screen { max-height: 29cqw; }
+.case-intro-screen .device-screen { max-height: none; }
 .product-feature-stage { display: grid; grid-template-columns: 1.8fr .8fr; gap: 3cqw; margin-top: 2.2cqw; flex: 1; min-height: 0; }
 .large-product-capture { overflow: hidden; border-radius: 1cqw; background: var(--deck-paper); border: 1px solid color-mix(in srgb, var(--deck-muted) 20%, transparent); }
 .large-product-capture img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
@@ -80,14 +80,15 @@
 .context-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 3cqw; }
 .context-heading h2 { font-size: 5cqw; }
 .context-heading > p { font-size: max(14px, 1.55cqw); line-height: 1.5; color: var(--deck-muted); flex-shrink: 0; }
-.human-product { position: relative; min-height: 0; flex: 1; margin-top: 2.2cqw; }
+.human-product { position: relative; container-type: size; min-height: 0; flex: 1; margin-top: 2.2cqw; }
 .human-product > .human-photo { position: absolute; inset: 0; width: 74%; height: 100%; object-position: center 42%; border-radius: 1cqw; }
-.human-product-device { position: absolute; right: 1cqw; bottom: 2.8cqw; width: 44%; }
-.human-product-device .device-screen { height: 19.5cqw; aspect-ratio: auto; }
+.human-product-device { position: absolute; right: 1cqw; bottom: 2.8cqw; width: min(37%, calc((100cqh - 9cqw) * 1.6)); }
+.human-product-phone .human-product-device { width: min(13.5%, calc((100cqh - 6cqw) * .462)); right: 9%; }
+.human-product-phone > .human-photo { width: 82%; }
 .photo-disclosure { position: absolute; bottom: 0; right: 0; background: var(--deck-white); color: var(--deck-muted); padding: .4cqw .6cqw; font-size: 14px; line-height: 1.4; }
 .editorial-clark-people .editorial-tags, .editorial-mhm-people .editorial-tags { margin-top: 2cqw; }
 .editorial .device-lineup { flex: 1; min-height: 0; align-items: end; margin-top: 2.4cqw; }
-.editorial .device-lineup .device-desktop { max-width: 39cqw; }
+.editorial .device-lineup .device-desktop { max-width: 35cqw; }
 .editorial .device-lineup .device-tablet { max-width: 17cqw; }
 .editorial .device-lineup .device-phone { max-width: 10cqw; }
 .editorial .device-lineup figcaption { font-size: max(14px, 1.55cqw); }
@@ -109,6 +110,69 @@
 .closing-links { display: flex; gap: 2cqw; margin-top: 3cqw; }
 .closing-links a { display: inline-flex; align-items: center; gap: 2cqw; font-size: max(14px, 1.55cqw); padding: 1.1cqw 1.8cqw; background: var(--deck-blue); color: var(--deck-white); border-radius: 3cqw; }
 .editorial-closing > p:last-child { display: flex; align-items: center; justify-content: space-between; font-size: max(14px, 1.5cqw); margin-top: 2.5cqw; color: var(--deck-muted); }
+.editorial .slide-top { margin-bottom: 2.2cqw; }
+.editorial-heading { gap: 1cqw; }
+.editorial-description { font-size: max(16px, 1.55cqw); line-height: 1.5; color: var(--deck-muted); max-width: 78ch; }
+.studio-cover-copy > p:last-child { max-width: 31ch; }
+.mission-composition { grid-template-columns: 1fr 1.12fr; gap: 3.5cqw; }
+.mission-composition h2 { font-size: 6.5cqw; }
+.mission-line { font-size: max(16px, 1.7cqw); margin-top: 2cqw; }
+.mission-promises { font-size: max(14px, 1.45cqw); margin-top: 2cqw; line-height: 1.7; }
+.mission-composition > .mission-evidence { justify-content: space-between; }
+.mission-evidence > .human-photo { height: 13cqw; border-radius: .8cqw; object-position: center 38%; }
+.track-record { margin-top: auto; }
+.track-record-label { font-size: 14px; line-height: 1.4; color: var(--deck-muted); }
+.metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3cqw; margin-top: 1.2cqw; }
+.metric-grid > div { border-top: 1px dashed color-mix(in srgb, var(--deck-muted) 40%, transparent); padding-top: 1cqw; }
+.metric-grid strong { font-size: 6cqw; letter-spacing: -.055em; font-weight: 500; color: var(--deck-blue); line-height: 1.1; }
+.metric-grid h3 { font-size: max(16px, 1.8cqw); margin-top: .8cqw; line-height: 1.3; }
+.metric-grid p { font-size: max(14px, 1.45cqw); line-height: 1.5; margin-top: .8cqw; color: var(--deck-muted); }
+.metric-source { font-size: 14px; line-height: 1.5; color: var(--deck-muted); margin-top: 1.5cqw; }
+.metric-source a { text-decoration: underline; text-underline-offset: 3px; }
+.compact .metric-grid { grid-template-columns: repeat(2, 1fr); gap: 2cqw; }
+.compact .metric-grid strong { font-size: 4.6cqw; }
+.compact .metric-grid h3 { font-size: 14px; }
+.compact .metric-grid p { font-size: 14px; line-height: 1.4; }
+.compact .metric-source { margin-top: 1cqw; }
+.method-sequence { margin-top: 2cqw; }
+.method-sequence > div { padding: 1.8cqw; }
+.method-sequence h3 { margin-top: 1.4cqw; }
+.quality-caption { max-width: 75ch; line-height: 1.5; }
+.case-intro h2 { font-size: 6.8cqw; }
+.case-intro-copy > p:not(.eyebrow) { font-size: max(16px, 1.7cqw); }
+.case-intro-screen { width: 43%; bottom: 0; }
+.editorial .device-screen { position: relative; border-width: .65cqw; padding: 0; }
+.editorial .device-screen img { width: 100%; height: 100%; object-fit: contain; transform: none; }
+.editorial .device-desktop .device-screen { aspect-ratio: 16 / 10; height: auto; border-bottom-width: 1.2cqw; border-radius: .75cqw; }
+.editorial .device-tablet .device-screen { aspect-ratio: 820 / 1100; height: auto; border-radius: 1.5cqw; border-block-width: 1.2cqw; }
+.editorial .device-phone .device-screen { aspect-ratio: 390 / 844; height: auto; border-radius: 1.7cqw; border-block-width: 1.1cqw; }
+.device-hardware { filter: drop-shadow(0 .5cqw 1cqw color-mix(in srgb, var(--deck-ink) 12%, transparent)); }
+.editorial .device-screen { box-shadow: none; }
+.monitor-stand { display: flex; flex-direction: column; align-items: center; }
+.monitor-stand > div { width: 16%; height: 2.7cqw; background: var(--deck-muted); clip-path: polygon(14% 0, 86% 0, 100% 100%, 0 100%); }
+.monitor-stand > span { width: 37%; height: .5cqw; border-radius: .4cqw .4cqw 0 0; background: var(--deck-ink); }
+.device-label { font-size: 14px; line-height: 1.4; text-align: center; color: var(--deck-muted); margin-top: .7cqw; white-space: nowrap; }
+.editorial-clark-intro .device-label { color: var(--deck-white); }
+.product-feature-stage { grid-template-columns: 1.6fr 1fr; align-items: center; gap: 3.5cqw; margin-top: 1.4cqw; }
+.paired-devices { position: relative; width: 100%; }
+.paired-devices > .device { width: 88%; max-width: 40cqw; }
+.paired-phone { position: absolute; width: 18%; bottom: 0; left: 36cqw; }
+.paired-phone .device-label { background: var(--deck-white); color: var(--deck-muted); border-radius: .3cqw; }
+.product-feature-stage .feature-rail, .mhm-detail-layout .feature-rail { gap: 1.6cqw; }
+.feature-rail h3 { font-size: 2.3cqw; }
+.feature-rail p { font-size: max(14px, 1.5cqw); }
+.context-heading .editorial-description { max-width: 85ch; }
+.editorial-mhm-people .context-heading h2, .editorial-mhm-detail h2 { font-size: 4.6cqw; }
+.editorial .device-lineup { align-items: center; }
+.editorial .device-lineup figure { gap: 1cqw; }
+.mhm-intro-layout { grid-template-columns: .9fr 1.2fr; gap: 2.5cqw; }
+.mhm-intro-layout h2 { font-size: 5.5cqw; }
+.network-hero { height: auto; overflow: visible; }
+.network-hero .device-screen img { width: 100%; height: 100%; object-fit: contain; transform: none; }
+.capture-context { font-size: 14px; line-height: 1.5; color: var(--deck-muted); text-align: center; margin-top: 1.4cqw; }
+.mhm-detail-layout { grid-template-columns: 1.4fr 1fr; align-items: center; gap: 4cqw; margin-top: 1.2cqw; }
+.mhm-detail-layout > .device { max-width: 34cqw; justify-self: center; }
+.editorial-closing > p:last-child { max-width: 70ch; line-height: 1.5; }
 @media (max-width: 900px) {
   .deck-brand > span { display: none; }
   .edition-switch { margin-right: 4px; }
@@ -164,7 +228,8 @@
   .human-product { flex: none; height: 270px; margin-top: 24px; }
   .human-product > .human-photo { width: 100%; height: 78%; }
   .human-product-device { width: 65%; bottom: 36px; }
-  .human-product-device .device-screen { height: auto; aspect-ratio: 1.6; }
+  .human-product-phone .human-product-device { width: 30%; right: 5%; }
+  .human-product-phone > .human-photo { width: 100%; }
   .photo-disclosure { font-size: 14px; padding: 4px; }
   .editorial-tags { flex-wrap: wrap; gap: 10px; }
   .editorial-tags span + span { padding-left: 10px; }
@@ -184,6 +249,32 @@
   .closing-links a { padding: 12px 20px; gap: 16px; border-radius: 24px; }
   .editorial-closing > p:last-child { line-height: 1.5; margin-top: 28px; }
   .editorial-closing > p:last-child svg { display: none; }
+  .mission-evidence > .human-photo { height: 180px; }
+  .track-record { margin-top: 24px; }
+  .metric-grid { grid-template-columns: 1fr; gap: 24px; margin-top: 16px; }
+  .metric-grid > div { padding-top: 12px; }
+  .metric-grid strong, .compact .metric-grid strong { font-size: 42px; }
+  .metric-grid h3, .compact .metric-grid h3 { font-size: 16px; margin-top: 8px; }
+  .metric-grid p { margin-top: 8px; }
+  .metric-source, .compact .metric-source { margin-top: 16px; }
+  .compact .metric-grid { gap: 16px; }
+  .mission-promises { font-size: 14px; }
+  .editorial .device-screen { border-width: 4px; }
+  .editorial .device-desktop .device-screen { border-radius: 8px; border-bottom-width: 8px; }
+  .editorial .device-tablet .device-screen, .editorial .device-phone .device-screen { border-radius: 12px; border-block-width: 8px; max-height: none; }
+  .monitor-stand > div { height: 18px; }
+  .monitor-stand > span { height: 4px; }
+  .device-label { margin-top: 8px; }
+  .paired-devices { width: 100%; }
+  .paired-devices > .device { width: 84%; max-width: none; }
+  .paired-phone { width: 24%; left: auto; right: 0; }
+  .paired-phone .device-label { white-space: normal; }
+  .product-feature-stage, .mhm-detail-layout { align-items: stretch; }
+  .product-feature-stage .feature-rail, .mhm-detail-layout .feature-rail { gap: 20px; }
+  .mhm-detail-layout > .device { max-width: none; }
+  .editorial-mhm-people .context-heading h2, .editorial-mhm-detail h2 { font-size: 36px; }
+  .network-hero { height: auto; }
+  .capture-context { margin-top: 16px; }
 }
 @media print {
   .print-deck .editorial { padding: .48in .65in .4in; }
