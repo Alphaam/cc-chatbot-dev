@@ -1,8 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Public_Sans } from "next/font/google";
-import "./globals.css";
+import { Inter } from "next/font/google";
 
-const publicSans = Public_Sans({
+const inter = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
   display: "swap",
@@ -29,7 +28,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${publicSans.variable} h-full antialiased bg-background`}
+      className={`${inter.variable} h-full antialiased bg-background`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">{children}</body>
     </html>
