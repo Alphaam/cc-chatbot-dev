@@ -1,7 +1,9 @@
-export type DeckVersion = "chatbot" | "studio";
+import { originalSlides } from "./original-content";
+
+export type DeckVersion = "chatbot" | "studio" | "original";
 export type SlideKind = "clark-rationale" | "mhm-rationale" | "cover" | "mission" | "expertise" | "method" | "quality" | "evidence" | "clark-intro" | "clark-features" | "clark-people" | "devices" | "custom" | "closing" | "mhm-intro" | "mhm-detail" | "mhm-people";
 export type Source = { label: string; url: string };
-export type SlideContent = { kind: SlideKind; chapter: string; title: string; notes: string; sources: Source[] };
+export type SlideContent = { kind: SlideKind; chapter: string; title: string; notes: string; sources: Source[]; image?: string; transcript?: string };
 export const sources = {
   studio: { label: "HR&A · Tech & Society", url: "https://hraadvisors.com/how-we-work/expertise/tech-society/" },
   labs: { label: "HR&A · Labs", url: "https://hraadvisors.com/how-we-work/labs/" },
@@ -60,6 +62,7 @@ const catalog: Record<SlideKind, SlideContent> = {
 const solo: SlideKind[] = ["cover", "mission", "expertise", "method", "quality", "evidence", "clark-intro", "clark-rationale", "clark-features", "clark-people", "devices", "custom", "closing"];
 const studio: SlideKind[] = ["cover", "mission", "method", "clark-intro", "clark-rationale", "clark-features", "clark-people", "mhm-intro", "mhm-rationale", "mhm-detail", "mhm-people", "closing"];
 export const decks: Record<DeckVersion, SlideContent[]> = {
+  original: originalSlides,
   chatbot: solo.map(kind => catalog[kind]),
   studio: studio.map(kind => catalog[kind]),
 };

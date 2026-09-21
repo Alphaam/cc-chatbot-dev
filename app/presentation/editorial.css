@@ -1,3 +1,15 @@
+.deck-slide.original-slide { padding: 0; min-height: 0; aspect-ratio: 1672 / 941; }
+.original-slide > img { display: block; width: 100%; height: auto; object-fit: contain; }
+.deck-download { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; color: var(--deck-ink); }
+.deck-download:hover { background: var(--deck-paper); color: var(--deck-blue); }
+@media print {
+  .print-deck .deck-slide.original-slide { padding: 0; }
+  .print-deck .original-slide > img { height: 100%; object-fit: contain; }
+}
+@media (max-width: 640px) {
+  .presentation .edition-switch { flex-wrap: wrap; border-radius: 12px; }
+  .deck-download { width: 34px; }
+}
 .edition-switch { display: flex; align-items: center; background: var(--deck-paper); border-radius: 24px; padding: 4px; margin-right: 16px; }
 .edition-switch a { font-size: 14px; line-height: 1.4; padding: 8px 14px; border-radius: 20px; white-space: nowrap; color: var(--deck-muted); }
 .edition-switch a[aria-current] { color: var(--deck-white); background: var(--deck-blue); }

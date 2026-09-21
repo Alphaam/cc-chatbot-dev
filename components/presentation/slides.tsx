@@ -37,6 +37,12 @@ function CaseRationale({ kind }: { kind: keyof typeof caseRationales }) {
 }
 
 export function Slide({ slide, index, version }: { slide: SlideContent; index: number; version: DeckVersion }) {
+  if (slide.image) {
+    return <article className="deck-slide original-slide" aria-label={`Slide ${index + 1}: ${slide.title}`}>
+      <Image src={slide.image} width={1672} height={941} alt={`Original PDF slide ${index + 1}: ${slide.title}`} loading="eager" unoptimized />
+      <div className="sr-only"><h2>{slide.title}</h2><p>{slide.transcript}</p></div>
+    </article>;
+  }
   const dual = version === "studio";
   return <article className={`deck-slide editorial editorial-${slide.kind}`} aria-label={`Slide ${index + 1}: ${slide.title}`}>
     <div className="slide-top"><span>HR&A <span className="brand-divider">/</span> Tech & Society Studio</span><span>{slide.chapter}</span></div>

@@ -7,12 +7,12 @@ const albert = Albert_Sans({ subsets: ["latin"], variable: "--font-presentation"
 
 export const metadata: Metadata = {
   title: "Custom products. Expertly built. | HR&A Tech & Society Studio",
-  description: "Two visual presentations of HR&A's custom digital product offering: the Clark County Digital Equity Assistant and MHM ecosystem mapping. Expertise, customization, and quality, including accessibility.",
+  description: "HR&A Tech & Society Studio's original 10-slide custom products presentation, preserved exactly, alongside the Clark County and Studio + tools editions.",
   robots: { index: false, follow: false },
 };
 
 export default async function PresentationPage({ searchParams }: { searchParams: Promise<{ draft?: string }> }) {
   const { draft } = await searchParams;
-  const version = draft === "studio" ? "studio" : "chatbot";
+  const version = draft === "studio" ? "studio" : draft === "chatbot" ? "chatbot" : "original";
   return <div className={albert.variable}><Presentation key={version} version={version} /></div>;
 }
