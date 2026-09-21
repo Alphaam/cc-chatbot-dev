@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Accessibility, ArrowDown, ArrowRight, BarChart3, Check, Code2, Database, FileText, Globe2, GraduationCap, Laptop, LockKeyhole, Monitor, Network, RefreshCw, Search, Settings2, Shield, ShieldCheck, SlidersHorizontal, Target, Users, Wrench, type LucideIcon } from "lucide-react";
+import { Accessibility, ArrowDown, ArrowRight, BarChart3, Building2, Check, Code2, Coins, Compass, Database, Eye, FileText, Filter, Globe2, GraduationCap, Handshake, Laptop, Layers, Link2, LockKeyhole, MapPin, MessageSquare, Monitor, Network, PieChart, RefreshCw, Route, Search, Settings2, Shield, ShieldCheck, SlidersHorizontal, Target, Users, Wrench, type LucideIcon } from "lucide-react";
 import type { SlideContent } from "./content";
 
 function Icon({ icon: Glyph }: { icon: LucideIcon }) {
@@ -10,12 +10,30 @@ function Artwork({ name, alt }: { name: string; alt: string }) {
   return <Image className="rebuilt-artwork" src={`/presentation/artwork-${name}.png`} alt={alt} width={1100} height={750} loading="eager" unoptimized />;
 }
 
+const frameDims: Record<string, [number, number]> = { phone: [390, 844], tablet: [820, 1100], desktop: [1440, 1000] };
+
+function Frame({ type, image, alt }: { type: "phone" | "tablet" | "desktop"; image: string; alt: string }) {
+  const [w, h] = frameDims[type];
+  return <figure className={`rframe rframe-${type}`}>
+    <div className="rframe-screen">{type === "phone" && <span className="rframe-island" aria-hidden="true" />}<Image src={image} alt={alt} width={w} height={h} loading="eager" unoptimized /></div>
+    {type === "desktop" && <div className="rframe-stand" aria-hidden="true"><span /><i /></div>}
+  </figure>;
+}
+
+function Photo({ name, alt }: { name: string; alt: string }) {
+  return <Image className="rebuilt-photo" src={`/presentation/${name}.jpg`} alt={alt} width={1500} height={1000} loading="eager" unoptimized />;
+}
+
 function Heading({ label, children, description }: { label: string; children: React.ReactNode; description?: string }) {
   return <div className="rebuilt-heading"><p className="eyebrow">{label}</p><h2>{children}</h2>{description && <p className="rebuilt-description">{description}</p>}</div>;
 }
 
 function Item({ title, text, icon }: { title: string; text: string; icon: LucideIcon }) {
   return <div className="rebuilt-item"><Icon icon={icon} /><div><h3>{title}</h3><p>{text}</p></div></div>;
+}
+
+function Rail({ items }: { items: { title: string; text: string }[] }) {
+  return <ol className="rebuilt-rail">{items.map((item, i) => <li key={item.title}><span className="rebuilt-rail-number">{i + 1}</span><div><h3>{item.title}</h3><p>{item.text}</p></div></li>)}</ol>;
 }
 
 function Cover() {
@@ -83,34 +101,117 @@ function Solutions() {
   return <><Heading label="Our solutions">Proven product patterns.<br /><span>Adapted to your context.</span></Heading><div className="rebuilt-solutions-grid">{patterns.map(item => <section className="rebuilt-card" key={item.title}><Artwork name={item.image} alt={item.alt} /><Item {...item} /></section>)}</div><p className="rebuilt-pattern-note"><strong>Not a template.</strong> A starting pattern customized to your people, evidence, and operating model.</p></>;
 }
 
-function Clark() {
-  return <div className="rebuilt-split rebuilt-case-layout"><div className="rebuilt-copy"><Heading label="Case study">A clearer<br />way to<br /><span>connect.</span></Heading><p className="rebuilt-case-label">Guided service navigation <span>|</span> Clark County Digital Equity Assistant</p><p className="rebuilt-description">The assistant helps county staff and partners find internet, training, and device resources for residents.</p><div className="rebuilt-services">{[{ title: "Internet", icon: Globe2 }, { title: "Skills", icon: GraduationCap }, { title: "Devices", icon: Laptop }].map(item => <div key={item.title}><Icon icon={item.icon} /><span>{item.title}</span></div>)}</div><div className="rebuilt-badges"><span><Monitor aria-hidden="true" />Responsive web product</span><span><Globe2 aria-hidden="true" />English / Español interface</span></div></div><Artwork name="clark" alt="Original Clark County Digital Equity Assistant illustrations on desktop, tablet, and phone. Internet plans, digital skills training, and free or low-cost devices." /></div>;
+function ClarkIntro() {
+  return <div className="rebuilt-split rebuilt-caseintro-layout"><div className="rebuilt-copy"><Heading label="Case study 01 · Clark County">A clearer<br />way to<br /><span>connect.</span></Heading><p className="rebuilt-case-label">Guided service navigation <span>|</span> Clark County Digital Equity Assistant</p><p className="rebuilt-description">The assistant helps county staff and partners find internet, training, and device resources for residents.</p><div className="rebuilt-services">{[{ title: "Internet", icon: Globe2 }, { title: "Skills", icon: GraduationCap }, { title: "Devices", icon: Laptop }].map(item => <div key={item.title}><Icon icon={item.icon} /><span>{item.title}</span></div>)}</div><div className="rebuilt-badges"><span><Monitor aria-hidden="true" />Responsive web product</span><span><Globe2 aria-hidden="true" />English / Español interface</span></div></div><div className="rebuilt-devicestage rebuilt-devicestage-clark"><Frame type="desktop" image="/presentation/clark-desktop.png" alt="Clark County Digital Equity Assistant on a desktop browser, actual application screenshot." /><Frame type="phone" image="/presentation/clark-phone.png" alt="Clark County Digital Equity Assistant on a phone, actual application screenshot." /></div></div>;
 }
 
-function Ecosystem() {
-  return <div className="rebuilt-split rebuilt-network-layout"><div className="rebuilt-copy"><Heading label="Case study">See the network.<br /><span>See the opportunity.</span></Heading><p className="rebuilt-case-label">Ecosystem intelligence <span>|</span> Regional grantee & organization network</p><p className="rebuilt-description">An interactive network tool helps foundations, intermediaries, and partners understand organizations, relationships, and areas of service.</p><div className="rebuilt-network-benefits">{[{ title: "Explore organizations", icon: Search }, { title: "Understand connections", icon: Network }, { title: "Inform coordination and investment", icon: BarChart3 }].map(item => <div key={item.title}><Icon icon={item.icon} /><span>{item.title}</span></div>)}</div></div><Artwork name="network" alt="Original MHM Regional Grantee & Organization Network illustrations showing Region D, Bexar County / San Antonio, network filters, and an organization detail panel." /></div>;
-}
-
-function Offering() {
-  const items = [
-    { title: "Your people", text: "Tasks · language · access", icon: Users },
-    { title: "Your evidence", text: "Data · geography · rules", icon: Database },
-    { title: "Your operation", text: "Workflow · ownership · updates", icon: Settings2 },
+function ClarkLogic() {
+  const steps = [
+    { title: "Need", text: "Internet, skills, or devices", icon: MessageSquare },
+    { title: "Place", text: "Confirm the resident’s location", icon: MapPin },
+    { title: "Match", text: "Surface relevant local options", icon: Search },
+    { title: "Referral", text: "Review providers and next steps", icon: Handshake },
   ];
-  return <><Heading label="Our offering" description="We scope the data model, interface, and operating workflow around your organization, rather than asking your team to adapt to a generic product.">Your context.<br /><span>Not a template.</span></Heading><div className="rebuilt-offering-grid">{items.map(item => <Item {...item} key={item.title} />)}</div><p className="rebuilt-offering-note">Customized by experts for public agencies, nonprofits, and mission-driven networks.</p></>;
+  return <><Heading label="The product logic" description="The assistant turns a broad service problem into a short, legible path staff can use in real time.">From a resident’s need<br /><span>to relevant support.</span></Heading><div className="rebuilt-flow-layout"><ol className="rebuilt-flow">{steps.map((step, i) => <li key={step.title}><section className="rebuilt-card"><span className="rebuilt-flow-number">{i + 1}</span><Icon icon={step.icon} /><h3>{step.title}</h3><p>{step.text}</p></section>{i < steps.length - 1 && <ArrowRight className="rebuilt-flow-arrow" aria-hidden="true" />}</li>)}</ol><aside className="rebuilt-why"><p className="eyebrow">Why it works</p><h3>It reduces the search burden.</h3><p>Staff start with the person’s need and place, then move toward a practical referral.</p></aside></div><p className="rebuilt-guardrail"><strong>Guardrail</strong> The tool supports referrals. Providers confirm availability and eligibility; staff retain judgment.</p></>;
+}
+
+function ClarkFeatures() {
+  const items = [
+    { title: "Start simply", text: "Three clear entry points: internet, skills, or devices." },
+    { title: "Make it local", text: "An address guides the search toward relevant local resources." },
+    { title: "Move forward", text: "Show options and provider contacts that support a referral." },
+    { title: "Design for access", text: "English / Español plus one responsive web experience." },
+  ];
+  return <><Heading label="The frontend experience" description="The interface is organized around the work staff need to do, rather than the structure of the underlying data.">A task. A place. <span>A next step.</span></Heading><div className="rebuilt-feature-layout"><div className="rebuilt-devicestage rebuilt-devicestage-feature"><Frame type="tablet" image="/presentation/clark-tablet.png" alt="Clark County assistant on a tablet, actual application screenshot." /><Frame type="phone" image="/presentation/clark-phone.png" alt="Clark County assistant on a phone, actual application screenshot." /></div><Rail items={items} /></div></>;
+}
+
+function ClarkPeople() {
+  const items = [
+    { title: "Local programs", text: "Surface relevant resources.", icon: Building2 },
+    { title: "Guided questions", text: "Turn a need into a usable pathway.", icon: Compass },
+    { title: "Human judgment", text: "Keep staff in control of the referral.", icon: Handshake },
+  ];
+  return <div className="rebuilt-split rebuilt-people-layout"><div className="rebuilt-copy"><Heading label="In context" description="Staff can guide a resident through focused questions, discuss relevant options, and make the next step clearer. The product supports human judgment rather than replacing it.">Support the<br /><span>conversation.</span></Heading><div className="rebuilt-people-items">{items.map(item => <Item {...item} key={item.title} />)}</div></div><div className="rebuilt-photostage"><Photo name="people-oneonone" alt="A county caseworker helping a resident look at a phone together, illustrative stock photography." /><div className="rebuilt-photostage-phone"><Frame type="phone" image="/presentation/clark-phone.png" alt="Clark County assistant on a phone, actual application screenshot." /></div><span className="rebuilt-photo-note">Illustrative stock photo · actual interface</span></div></div>;
+}
+
+function Devices() {
+  const lineup = [
+    { type: "desktop" as const, image: "clark-desktop", caption: "At the desk", sub: "Detailed search and referral work." },
+    { type: "tablet" as const, image: "clark-tablet", caption: "Side by side", sub: "Shared conversation with a resident." },
+    { type: "phone" as const, image: "clark-phone", caption: "In the community", sub: "Portable access during outreach." },
+  ];
+  return <><Heading label="One responsive web product" description="The same web product works across desktop, tablet, and phone so staff can use it at a desk, side by side with a resident, or in the field.">Where the <span>work happens.</span></Heading><div className="rebuilt-lineup">{lineup.map(item => <figure key={item.caption}><Frame type={item.type} image={`/presentation/${item.image}.png`} alt={`Clark County assistant on a ${item.type}, actual application screenshot.`} /><figcaption><strong>{item.caption}</strong><span>{item.sub}</span></figcaption></figure>)}</div><p className="rebuilt-fineprint">Build standard: responsive layout · keyboard usability · readable contrast · English / Español interface.</p></>;
+}
+
+function ClarkData() {
+  const steps = [
+    { title: "Source", text: "Program records, service categories, provider details, and geography.", icon: FileText },
+    { title: "Structure", text: "Common fields and definitions so resources can be compared.", icon: Database },
+    { title: "Validate", text: "Providers confirm availability and eligibility; staff can flag issues.", icon: ShieldCheck },
+    { title: "Steward", text: "Named ownership and update paths keep the directory usable.", icon: RefreshCw },
+  ];
+  return <><Heading label="Data foundation" description="The product is only as useful as the information behind it. The operating model defines what gets stored, who validates it, and how it stays current.">A living service directory<br /><span>needs governance.</span></Heading><div className="rebuilt-data-grid">{steps.map((step, i) => <section className="rebuilt-card" key={step.title}><span className="rebuilt-step-number">0{i + 1}</span><Icon icon={step.icon} /><h3>{step.title}</h3><p>{step.text}</p></section>)}</div><p className="rebuilt-guardrail"><strong>The principle</strong> The tool supports referrals. It does not assert that a resident is eligible or that a provider has current availability.</p></>;
+}
+
+function MhmIntro() {
+  return <div className="rebuilt-split rebuilt-network-layout"><div className="rebuilt-copy"><Heading label="Case study 02 · MHM ecosystem">See the network.<br /><span>See the opportunity.</span></Heading><p className="rebuilt-case-label">Ecosystem intelligence <span>|</span> Regional grantee & organization network</p><p className="rebuilt-description">MHM’s ecosystem tool turns a regional set of organizations, grants, services, and relationships into an interactive view program teams can explore.</p><div className="rebuilt-network-benefits">{[{ title: "Organizations", icon: Building2 }, { title: "Connections", icon: Network }, { title: "Services", icon: Layers }, { title: "Funding", icon: Coins }].map(item => <div key={item.title}><Icon icon={item.icon} /><span>{item.title}</span></div>)}</div></div><div className="rebuilt-devicestage rebuilt-devicestage-network"><Frame type="desktop" image="/presentation/mhm-network.png" alt="MHM Regional Grantee & Organization Network for Region D, Bexar County / San Antonio, actual application screenshot." /></div></div>;
+}
+
+function MhmRationale() {
+  return <><Heading label="The problem & approach">See the relationships,<br /><span>not just the records.</span></Heading><div className="rebuilt-rationale-layout"><div className="rebuilt-rationale-copy"><section className="rebuilt-card"><h3>The problem</h3><p>Understanding a regional ecosystem means seeing who provides which services, where they work, how funding flows, and how organizations connect.</p></section><section className="rebuilt-card"><h3>Why this solution</h3><p>An interactive network makes those relationships visible. Filters and organization details connect the wider picture to funding, reported reach, and service focus.</p></section></div><div className="rebuilt-devicestage rebuilt-devicestage-rationale"><Frame type="desktop" image="/presentation/mhm-network.png" alt="MHM ecosystem network view, actual application screenshot." /></div></div><p className="rebuilt-fineprint">Supports exploration. Available data is a partial operating picture, not audited impact.</p></>;
+}
+
+function MhmModel() {
+  const nodes = [
+    { title: "Region", text: "Where it operates", icon: MapPin },
+    { title: "Service type", text: "What it provides", icon: Layers },
+    { title: "Grant", text: "Funding + period", icon: Coins },
+    { title: "Relationship", text: "Who it connects to", icon: Link2 },
+    { title: "Reported reach", text: "What is reported", icon: PieChart },
+  ];
+  return <><Heading label="The interface sits on a relational model" description="The tool connects different kinds of evidence so users can move from a regional pattern to the organizations and records behind it.">A data model built for<br /><span>ecosystem questions.</span></Heading><div className="rebuilt-model"><div className="rebuilt-model-hub"><Network aria-hidden="true" /><strong>Organization</strong><span>The record at the center</span></div><div className="rebuilt-model-grid">{nodes.map(node => <section className="rebuilt-card" key={node.title}><Icon icon={node.icon} /><h3>{node.title}</h3><p>{node.text}</p></section>)}</div></div><p className="rebuilt-fineprint">This structure supports regional filters, organization detail views, and relationship analysis.</p></>;
+}
+
+function MhmDetail() {
+  const items = [
+    { title: "Explore", text: "Compare regional relationships across the network." },
+    { title: "Focus", text: "Filter by service type and grantee status." },
+    { title: "Understand", text: "Open an organization to see the records behind the node." },
+  ];
+  return <><Heading label="From ecosystem to organization" description="Users can filter the network, select an organization, and review grant context, reported reach, and connections without leaving the workflow.">Explore. Focus. <span>Understand.</span></Heading><div className="rebuilt-feature-layout rebuilt-feature-layout-wide"><div className="rebuilt-devicestage rebuilt-devicestage-detail"><Frame type="desktop" image="/presentation/mhm-detail.png" alt="MHM organization detail panel with funding, reporting, and connections, actual application screenshot." /></div><Rail items={items} /></div></>;
+}
+
+function MhmPeople() {
+  const items = [
+    { title: "Find partners", text: "Identify organizations connected to the same service area or network.", icon: Handshake },
+    { title: "See concentration", text: "Spot where services, grantees, or relationships cluster.", icon: Filter },
+    { title: "Investigate gaps", text: "Frame questions about missing or weakly connected capacity.", icon: Route },
+    { title: "Ground discussion", text: "Move from an abstract picture to specific organizations.", icon: Eye },
+  ];
+  return <div className="rebuilt-split rebuilt-people-layout"><div className="rebuilt-copy"><Heading label="A shared picture for better discussion" description="The network helps teams ask better questions. It should inform discussion, coordination, and follow-up rather than automate funding or performance judgments.">Designed for exploration,<br /><span>not automated decisions.</span></Heading><div className="rebuilt-people-grid">{items.map(item => <Item {...item} key={item.title} />)}</div></div><div className="rebuilt-photostage"><Photo name="people-planning" alt="A program team reviewing an ecosystem view together on a monitor, illustrative stock photography." /><span className="rebuilt-photo-note">Illustrative stock photo · shared exploration</span></div></div>;
 }
 
 function Closing() {
-  return <div className="rebuilt-split rebuilt-closing-layout"><div className="rebuilt-copy"><Heading label="Let’s build">Custom<br />products.<br /><span>Expertly built.</span></Heading><h3>What should your expertise make possible?</h3><p className="rebuilt-description">Bring a user need and a decision. Together, we scope the data, product, and quality criteria.</p><p className="rebuilt-callout"><ArrowRight aria-hidden="true" />Get this customized by experts for your need.</p></div><Artwork name="closing" alt="Original laptop, tablet, and phone illustrations: Turn expertise into impact; Better tools for brighter futures; Build what’s next." /></div>;
+  const tools = [
+    { title: "Guided service navigation", text: "When people need to move from a need and place to a practical next step across fragmented programs.", adapt: "Public agencies · service networks · digital opportunity programs", icon: Compass },
+    { title: "Ecosystem intelligence", text: "When teams need a shared view of organizations, relationships, funding, services, or regional capacity.", adapt: "Intermediaries · foundations · regional collaboratives · networks", icon: Network },
+  ];
+  return <div className="rebuilt-closing-layout"><div className="rebuilt-copy"><Heading label="Our offering">Two tools.<br /><span>A broader capability.</span></Heading><p className="rebuilt-description">Clark County and MHM show different product patterns built from one studio capability: domain expertise, data design, frontend delivery, QA, and responsible implementation.</p><p className="rebuilt-callout"><ArrowRight aria-hidden="true" />Custom products. Expertly built.</p></div><div className="rebuilt-closing-tools">{tools.map(tool => <section className="rebuilt-card" key={tool.title}><Icon icon={tool.icon} /><h3>{tool.title}</h3><p>{tool.text}</p><span className="rebuilt-adapt">{tool.adapt}</span></section>)}<p className="rebuilt-closing-cta"><Settings2 aria-hidden="true" />Bring us the user, the decision, and the operating context. We will scope the product around your need.</p></div></div>;
 }
 
-const bodies = [Cover, Mission, Expertise, Method, Quality, Solutions, Clark, Ecosystem, Offering, Closing];
+const bodies = [Cover, Mission, Expertise, Method, Quality, Solutions, ClarkIntro, ClarkLogic, ClarkFeatures, ClarkPeople, Devices, ClarkData, MhmIntro, MhmRationale, MhmModel, MhmDetail, MhmPeople, Closing];
 
 export function RebuiltSlide({ slide, index }: { slide: SlideContent; index: number }) {
   const Body = bodies[index];
+  const total = bodies.length;
+  const footer = index === 0 ? "Studio + Product Systems"
+    : index === total - 1 ? <a href="/" target="_blank" rel="noreferrer">Explore the chatbot</a>
+    : index >= 6 && index <= 11 ? "Case study 01 · Clark County Digital Equity Assistant"
+    : index >= 12 && index <= 16 ? "Case study 02 · MHM ecosystem intelligence"
+    : "Expertise × Customization × Quality";
   return <article className={`deck-slide rebuilt rebuilt-${slide.kind}`} aria-label={`Slide ${index + 1}: ${slide.title}`}>
-    <header className="rebuilt-top"><span>HR&A <span className="brand-divider">/</span> Tech & Society Studio</span>{slide.kind === "method" && <span>Our methodology</span>}</header>
+    <header className="rebuilt-top"><span>HR&A <span className="brand-divider">/</span> Tech & Society Studio</span><span>{slide.chapter}</span></header>
     <div className="rebuilt-body"><Body /></div>
-    <footer className="rebuilt-bottom"><span>{index === 0 ? "Studio + Product Systems" : index === 9 ? <a href="/" target="_blank" rel="noreferrer">Explore the chatbot</a> : "Expertise × Customization × Quality"}</span><span>{String(index + 1).padStart(2, "0")} / 10</span></footer>
+    <footer className="rebuilt-bottom"><span>{footer}</span><span>{String(index + 1).padStart(2, "0")} / {total}</span></footer>
   </article>;
 }

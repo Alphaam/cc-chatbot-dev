@@ -8,7 +8,7 @@ const albert = Albert_Sans({ subsets: ["latin"], variable: "--font-presentation"
 
 export const metadata: Metadata = {
   title: "Custom products. Expertly built. | HR&A Tech & Society Studio",
-  description: "HR&A Tech & Society Studio's 10-slide custom products presentation, rebuilt with native text and layouts for selectable-text PDF export, alongside the Clark County and Studio + tools editions.",
+  description: "HR&A Tech & Society Studio's merged custom products presentation (Part 1 + Part 2), rebuilt with native text and layouts for selectable-text PDF and editable PowerPoint export.",
   robots: { index: false, follow: false },
 };
 
