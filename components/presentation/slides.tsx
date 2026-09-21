@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { ArrowRight, ArrowUpRight, Check } from "lucide-react";
-import { expertiseMetrics, sources, type DeckVersion, type SlideContent } from "./content";
+import { caseRationales, expertiseMetrics, sources, type DeckVersion, type SlideContent } from "./content";
 
 function Photo({ name = "people-working", className = "" }: { name?: string; className?: string }) {
   return <Image className={`human-photo ${className}`} src={`/presentation/${name}.jpg`} width={1800} height={1200} alt={name === "people-assistance" ? "Colleagues helping one another at computers, illustrative stock photography" : "People collaborating around laptops, illustrative stock photography"} unoptimized />;
@@ -27,6 +27,11 @@ function HumanProduct({ mhm = false }: { mhm?: boolean }) {
   return <div className={`human-product ${mhm ? "human-product-monitor" : "human-product-phone"}`}><Photo name={mhm ? "people-working" : "people-assistance"} /><div className="human-product-device"><Device type={mhm ? "desktop" : "phone"} image={mhm ? "/presentation/mhm-network.png" : undefined} /></div><span className="photo-disclosure">Stock-photo mockup · actual interface</span></div>;
 }
 
+function CaseRationale({ kind }: { kind: keyof typeof caseRationales }) {
+  const content = caseRationales[kind];
+  return <><Title label={content.label}>{content.title}<br /><span>{content.emphasis}</span></Title><div className="case-rationale-layout"><div className="case-rationale-copy"><section><h3>The problem</h3><p>{content.problem}</p></section><section><h3>Why this solution</h3><p>{content.solution}</p></section></div><Device image={kind === "mhm-rationale" ? "/presentation/mhm-network.png" : undefined} /></div><p className="case-rationale-boundary">{content.boundary}</p></>;
+}
+
 export function Slide({ slide, index, version }: { slide: SlideContent; index: number; version: DeckVersion }) {
   const dual = version === "studio";
   return <article className={`deck-slide editorial editorial-${slide.kind}`} aria-label={`Slide ${index + 1}: ${slide.title}`}>
@@ -45,6 +50,8 @@ export function Slide({ slide, index, version }: { slide: SlideContent; index: n
     {slide.kind === "evidence" && <><Title label="Expert-led data design" description="Before designing the interface, establish what the data means, who validates it, and how it stays current.">Useful answers<br /><span>start here.</span></Title><div className="evidence-pipeline">{[{ title: "Source", text: "The right evidence" }, { title: "Structure", text: "A usable model" }, { title: "Validate", text: "Expert judgment" }, { title: "Steward", text: "Named ownership" }].map((item, i) => <div key={item.title}><div className="evidence-sheets" aria-hidden="true">{i === 0 ? "Sources" : i === 1 ? "Definitions" : i === 2 ? "Review" : "Updates"}</div><h3>{item.title}</h3><p>{item.text}</p></div>)}</div></>}
 
     {slide.kind === "clark-intro" && <div className="case-intro"><div className="case-intro-copy"><p className="eyebrow">Clark County, Nevada</p><h2>A clearer<br />way to<br /><span>connect.</span></h2><p>The Digital Equity Assistant helps county staff and partners find internet, training, and device resources for residents.</p><Tags items={["Internet", "Skills", "Devices"]} /></div><div className="case-intro-visual"><Photo name="people-assistance" /><div className="case-intro-screen"><Device type="tablet" /></div></div></div>}
+
+    {(slide.kind === "clark-rationale" || slide.kind === "mhm-rationale") && <CaseRationale kind={slide.kind} />}
 
     {slide.kind === "clark-features" && <><Title label="Clark County / The experience" description="Choose a need, confirm a location, and review resources. Providers confirm availability and eligibility.">A task. A place. <span>A next step.</span></Title><div className="product-feature-stage"><div className="paired-devices"><Device /><div className="paired-phone"><Device type="phone" /></div></div><div className="feature-rail"><div><h3>Start simply.</h3><p>Choose internet, skills, or devices.</p></div><div><h3>Make it local.</h3><p>Use an address to guide the search.</p></div><div><h3>Move forward.</h3><p>Review options and provider contacts.</p></div><span className="language-label">English / Español interface</span></div></div></>}
 
