@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { RebuiltSlide } from "./rebuilt-slides";
+import { RebuiltSlide, GranteeSlide } from "./rebuilt-slides";
 import { ArrowRight, ArrowUpRight, Check } from "lucide-react";
 import { caseRationales, expertiseMetrics, sources, type DeckVersion, type SlideContent } from "./content";
 
@@ -39,6 +39,7 @@ function CaseRationale({ kind }: { kind: keyof typeof caseRationales }) {
 
 export function Slide({ slide, index, version }: { slide: SlideContent; index: number; version: DeckVersion }) {
   if (version === "original") return <RebuiltSlide slide={slide} index={index} />;
+  if (version === "grantee") return <GranteeSlide slide={slide} index={index} />;
   const dual = version === "studio";
   return <article className={`deck-slide editorial editorial-${slide.kind}`} aria-label={`Slide ${index + 1}: ${slide.title}`}>
     <div className="slide-top"><span>HR&A <span className="brand-divider">/</span> Tech & Society Studio</span><span>{slide.chapter}</span></div>

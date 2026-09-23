@@ -1,7 +1,7 @@
 import { originalSlides } from "./original-content";
 
-export type DeckVersion = "chatbot" | "studio" | "original";
-export type SlideKind = "clark-rationale" | "mhm-rationale" | "cover" | "mission" | "expertise" | "method" | "quality" | "evidence" | "clark-intro" | "clark-logic" | "clark-features" | "clark-people" | "devices" | "clark-data" | "custom" | "closing" | "mhm-intro" | "mhm-model" | "mhm-detail" | "mhm-people";
+export type DeckVersion = "chatbot" | "studio" | "original" | "grantee";
+export type SlideKind = "clark-rationale" | "mhm-rationale" | "cover" | "mission" | "expertise" | "method" | "quality" | "evidence" | "clark-intro" | "clark-logic" | "clark-features" | "clark-people" | "devices" | "clark-data" | "custom" | "closing" | "mhm-intro" | "mhm-model" | "mhm-detail" | "mhm-people" | "grantee-intro" | "grantee-rationale" | "grantee-model";
 export type Source = { label: string; url: string };
 export type SlideContent = { kind: SlideKind; chapter: string; title: string; notes: string; sources: Source[]; image?: string; transcript?: string };
 export const sources = {
@@ -64,8 +64,15 @@ const catalog: Record<SlideKind, SlideContent> = {
 };
 const solo: SlideKind[] = ["cover", "mission", "expertise", "method", "quality", "evidence", "clark-intro", "clark-rationale", "clark-features", "clark-people", "devices", "custom", "closing"];
 const studio: SlideKind[] = ["cover", "mission", "method", "clark-intro", "clark-rationale", "clark-features", "clark-people", "mhm-intro", "mhm-rationale", "mhm-detail", "mhm-people", "closing"];
+const granteeNote = "Illustrative case study for a proposed grantmaking operating system. The interface shown is a captured mockup of an MHM Grantee Management concept, not a deployed product; figures, organizations, and status labels are sample data. The problem, solution, and operating model describe the design intent, not a measured outcome or a documented client brief.";
+export const granteeSlides: SlideContent[] = [
+  { kind: "grantee-intro", chapter: "Case study 03 · Grantee management", title: "Grantee Management Tech Stack.", notes: granteeNote + " This intro frames the offering: a coordinated workflow spanning application intake, review, awards, compliance, and reporting for grantmaking teams.", sources: [] },
+  { kind: "grantee-rationale", chapter: "Grantee management · Why this solution", title: "Manage the grant lifecycle, not just the handoffs.", notes: granteeNote + " The problem is fragmentation across applications, spreadsheets, email, and reporting files. The solution connects those steps in one shared place so decisions and grantee information stay current.", sources: [] },
+  { kind: "grantee-model", chapter: "Grantee management · Operating model", title: "The tech stack connects applications to decisions and follow-through.", notes: granteeNote + " The relational model puts the grant record at the center and links the applicant, reviewer activity, award terms, requirements, and reporting so teams can move from intake to closeout with context.", sources: [] },
+];
 export const decks: Record<DeckVersion, SlideContent[]> = {
   original: originalSlides,
   chatbot: solo.map(kind => catalog[kind]),
   studio: studio.map(kind => catalog[kind]),
+  grantee: granteeSlides,
 };

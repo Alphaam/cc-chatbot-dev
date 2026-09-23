@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Accessibility, ArrowDown, ArrowRight, BarChart3, Building2, Check, Code2, Coins, Compass, Database, Eye, FileText, Filter, Globe2, GraduationCap, Handshake, Laptop, Layers, Link2, LockKeyhole, MapPin, MessageSquare, Monitor, Network, PieChart, RefreshCw, Route, Search, Settings2, Shield, ShieldCheck, SlidersHorizontal, Target, Users, Wrench, type LucideIcon } from "lucide-react";
+import { Accessibility, ArrowDown, ArrowRight, BarChart3, Building2, Check, Code2, Coins, Compass, Database, Eye, FileText, Filter, Globe2, GraduationCap, Handshake, Laptop, Layers, Link2, LockKeyhole, MapPin, MessageSquare, Monitor, Network, PieChart, RefreshCw, Route, Search, Settings2, Shield, ShieldCheck, SlidersHorizontal, Target, Trophy, User, Users, Wrench, type LucideIcon } from "lucide-react";
 import type { SlideContent } from "./content";
 
 function Icon({ icon: Glyph }: { icon: LucideIcon }) {
@@ -199,7 +199,42 @@ function Closing() {
   return <div className="rebuilt-closing-layout"><div className="rebuilt-copy"><Heading label="Our offering">Two tools.<br /><span>A broader capability.</span></Heading><p className="rebuilt-description">Clark County and MHM show different product patterns built from one studio capability: domain expertise, data design, frontend delivery, QA, and responsible implementation.</p><p className="rebuilt-callout"><ArrowRight aria-hidden="true" />Custom products. Expertly built.</p></div><div className="rebuilt-closing-tools">{tools.map(tool => <section className="rebuilt-card" key={tool.title}><Icon icon={tool.icon} /><h3>{tool.title}</h3><p>{tool.text}</p><span className="rebuilt-adapt">{tool.adapt}</span></section>)}<p className="rebuilt-closing-cta"><Settings2 aria-hidden="true" />Bring us the user, the decision, and the operating context. We will scope the product around your need.</p></div></div>;
 }
 
+function GranteeIntro() {
+  const benefits = [
+    { title: "Centralize grant records", icon: FileText },
+    { title: "Coordinate review and approvals", icon: Network },
+    { title: "Track awards, reporting, and follow-up", icon: BarChart3 },
+  ];
+  return <div className="rebuilt-split rebuilt-network-layout rebuilt-grantee-intro-layout"><div className="rebuilt-copy"><Heading label="Case study 03 · Grantee management">Grantee Management<br /><span>Tech Stack.</span></Heading><p className="rebuilt-description">A digital operating system for grantmaking teams that brings application intake, review, awards, compliance, and reporting into one coordinated workflow.</p><div className="rebuilt-network-benefits">{benefits.map(item => <div key={item.title}><Icon icon={item.icon} /><span>{item.title}</span></div>)}</div><span className="rebuilt-cta">See the workflow<ArrowRight aria-hidden="true" /></span></div><div className="rebuilt-devicestage rebuilt-devicestage-network"><Frame type="desktop" image="/presentation/grantee-dashboard.png" alt="MHM Grantee Management dashboard with applications, grant pipeline, upcoming tasks, and recent applications, illustrative interface capture." /></div></div>;
+}
+
+function GranteeRationale() {
+  return <><Heading label="The problem & approach">Manage the grant lifecycle,<br /><span>not just the handoffs.</span></Heading><div className="rebuilt-rationale-layout"><div className="rebuilt-rationale-copy"><section className="rebuilt-card"><h3>The problem</h3><p>Grantmaking teams often work across disconnected applications, spreadsheets, email threads, and reporting files. That makes reviews slower, ownership less clear, and follow-up harder to manage.</p></section><section className="rebuilt-card"><h3>Why this solution</h3><p>A shared tech stack connects intake, review, awards, compliance, and reporting in one place, so staff can coordinate decisions and keep grantee information current.</p></section></div><div className="rebuilt-devicestage rebuilt-devicestage-rationale"><Frame type="desktop" image="/presentation/grantee-dashboard.png" alt="MHM Grantee Management dashboard, illustrative interface capture." /></div></div><p className="rebuilt-fineprint">Proposed operating model. Illustrative interface with sample data, not a deployed grantee-management system.</p></>;
+}
+
+function GranteeModel() {
+  const nodes = [
+    { title: "Applicant", text: "Who is applying", icon: User },
+    { title: "Review", text: "Scores + comments", icon: Network },
+    { title: "Award", text: "Amount + terms", icon: Trophy },
+    { title: "Requirements", text: "Deadlines + compliance", icon: FileText },
+    { title: "Reporting", text: "Progress + outcomes", icon: BarChart3 },
+  ];
+  return <><Heading label="The operating model" description="The system links the applicant record, the grant record, reviewer activity, award requirements, and reporting so teams can move from intake to closeout with context.">The tech stack connects<br /><span>applications to decisions and follow-through.</span></Heading><div className="rebuilt-model"><div className="rebuilt-model-hub"><Database aria-hidden="true" /><strong>Grant</strong><span>The record at the center</span></div><div className="rebuilt-model-grid">{nodes.map(node => <section className="rebuilt-card" key={node.title}><Icon icon={node.icon} /><h3>{node.title}</h3><p>{node.text}</p></section>)}</div></div><p className="rebuilt-fineprint">One relational record ties the workflow together, from intake through award, compliance, and closeout.</p></>;
+}
+
 const bodies = [Cover, Mission, Expertise, Method, Quality, Solutions, ClarkIntro, ClarkLogic, ClarkFeatures, ClarkPeople, Devices, ClarkData, MhmIntro, MhmRationale, MhmModel, MhmDetail, MhmPeople, Closing];
+
+const granteeBodies: Record<string, () => React.JSX.Element> = { "grantee-intro": GranteeIntro, "grantee-rationale": GranteeRationale, "grantee-model": GranteeModel };
+
+export function GranteeSlide({ slide, index }: { slide: SlideContent; index: number }) {
+  const Body = granteeBodies[slide.kind];
+  return <article className={`deck-slide rebuilt rebuilt-${slide.kind}`} aria-label={`Slide ${index + 1}: ${slide.title}`}>
+    <header className="rebuilt-top"><span>HR&A <span className="brand-divider">/</span> Tech & Society Studio</span><span>{slide.chapter}</span></header>
+    <div className="rebuilt-body"><Body /></div>
+    <footer className="rebuilt-bottom"><span>Case study 03 · Grantee Management Tech Stack</span><span>{String(index + 1).padStart(2, "0")} / 3</span></footer>
+  </article>;
+}
 
 export function RebuiltSlide({ slide, index }: { slide: SlideContent; index: number }) {
   const Body = bodies[index];
