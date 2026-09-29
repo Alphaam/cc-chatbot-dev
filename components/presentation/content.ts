@@ -1,6 +1,6 @@
 import { originalSlides } from "./original-content";
 
-export type DeckVersion = "chatbot" | "studio" | "original" | "grantee";
+export type DeckVersion = "chatbot" | "studio" | "original" | "grantee" | "productlogic";
 export type SlideKind = "clark-rationale" | "mhm-rationale" | "cover" | "mission" | "expertise" | "method" | "quality" | "evidence" | "clark-intro" | "clark-logic" | "clark-features" | "clark-people" | "devices" | "clark-data" | "custom" | "closing" | "mhm-intro" | "mhm-model" | "mhm-detail" | "mhm-people" | "grantee-intro" | "grantee-rationale" | "grantee-model";
 export type Source = { label: string; url: string };
 export type SlideContent = { kind: SlideKind; chapter: string; title: string; notes: string; sources: Source[]; image?: string; transcript?: string };
@@ -70,9 +70,13 @@ export const granteeSlides: SlideContent[] = [
   { kind: "grantee-rationale", chapter: "Grantee management · Why this solution", title: "Manage the grant lifecycle, not just the handoffs.", notes: granteeNote + " The problem is fragmentation across applications, spreadsheets, email, and reporting files. The solution connects those steps in one shared place so decisions and grantee information stay current.", sources: [] },
   { kind: "grantee-model", chapter: "Grantee management · Operating model", title: "The tech stack connects applications to decisions and follow-through.", notes: granteeNote + " The relational model puts the grant record at the center and links the applicant, reviewer activity, award terms, requirements, and reporting so teams can move from intake to closeout with context.", sources: [] },
 ];
+export const productLogicSlides: SlideContent[] = [
+  { kind: "clark-logic", chapter: "Clark County · The product logic", title: "The assistant turns a resident need and location into a practical referral path.", notes: rationaleNote + "The four phone screens are actual captures of this repository's Clark County Digital Equity Assistant, rendered at a mobile viewport: the task-selection landing, the address step, the matched-resources list, and a resource detail. Resource names, distances, and contact details come from the app's real digital-inclusion dataset for Clark County, matched by distance to a downtown Las Vegas test address. The tool supports referrals; it does not decide eligibility or guarantee provider availability.", sources: [] },
+];
 export const decks: Record<DeckVersion, SlideContent[]> = {
   original: originalSlides,
   chatbot: solo.map(kind => catalog[kind]),
   studio: studio.map(kind => catalog[kind]),
   grantee: granteeSlides,
+  productlogic: productLogicSlides,
 };

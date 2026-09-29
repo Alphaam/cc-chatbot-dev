@@ -16,6 +16,10 @@ function BrowserCapture({ image, label }: { image: string; label: string }) {
   return <figure className="browser-capture"><figcaption><span>{label}</span><span>Web application</span></figcaption><Image src={image} width={1440} height={1000} alt={`${label}, actual application screenshot`} loading="eager" unoptimized /></figure>;
 }
 
+function PhoneFrame({ image, alt }: { image: string; alt: string }) {
+  return <div className="pl-phone"><div className="pl-phone-screen"><Image src={image} width={393} height={852} alt={alt} loading="eager" unoptimized /></div></div>;
+}
+
 function Title({ label, children, description }: { label: string; children: React.ReactNode; description?: string }) {
   return <div className="editorial-heading"><p className="eyebrow">{label}</p><h2>{children}</h2>{description && <p className="editorial-description">{description}</p>}</div>;
 }
@@ -61,6 +65,13 @@ export function Slide({ slide, index, version }: { slide: SlideContent; index: n
     {(slide.kind === "clark-rationale" || slide.kind === "mhm-rationale") && <CaseRationale kind={slide.kind} />}
 
     {slide.kind === "clark-features" && <><Title label="Clark County / The experience" description="Choose a need, confirm a location, and review resources. Providers confirm availability and eligibility.">A task. A place. <span>A next step.</span></Title><div className="product-feature-stage"><div className="paired-devices"><BrowserCapture image="/presentation/clark-desktop.png" label="Clark County / Assistant" /><div className="paired-phone"><Device type="phone" /></div></div><div className="feature-rail"><div><h3>Start simply.</h3><p>Choose internet, skills, or devices.</p></div><div><h3>Make it local.</h3><p>Use an address to guide the search.</p></div><div><h3>Move forward.</h3><p>Review options and provider contacts.</p></div><span className="language-label">English / Español interface</span></div></div></>}
+
+    {slide.kind === "clark-logic" && <><Title label="The product logic" description="The interface starts with the resident’s problem, then uses place and program data to narrow the next step.">The assistant turns a resident need and location <span>into a practical referral path.</span></Title><div className="pl-stage">{[
+      { num: 1, screen: "need", title: "Need", text: "Internet, skills, or devices" },
+      { num: 2, screen: "place", title: "Place", text: "Confirm the resident’s location" },
+      { num: 3, screen: "match", title: "Match", text: "Surface relevant local options" },
+      { num: 4, screen: "detail", title: "Referral", text: "Review providers and next steps" },
+    ].map(step => <div className="pl-col" key={step.num}><PhoneFrame image={`/presentation/clark-screen-${step.screen}.png`} alt={`Actual Clark County Digital Equity Assistant ${step.title.toLowerCase()} screen, captured at phone size`} /><div className="pl-caption"><span className="pl-num">{step.num}</span><h3>{step.title}</h3><p>{step.text}</p></div></div>)}<aside className="pl-principle"><p className="eyebrow">Design principle</p><p>Start with the <strong>resident’s problem,</strong> not the structure of the underlying data.</p></aside></div><div className="pl-guardrail"><strong>Guardrail</strong><span>The tool supports referrals. Providers confirm availability and eligibility; staff retain judgment.</span></div></>}
 
     {slide.kind === "clark-people" && <><div className="context-heading"><Title label="Clark County / The human context" description="Staff can guide a resident through questions and discuss relevant options. The tool supports human judgment, not an eligibility decision.">Support the <span>conversation.</span></Title></div><HumanProduct /><Tags items={["Local programs", "Guided questions", "Human judgment"]} /></>}
 

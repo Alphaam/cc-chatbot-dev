@@ -14,6 +14,6 @@ export const metadata: Metadata = {
 
 export default async function PresentationPage({ searchParams }: { searchParams: Promise<{ draft?: string }> }) {
   const { draft } = await searchParams;
-  const version = draft === "studio" ? "studio" : draft === "chatbot" ? "chatbot" : draft === "grantee" ? "grantee" : "original";
+  const version = draft === "studio" ? "studio" : draft === "chatbot" ? "chatbot" : draft === "grantee" ? "grantee" : draft === "productlogic" ? "productlogic" : "original";
   return <div className={albert.variable}><Presentation key={version} version={version} /></div>;
 }
