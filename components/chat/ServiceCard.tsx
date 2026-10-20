@@ -16,7 +16,7 @@ export const formatServiceSms = (s: ServiceWithDistance, locale: Locale = 'en'):
     t('Type: {type}', { type: translateServiceType(locale, s.type) }),
   ];
   if (s.distanceMiles != null) lines.push(t('Distance: {distance} miles', { distance: s.distanceMiles.toFixed(1) }));
-  if (s.phone) lines.push(t('Phone: {phone}', { phone: s.phone }));
+  if (s.phone) lines.push(t('Phone: {phone}', { phone: t(s.phone) }));
   if (s.address && s.address !== 'Online / National') lines.push(t('Address: {address}', { address: s.address }));
   if (s.url) lines.push(t('Info: {url}', { url: s.url }));
   return lines.join('\n');
@@ -30,7 +30,7 @@ export const serviceCsvRows = (services: ServiceWithDistance[], locale: Locale =
     s.name,
     translateServiceType(locale, s.type),
     s.distanceMiles != null ? s.distanceMiles.toFixed(1) : '',
-    s.phone ?? '',
+    s.phone ? translate(locale, s.phone) : '',
     s.address === 'Online / National' ? translate(locale, s.address) : s.address ?? '',
     s.url ?? '',
   ]),
@@ -55,7 +55,7 @@ function ServiceRow({ service }: { service: ServiceWithDistance }) {
       </div>
       <div className="flex flex-wrap items-center gap-3 mt-2.5">
         {service.phone && (
-          <a href={`tel:${service.phone}`} className="text-sm font-medium text-primary hover:underline">{service.phone}</a>
+          <a href={`tel:${service.phone}`} className="text-sm font-medium text-primary hover:underline">{t(service.phone)}</a>
         )}
         {service.url && (
           <a href={service.url} target="_blank" rel="noopener noreferrer"

@@ -23,7 +23,7 @@ export const planCsvRows = (plans: Plan[], locale: Locale = 'en'): Array<Array<s
     formatPrice(p.price),
     p.downloadMbps,
     p.uploadMbps,
-    p.lowIncome === 'Y' ? `$${p.liDiscount}` : '',
+    p.lowIncome === 'Y' ? formatPrice(p.liDiscount) : '',
     p.contract === 'Y' ? translate(locale, '{count} months', { count: p.contractMonths }) : translate(locale, 'No contract'),
     translate(locale, p.meetsThreshold ? 'Yes' : 'No'),
   ]),

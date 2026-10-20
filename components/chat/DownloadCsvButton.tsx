@@ -16,6 +16,7 @@ export default function DownloadCsvButton({ filename, rows, label = 'CSV', class
     <button
       onClick={() => downloadCsv(filename, rows)}
       title={t('Download as CSV')}
+      aria-label={t('Download as CSV')}
       className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-sm text-muted-foreground hover:bg-accent hover:text-primary transition-colors ${className}`}
     >
       <Download size={13} />

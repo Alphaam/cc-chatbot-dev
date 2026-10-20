@@ -1,7 +1,9 @@
-export type DeckVersion = "chatbot" | "studio";
-export type SlideKind = "clark-rationale" | "mhm-rationale" | "cover" | "mission" | "expertise" | "method" | "quality" | "evidence" | "clark-intro" | "clark-features" | "clark-people" | "devices" | "custom" | "closing" | "mhm-intro" | "mhm-detail" | "mhm-people";
+import { originalSlides } from "./original-content";
+
+export type DeckVersion = "chatbot" | "studio" | "original" | "grantee" | "productlogic";
+export type SlideKind = "clark-rationale" | "mhm-rationale" | "cover" | "mission" | "expertise" | "method" | "quality" | "evidence" | "clark-intro" | "clark-logic" | "clark-features" | "clark-people" | "devices" | "clark-data" | "custom" | "closing" | "mhm-intro" | "mhm-model" | "mhm-detail" | "mhm-people" | "grantee-intro" | "grantee-rationale" | "grantee-model";
 export type Source = { label: string; url: string };
-export type SlideContent = { kind: SlideKind; chapter: string; title: string; notes: string; sources: Source[] };
+export type SlideContent = { kind: SlideKind; chapter: string; title: string; notes: string; sources: Source[]; image?: string; transcript?: string };
 export const sources = {
   studio: { label: "HR&A · Tech & Society", url: "https://hraadvisors.com/how-we-work/expertise/tech-society/" },
   labs: { label: "HR&A · Labs", url: "https://hraadvisors.com/how-we-work/labs/" },
@@ -56,10 +58,25 @@ const catalog: Record<SlideKind, SlideContent> = {
   "mhm-intro": { kind: "mhm-intro", chapter: "MHM · Ecosystem mapping", title: "See the network. See the opportunity.", notes: "MHM's Regional Grantee & Organization Network supports exploring digital equity organizations and relationships across its Texas service regions. Actual published-product screenshot captured September 21, 2026, in Region D, Bexar County / San Antonio. Network nodes and links are real rendered application output, not invented diagram data. The slide emphasizes visibility and exploration, not proof of causal impact or funding optimization.", sources: [sources.mhm] },
   "mhm-detail": { kind: "mhm-detail", chapter: "MHM · Product experience", title: "From the ecosystem to the organization.", notes: "Actual Community Tech Network detail panel in the published MHM tool. Visible features include service type, grantee status, funding information, reporting periods, KPI reporting, and connections in the selected region. Network controls include region, service type, grantee status, and node sizing by connections, grant size, or people served. Snapshot figures are source-reported and not independently audited. Relationships reflect available data, not a complete census of collaboration.", sources: [sources.mhm] },
   "mhm-people": { kind: "mhm-people", chapter: "MHM · In context", title: "A shared picture. A better discussion.", notes: "Intended use context: program teams and partners explore organizations, reported funding, and regional connections together. The value proposition is a shared evidence surface for discussion, not an automated funding recommendation or demonstrated outcome. The tool also exposes data charts and a relationships table. " + photoNote, sources: [sources.mhm, sources.working, sources.license] },
+  "clark-logic": { kind: "clark-logic", chapter: "Clark County · Why this solution", title: "From a resident’s need to relevant support.", notes: rationaleNote + "The assistant turns a broad service problem into a short, legible path: identify the need, confirm the place, surface matching local options, and review providers and next steps. It supports referrals; it does not decide eligibility or guarantee provider availability.", sources: [] },
+  "clark-data": { kind: "clark-data", chapter: "Clark County · Data foundation", title: "A living service directory needs governance.", notes: "The interface is only as useful as the evidence behind it. An operating model defines what gets stored, who validates it, and how it stays current: source, structure, validate, and steward. The tool supports referrals and does not assert that a resident is eligible or that a provider has current availability. " + qualityNote, sources: [] },
+  "mhm-model": { kind: "mhm-model", chapter: "MHM · Data model", title: "A data model built for ecosystem questions.", notes: "The interface sits on a relational model connecting organizations to region, service type, grants, relationships, and reported reach. This structure supports regional filters, organization detail views, and relationship analysis. Reported figures are source-reported, not independently audited.", sources: [sources.mhm] },
 };
 const solo: SlideKind[] = ["cover", "mission", "expertise", "method", "quality", "evidence", "clark-intro", "clark-rationale", "clark-features", "clark-people", "devices", "custom", "closing"];
 const studio: SlideKind[] = ["cover", "mission", "method", "clark-intro", "clark-rationale", "clark-features", "clark-people", "mhm-intro", "mhm-rationale", "mhm-detail", "mhm-people", "closing"];
+const granteeNote = "Illustrative case study for a proposed grantmaking operating system. The interface shown is a captured mockup of an MHM Grantee Management concept, not a deployed product; figures, organizations, and status labels are sample data. The problem, solution, and operating model describe the design intent, not a measured outcome or a documented client brief.";
+export const granteeSlides: SlideContent[] = [
+  { kind: "grantee-intro", chapter: "Case study 03 · Grantee management", title: "Grantee Management Tech Stack.", notes: granteeNote + " This intro frames the offering: a coordinated workflow spanning application intake, review, awards, compliance, and reporting for grantmaking teams.", sources: [] },
+  { kind: "grantee-rationale", chapter: "Grantee management · Why this solution", title: "Manage the grant lifecycle, not just the handoffs.", notes: granteeNote + " The problem is fragmentation across applications, spreadsheets, email, and reporting files. The solution connects those steps in one shared place so decisions and grantee information stay current.", sources: [] },
+  { kind: "grantee-model", chapter: "Grantee management · Operating model", title: "The tech stack connects applications to decisions and follow-through.", notes: granteeNote + " The relational model puts the grant record at the center and links the applicant, reviewer activity, award terms, requirements, and reporting so teams can move from intake to closeout with context.", sources: [] },
+];
+export const productLogicSlides: SlideContent[] = [
+  { kind: "clark-logic", chapter: "Clark County · The product logic", title: "The assistant turns a resident need and location into a practical referral path.", notes: rationaleNote + "The four phone screens are actual captures of this repository's Clark County Digital Equity Assistant, rendered at a mobile viewport: the task-selection landing, the address step, the matched-resources list, and a resource detail. Resource names, distances, and contact details come from the app's real digital-inclusion dataset for Clark County, matched by distance to a downtown Las Vegas test address. The tool supports referrals; it does not decide eligibility or guarantee provider availability.", sources: [] },
+];
 export const decks: Record<DeckVersion, SlideContent[]> = {
+  original: originalSlides,
   chatbot: solo.map(kind => catalog[kind]),
   studio: studio.map(kind => catalog[kind]),
+  grantee: granteeSlides,
+  productlogic: productLogicSlides,
 };

@@ -22,6 +22,7 @@ export function LanguageProvider({ children, initialLocale }: { children: ReactN
   useEffect(() => {
     document.documentElement.lang = locale;
     document.title = translate(locale, 'Clark County Digital Equity Assistant');
+    document.querySelector('meta[name="description"]')?.setAttribute('content', translate(locale, 'Find internet plans and digital inclusion resources for Clark County, Nevada. Available in English and Spanish.'));
     return () => { document.documentElement.lang = 'en'; };
   }, [locale]);
   const value = useMemo(() => ({ locale, localeRef, setLocale, t }), [locale, setLocale, t]);
