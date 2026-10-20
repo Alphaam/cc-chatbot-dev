@@ -26,6 +26,32 @@ const stripDirectional = (addr: string) => {
   return m ? `${m[1]} ${m[3]}` : null;
 };
 
+// The FCC dataset writes the directional after the street type ("3729 LAS
+// VEGAS BLVD S"); people usually write it before the name ("3729 S Las Vegas
+// Blvd"). Offer the dataset's form as another candidate for exact matching.
+const moveDirectionalToEnd = (addr: string) => {
+  const m = addr.match(/^(\d+)\s+(N|S|E|W)\s+(.+)$/);
+  return m ? `${m[1]} ${m[3]} ${m[2]}` : null;
+};
+
+// Unit designators ("Bldg 2", "Suite 100", "#4B") only get in the way of
+// street parsing and geocoding; the building-level record is what we match.
+const UNIT_RE = /[\s,]+(?:bldg|building|ste|suite|unit|apt|apartment|fl|floor|rm|room)\.?\s*#?\s*[\w-]+|\s+#\s*[\w-]+/gi;
+
+// "3722 & 3726 S Las Vegas Blvd" names two numbers on one street. Keep the
+// first; the confirmation prompt shows exactly which address was used.
+const MULTI_NUMBER_RE = /^(\s*\d+)\s*(?:&|\band\b|\/|,)\s*\d+(?=\s+[A-Za-z])/i;
+
+// "123 Main St S, City" -> "123 S Main St, City" so the directional doesn't
+// get read as the start of the city name.
+const TRAILING_DIRECTIONAL_RE = /^(\d+)\s+(.+?)\s+([A-Za-z]{2,10})\.?\s+(N|S|E|W)(?=[\s,]|$)/i;
+
+const cleanInput = (text: string, keepUnit: boolean) => {
+  let s = text.replace(MULTI_NUMBER_RE, '$1');
+  if (!keepUnit) s = s.replace(UNIT_RE, '');
+  return s;
+};
+
 // ─── Extraction ────────────────────────────────────────────────────────────
 
 // Plain Levenshtein edit distance. Suffix words and street names here are
@@ -79,7 +105,10 @@ export interface ParsedAddress {
   zip: string;
 }
 
-export const extractAddress = (text: string): ParsedAddress | null => {
+export const extractAddress = (rawText: string): ParsedAddress | null => {
+  let text = cleanInput(rawText, false);
+  text = text.replace(TRAILING_DIRECTIONAL_RE, (whole, num, name, suffix, dir) =>
+    fuzzyMatchSuffix(suffix) ? `${num} ${dir} ${name} ${suffix}` : whole);
   const build = (street: string, suffix: string, city: string | null, state: string, zip: string): ParsedAddress => {
     const addr = normalizeAddr(`${street} ${suffix}`);
     return { addr, addrAlt: stripDirectional(addr), city, state, zip };
@@ -241,24 +270,51 @@ export const fuzzyCorrectStreet = async (parsed: ParsedAddress): Promise<ParsedA
 // to be a superset of candidates, not exact.
 const NEARBY_BOX_DEGREES = 0.15;
 
-export interface NearbyPoint { addr: string; city: string; state: string; zip: string; distanceMiles: number }
+export interface NearbyPoint {
+  addr: string; city: string; state: string; zip: string;
+  lat: number; lon: number;
+  // Only set when the geocode landed on the house itself. A street-level
+  // fallback puts the origin somewhere along the street, so a distance from
+  // it would be misleading.
+  distanceMiles?: number;
+}
 
-// Used when a geocoded address has no exact match in the FCC dataset — the
-// nearest known points are cheap, concrete alternatives the user can try
-// instead of guessing at spelling.
-export const findNearbyPoints = async (lat: number, lon: number, limit = 5): Promise<NearbyPoint[]> => {
+// Street name with house number, directional, and unit stripped, for
+// comparing "3726 S LAS VEGAS BLVD" against "3729 LAS VEGAS BLVD S BLDG 3".
+const streetCore = (addr: string) =>
+  addr.replace(/^\d+\s+/, '')
+    .replace(UNIT_RE, '')
+    .replace(/\b(N|S|E|W)\b/g, '')
+    .replace(/\s+/g, ' ').trim();
+
+// Used when a geocoded address has no exact match in the FCC dataset. Prefers
+// known addresses on the same street, ordered by closeness of house number,
+// since that is what a mistyped number or unit most likely means; falls back
+// to plain geographic distance when the street has no records in range.
+export const findNearbyPoints = async (
+  lat: number, lon: number,
+  opts: { parsed?: ParsedAddress; precise?: boolean; limit?: number } = {},
+): Promise<NearbyPoint[]> => {
+  const { parsed, precise = true, limit = 5 } = opts;
   const rows = await sql`
     SELECT DISTINCT addr, city, state, zip, lat, long FROM points
     WHERE lat BETWEEN ${lat - NEARBY_BOX_DEGREES} AND ${lat + NEARBY_BOX_DEGREES}
       AND long BETWEEN ${lon - NEARBY_BOX_DEGREES} AND ${lon + NEARBY_BOX_DEGREES}
   `;
-  return rows
-    .map(r => ({
-      addr: r.addr, city: r.city, state: r.state, zip: r.zip,
-      distanceMiles: haversineMiles(lat, lon, r.lat, r.long),
-    }))
-    .sort((a, b) => a.distanceMiles - b.distanceMiles)
-    .slice(0, limit);
+  const points = rows.filter(r => r.addr).map(r => ({
+    addr: r.addr as string, city: r.city as string, state: r.state as string, zip: r.zip as string,
+    lat: r.lat as number, lon: r.long as number,
+    distanceMiles: haversineMiles(lat, lon, r.lat, r.long),
+  }));
+
+  const target = parsed ? parseInt(parsed.addr, 10) : NaN;
+  const core = parsed ? streetCore(parsed.addr) : '';
+  const sameStreet = core ? points.filter(p => streetCore(p.addr) === core) : [];
+  const ranked = sameStreet.length && !Number.isNaN(target)
+    ? sameStreet.sort((a, b) => Math.abs(parseInt(a.addr, 10) - target) - Math.abs(parseInt(b.addr, 10) - target) || a.distanceMiles - b.distanceMiles)
+    : points.sort((a, b) => a.distanceMiles - b.distanceMiles);
+
+  return ranked.slice(0, limit).map(p => precise ? p : { ...p, distanceMiles: undefined });
 };
 
 const haversineMiles = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -282,7 +338,7 @@ export interface PointsRow {
 }
 
 export const searchPoints = async ({ addr, addrAlt, city, state, zip }: ParsedAddress): Promise<PointsRow | null> => {
-  const candidates = [addr, addrAlt].filter(Boolean) as string[];
+  const candidates = [addr, addrAlt, moveDirectionalToEnd(addr)].filter(Boolean) as string[];
   for (const a of candidates) {
     let rows = city
       ? await sql`SELECT * FROM points WHERE addr=${a} AND state=${state} AND city=${city} LIMIT 1`

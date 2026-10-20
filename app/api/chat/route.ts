@@ -33,6 +33,7 @@ export async function POST(req: Request) {
     numServices,
     lat: clientLat,
     lon: clientLon,
+    logOnly,
   } = await req.json();
 
   // contextBlock is pre-built by the client from /api/lookup and passed here
@@ -64,6 +65,9 @@ export async function POST(req: Request) {
   } else {
     logChat({ ...baseLogEntry, lat: clientLat, long: clientLon });
   }
+
+  // Data-only turns are answered client-side; they just need the analytics row.
+  if (logOnly) return new Response(null, { status: 204 });
 
   const result = streamText({
     model: anthropic('claude-sonnet-4-6'),

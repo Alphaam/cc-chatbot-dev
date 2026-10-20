@@ -46,6 +46,8 @@ interface Message {
 
 type Intent = PromptIntent | 'both';
 
+interface NearbyAddress { addr: string; city: string; state: string; zip: string; lat: number; lon: number; distanceMiles?: number }
+
 interface LookupResult {
   planGroups: PlanGroups | null;
   serviceGroups: ServiceGroups | null;
@@ -53,7 +55,7 @@ interface LookupResult {
   validated?: boolean;
   address?: string;
   confirmAddress?: string;
-  nearbyAddresses?: { addr: string; city: string; state: string; zip: string; distanceMiles: number }[];
+  nearbyAddresses?: NearbyAddress[];
   lat?: number;
   lon?: number;
   intent: Intent;
@@ -199,9 +201,39 @@ interface RequestJob {
   history: Array<{ role: string; content: string }>;
   needsLookup: boolean;
   confirmed?: boolean;
+  // Answer from the lookup data alone (no model call); see localReply.
+  local?: boolean;
+  exact?: NearbyAddress;
   replacing?: boolean;
   result?: Omit<LookupResult, 'intent'>;
   outcome?: { contextBlock: string; numPlans: number; numServices: number; lat?: number; lon?: number; showDisclaimer: boolean };
+}
+
+const ADDRESS_FAILED = "I couldn't find that address. Check the spelling, or send the street number, street name, city, and ZIP. For several addresses on one street, send one at a time.";
+const ADDRESS_FAILED_KEPT = 'The current address is unchanged.';
+
+// Set NEXT_PUBLIC_LLM_REPLIES=true to have the model narrate address results.
+// By default those turns show a one-line reply plus the data cards, which is
+// faster, free of API cost, and keeps working when the model is unavailable.
+const LLM_REPLIES = process.env.NEXT_PUBLIC_LLM_REPLIES === 'true';
+
+const ISP_LINE = 'Contact providers directly to confirm availability: Cox, AT&T, CenturyLink, or Spectrum.';
+
+function localReply(job: Pick<RequestJob, 'result' | 'intent'>): MessageCopy {
+  const r = job.result;
+  if (!r) return { key: "Enter the client's full street address, including city and ZIP code." };
+  const showPlans = job.intent !== 'services';
+  const showServices = job.intent !== 'plans';
+  if (!r.found) {
+    return {
+      key: r.nearbyAddresses?.length
+        ? 'No broadband record was found for this exact address. Choose the nearest address below, or retype it with a unit number or ZIP.'
+        : 'No broadband record was found for this exact address. Check the address or try a nearby cross street.',
+      suffix: showPlans ? ISP_LINE : undefined,
+    };
+  }
+  if (showPlans && showServices) return { key: "Here are the internet plans and digital equity resources for the client's address." };
+  return { key: showPlans ? "Here are the internet plans available at the client's address." : 'Here are the digital equity resources near this address.' };
 }
 
 const PLAN_DISCLAIMER = "A quick note: this list isn't influenced by search engine optimization, advertising, or paid placement — plans are shown based on availability data only.";
@@ -362,7 +394,7 @@ export default function Chatbot() {
       : !result.found
       ? `No FCC broadband database record was found for this exact address, so plan matching may be incomplete — let the user know.${
           result.nearbyAddresses?.length
-            ? ` Offer these nearest known addresses instead, closest first, and ask if any of them is the correct one or close to it: ${result.nearbyAddresses.map(n => `${n.addr}, ${n.city}, ${n.state} ${n.zip} (${n.distanceMiles.toFixed(1)} mi)`).join('; ')}.`
+            ? ' The UI shows the nearest known addresses as buttons below your reply. Do not list them. Say in one sentence that the client\'s address has no record, and ask the user to pick the matching address below or retype it with a unit number or ZIP. If the ZIP the user gave differs from the ZIP of these suggestions, point that out.'
             : ' Suggest they double-check the address or try a nearby cross street.'
         }${showPlans ? ' Also suggest contacting ISPs directly (Cox, AT&T, CenturyLink, Spectrum serve Clark County).' : ''}`
       : 'Use ONLY the data above — do not mention or invent any provider, plan, or resource that is not listed.';
@@ -412,7 +444,7 @@ export default function Chatbot() {
       if (job.needsLookup && !job.result) {
         const response = await fetch('/api/lookup', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: job.text }), signal: controller.signal,
+          body: JSON.stringify({ text: job.text, exact: job.exact }), signal: controller.signal,
         });
         if (!response.ok) throw new Error('Lookup failed');
         const result = await response.json();
@@ -423,7 +455,7 @@ export default function Chatbot() {
       if (!current()) return;
       if (job.needsLookup && job.result) {
         if (!job.result.validated) {
-          setMessages(prev => prev.map(m => m.id === job.assistantMsgId ? { ...m, suppressResults: true, content: 'I could not verify that address. Please check the spelling and include the city and ZIP code. Your previous address, if any, has not changed.' } : m));
+          setMessages(prev => prev.map(m => m.id === job.assistantMsgId ? { ...m, suppressResults: true, content: lastLookup ? `${ADDRESS_FAILED} ${ADDRESS_FAILED_KEPT}` : ADDRESS_FAILED, copy: { key: ADDRESS_FAILED, suffix: lastLookup ? ADDRESS_FAILED_KEPT : undefined } } : m));
           setAnnouncement('Address could not be verified. Check the spelling, city and ZIP code.');
           return;
         }
@@ -448,6 +480,23 @@ export default function Chatbot() {
         job.outcome = buildLookupOutcome(job.result, job.intent, job.userMsgId, !job.needsLookup);
       }
       stage = 'response';
+      if (job.local) {
+        const copy = localReply(job);
+        const content = translateCopy('en', copy);
+        // Still record the turn for analytics; no model call is made.
+        fetch('/api/chat', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: job.history, sessionId: job.sessionId, intent: job.intent, locale: localeRef.current, logOnly: true, ...job.outcome }),
+        }).catch(() => {});
+        setMessages(prev => prev.map(m => m.id === job.assistantMsgId ? { ...m, content, copy, locale: undefined, resultsReady: true } : m));
+        if (job.outcome?.showDisclaimer && !shownPlanDisclaimerRef.current) {
+          shownPlanDisclaimerRef.current = true;
+          appendAssistantText(PLAN_DISCLAIMER);
+          job.outcome.showDisclaimer = false;
+        }
+        setAnnouncement(translateCopy(localeRef.current, copy));
+        return;
+      }
       setAnnouncement('Preparing a reply.');
       const responseLocale = localeRef.current;
       const response = await fetch('/api/chat', {
@@ -493,17 +542,17 @@ export default function Chatbot() {
         focusInput();
       }
     }
-  }, [buildLookupOutcome, appendAssistantText, focusInput, localeRef]);
+  }, [buildLookupOutcome, appendAssistantText, focusInput, localeRef, lastLookup]);
 
   const sendMessage = useCallback((text: string, intentOverride?: Intent, opts?: SendOptions) => {
     if (abortRef.current || isStreaming) return;
     const intent = changingAddress ? activeIntent : intentOverride ?? classifyIntent(text) ?? activeIntent;
-    const needsLookup = changingAddress || !!opts?.addressConfirmed || ADDRESS_RE.test(text);
+    const needsLookup = changingAddress || !!opts?.addressConfirmed || !!opts?.exact || ADDRESS_RE.test(text);
     const userMsg: Message = { id: nanoid(), role: 'user', content: text, addressChange: changingAddress, workflowPrompt: !!intentOverride };
     const assistantMsgId = nanoid();
     // A new address starts a clean model context; the old transcript remains historical.
     const history = [...(needsLookup ? (workflow ? [{ role: 'user', content: workflow.prompt }] : []) : messages.filter(m => !m.archived && !m.superseded && !m.stopped && m.content)), userMsg].map(m => ({ role: m.role, content: m.content }));
-    const job: RequestJob = { userMsgId: userMsg.id, assistantMsgId, text, intent, sessionId: sessionRef.current, history, needsLookup, confirmed: opts?.addressConfirmed, replacing: changingAddress, result: needsLookup ? undefined : lastLookup ?? undefined };
+    const job: RequestJob = { userMsgId: userMsg.id, assistantMsgId, text, intent, sessionId: sessionRef.current, history, needsLookup, local: !LLM_REPLIES && (needsLookup || !!intentOverride), confirmed: opts?.addressConfirmed || !!opts?.exact, exact: opts?.exact, replacing: changingAddress, result: needsLookup ? undefined : lastLookup ?? undefined };
     if (!changingAddress) { setPlanFlow(IDLE_PLAN_FLOW); setServiceFlow(IDLE_SERVICE_FLOW); }
     setShowMainMenu(false);
     setPendingConfirm(null);
@@ -677,15 +726,15 @@ export default function Chatbot() {
       <header className="bg-primary text-primary-foreground shrink-0 shadow-sm ring-1 ring-black/5 px-4 sm:px-6">
         <div className="max-w-3xl mx-auto flex flex-wrap items-center gap-3 py-3.5 text-sm">
           {messages.length > 0 && !showMainMenu && (
-            <nav aria-label={t('Client navigation')} className="order-2 flex basis-full shrink-0 items-center gap-1 sm:order-first sm:basis-auto">
+            <nav aria-label={t('Client navigation')} className="order-2 flex shrink-0 items-center gap-1 sm:order-first sm:basis-auto">
               <button type="button" className="flex size-11 items-center justify-center rounded-xl hover:bg-primary-foreground/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground transition-colors" aria-label={t('Home')} title={t('Home')} onClick={handleBackToMenu}><House aria-hidden="true" className="size-5" strokeWidth={2.25} /></button>
               <button type="button" className="flex size-11 items-center justify-center rounded-xl hover:bg-primary-foreground/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground transition-colors" aria-label={t('Clear conversation')} title={t('Clear conversation')} onClick={requestReset}><RefreshCw aria-hidden="true" className="size-5" strokeWidth={2.25} /></button>
             </nav>
           )}
-          <div className="min-w-0 flex-1 basis-0">
+          <div className="order-1 min-w-0 basis-full sm:order-2 sm:flex-1 sm:basis-0">
             <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-balance leading-tight">{t('Clark County Digital Equity Assistant')}</h2>
           </div>
-          <div className="order-1 ml-auto shrink-0 sm:order-3"><LanguageToggle /></div>
+          <div className="order-3 ml-auto shrink-0"><LanguageToggle /></div>
         </div>
       </header>
 
@@ -767,6 +816,27 @@ export default function Chatbot() {
                     {result.serviceGroups && result.intent !== 'plans' && (
                       <ServiceCard services={getTopServices(result.serviceGroups)} />
                     )}
+                  </div>
+                )}
+                {!isUser && !m.archived && m.resultsReady && result && !result.found && isLastMsg && !isStreaming && !!result.nearbyAddresses?.length && (
+                  <div className="mt-3 max-w-lg">
+                    <p className="text-sm font-medium text-foreground">{t('Nearest addresses with a record')}</p>
+                    <div className="mt-2 flex flex-col gap-2">
+                      {result.nearbyAddresses.map(n => {
+                        const label = `${n.addr.replace(/\b(\w)(\w*)/g, (_, a, b) => a + b.toLowerCase()).replace(/\b(Nv)\b/, 'NV')}, ${n.city.replace(/\b(\w)(\w*)/g, (_, a, b) => a + b.toLowerCase())}, ${n.state} ${n.zip}`;
+                        return (
+                          <button
+                            key={`${n.addr}|${n.zip}`}
+                            type="button"
+                            onClick={() => sendMessage(label, result.intent, { exact: n })}
+                            className="flex items-center justify-between gap-3 rounded-xl border border-primary/25 bg-accent px-4 py-3 text-left text-[0.95rem] font-medium text-accent-foreground shadow-sm transition-all hover:border-primary/45 hover:bg-primary hover:text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none"
+                          >
+                            <span>{label}</span>
+                            {n.distanceMiles != null && <span className="shrink-0 text-sm font-normal opacity-80">{n.distanceMiles < 0.1 ? t('Under 0.1 mi') : `${n.distanceMiles.toFixed(1)} mi`}</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
 
@@ -929,7 +999,7 @@ export default function Chatbot() {
               {changingAddress && <ChatInput autoFocus onSend={(text, o) => sendMessage(text, undefined, o)} onDraftChange={setHasDraft} onStop={isStreaming ? stopRequest : undefined} onCancel={cancelAddressChange} disabled={isStreaming || !!pendingConfirm} placeholder="Enter the replacement address, or type @ to search…" />}
             </div>
           )}
-          <p className={`text-sm leading-relaxed text-muted-foreground text-center text-balance ${atMenu ? '' : 'mt-2.5'}`}>
+          <p className={`text-xs sm:text-sm leading-relaxed text-muted-foreground text-center sm:text-balance ${atMenu ? '' : 'mt-2.5'}`}>
             {t('For emergencies, call 911 · Mental health crisis, call or text 988 · Social services, call 211')}
           </p>
         </div>
