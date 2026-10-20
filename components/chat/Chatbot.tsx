@@ -217,6 +217,8 @@ const ADDRESS_FAILED_KEPT = 'The current address is unchanged.';
 // faster, free of API cost, and keeps working when the model is unavailable.
 const LLM_REPLIES = process.env.NEXT_PUBLIC_LLM_REPLIES === 'true';
 
+const FREE_TEXT_UNAVAILABLE = "Free-text questions aren't available right now. Enter the client's address or choose an option from the menu.";
+
 const ISP_LINE = 'Contact providers directly to confirm availability: Cox, AT&T, CenturyLink, or Spectrum.';
 
 function localReply(job: Pick<RequestJob, 'result' | 'intent'>): MessageCopy {
@@ -528,6 +530,14 @@ export default function Chatbot() {
       setAnnouncement('Reply complete.');
     } catch {
       if (!current()) return;
+      // The model only narrates; if it's unavailable, answer from the data
+      // already fetched (or point back to the address step) instead of failing.
+      if (stage === 'response') {
+        const copy = job.result ? localReply(job) : { key: FREE_TEXT_UNAVAILABLE };
+        setMessages(prev => prev.map(m => m.id === job.assistantMsgId ? { ...m, content: translateCopy('en', copy), copy, locale: undefined, stopped: false, resultsReady: true } : m));
+        setAnnouncement(translateCopy(localeRef.current, copy));
+        return;
+      }
       const message = stage === 'lookup' ? 'The address lookup could not finish. Retry the lookup or enter a different address.' : 'The reply could not finish. Retry the reply; any address results already found will be reused.';
       setError(message);
       setRetryJob(job);

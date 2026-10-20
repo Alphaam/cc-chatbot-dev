@@ -54,6 +54,7 @@ export const spanish: Record<string, string> = {
   "Here are the internet plans and digital equity resources for the client's address.": 'Estos son los planes de internet y los recursos de equidad digital para la dirección del cliente.',
   "Here are the internet plans available at the client's address.": 'Estos son los planes de internet disponibles en la dirección del cliente.',
   'Here are the digital equity resources near this address.': 'Estos son los recursos de equidad digital cerca de esta dirección.',
+  "Free-text questions aren't available right now. Enter the client's address or choose an option from the menu.": 'Las preguntas escritas no están disponibles por ahora. Ingrese la dirección del cliente o elija una opción del menú.',
   'The current address is unchanged.': 'La dirección actual no ha cambiado.',
   'Nearest addresses with a record': 'Direcciones más cercanas con registro', 'Under 0.1 mi': 'Menos de 0.1 mi',
   'Address could not be verified. Check the spelling, city and ZIP code.': 'No se pudo verificar la dirección. Revise cómo está escrita, la ciudad y el código postal.',
