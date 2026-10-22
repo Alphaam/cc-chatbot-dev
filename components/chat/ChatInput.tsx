@@ -27,7 +27,11 @@ function outsideArea(context?: AddressContext): boolean {
   const county = context?.district?.name;
   return !!county && /county/i.test(county) && !/^clark county$/i.test(county.trim());
 }
-export interface SendOptions { addressConfirmed?: boolean }
+export interface SendOptions {
+  addressConfirmed?: boolean;
+  // A suggested dataset address the user picked; the lookup matches it exactly.
+  exact?: { addr: string; city: string; state: string; zip: string; lat: number; lon: number };
+}
 interface ChatInputProps {
   onSend: (text: string, opts?: SendOptions) => void;
   disabled?: boolean;
