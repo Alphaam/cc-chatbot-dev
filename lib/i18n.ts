@@ -46,6 +46,7 @@ export const spanish: Record<string, string> = {
   'Home will show the three starting options.': 'Inicio mostrará las tres opciones iniciales.',
   'New client will restart your current workflow.': 'Nuevo cliente reiniciará el proceso actual.',
   "Don't show me again": 'No volver a mostrar', 'Cancel': 'Cancelar', 'Clear and continue': 'Borrar y continuar',
+  'Please enter your client’s address, including the city and ZIP code.': 'Ingrese la dirección de su cliente, incluida la ciudad y el código postal.',
   'Please enter the new client’s address, including the city and ZIP code.': 'Ingrese la dirección del nuevo cliente, incluida la ciudad y el código postal.',
   'New client started in the same workflow. Enter an address.': 'Se inició una nueva consulta en la misma sección. Ingrese la dirección del cliente.',
   'Conversation cleared. Choose one of the three options.': 'Conversación borrada. Elija una de las tres opciones.',

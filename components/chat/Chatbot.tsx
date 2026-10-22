@@ -516,9 +516,28 @@ export default function Chatbot() {
   }, [isStreaming, activeIntent, changingAddress, messages, lastLookup, workflow, runRequest]);
 
   const selectWorkflow = useCallback((prompt: string, intent: PromptIntent) => {
+    if (abortRef.current || isStreaming) return;
     setWorkflow({ prompt, intent });
-    sendMessage(prompt, intent);
-  }, [sendMessage]);
+    if (lastLookup) {
+      sendMessage(prompt, intent);
+      return;
+    }
+    const addressPrompt = 'Please enter your client’s address, including the city and ZIP code.';
+    setActiveIntent(intent);
+    setPlanFlow(IDLE_PLAN_FLOW);
+    setServiceFlow(IDLE_SERVICE_FLOW);
+    setShowMainMenu(false);
+    setPendingConfirm(null);
+    setError(null);
+    setRetryJob(null);
+    nearBottom.current = true;
+    setMessages(prev => [...prev,
+      { id: nanoid(), role: 'user', content: prompt, workflowPrompt: true },
+      { id: nanoid(), role: 'assistant', content: addressPrompt },
+    ]);
+    setAnnouncement(addressPrompt);
+    focusInput();
+  }, [isStreaming, lastLookup, sendMessage, focusInput]);
   const handleAddressConfirm = useCallback((value: 'yes' | 'no') => {
     if (!pendingConfirm) return;
     const job = pendingConfirm;
