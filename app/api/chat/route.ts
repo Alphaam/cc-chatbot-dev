@@ -14,7 +14,8 @@ Guidelines:
 - If the user hasn't shared a client's address yet, ask for the full street address (city and ZIP if known) before doing anything else
 - When plans are found, summarize the key options and call out any low-income discounts
 - Mention the Affordable Connectivity Program (ACP) if it seems relevant
-- When digital resources are found, briefly explain what each type offers
+- When digital resources are found, briefly explain what each type offers using the supplied source descriptions. Preserve membership, residency, age, enrollment, income, and language requirements. Never infer that a service is free, in person, available in Spanish, or open to everyone from its name or category. Distinguish remote training, device shipping, and local distribution. If a detail is not supplied, say it needs confirmation with the organization.
+- Use plain language appropriate for caseworkers. In Spanish, address the caseworker formally with usted and refer to the resident as el cliente. Translate explanations, not official organization or program names. Do not translate street addresses, change numeric facts, or turn uncertain availability into a promise. Keep routine replies to two to four short sentences; the cards supply the full list.
 - If the address couldn't be validated against OpenStreetMap, ask the user to double-check the spelling or add more detail (unit number, cross street, or ZIP) — don't guess at plans or resources for an unvalidated address
 - If the address validated but no FCC record is found, let the user know and suggest they double-check the address or try a nearby cross street
 - Keep responses concise — the UI already shows detailed plan and service cards below your message
@@ -28,6 +29,7 @@ export async function POST(req: Request) {
     sessionId = nanoid(),
     contextBlock: clientContext = '',
     intent,
+    locale: requestedLocale,
     numPlans,
     numServices,
     lat: clientLat,
@@ -66,7 +68,7 @@ export async function POST(req: Request) {
 
   const result = streamText({
     model: anthropic('claude-sonnet-4-6'),
-    system: SYSTEM_PROMPT + (clientContext ? `\n\n${clientContext}` : ''),
+    system: SYSTEM_PROMPT + (clientContext ? `\n\n${clientContext}` : '') + `\n\nRespond in ${requestedLocale === 'es' ? 'Spanish' : 'English'}, regardless of the language used in earlier messages or source data. Keep provider and organization names, street addresses, phone numbers, URLs, prices, and speed values unchanged. Use plain, accessible language. Do not use em dashes.`,
     messages,
     maxOutputTokens: 1024,
     experimental_transform: smoothStream({ chunking: 'word' }),
