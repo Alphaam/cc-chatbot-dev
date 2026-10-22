@@ -26,15 +26,9 @@ export default function PromptSuggestions({ onSelect, showAbout = false }: Props
   return (
     <div className="flex flex-col gap-7">
       <div className="text-center mx-auto">
-        <span className="inline-flex items-center rounded-full border border-border bg-card px-3 py-1 text-sm font-medium text-muted-foreground">
-          {t('Clark County, Nevada')}
-        </span>
-        <h2 className="mt-4 text-3xl sm:text-4xl leading-tight font-semibold tracking-tight text-foreground text-balance">
-          {t('Digital Navigation for Clark County Residents')}
+        <h2 className="text-3xl sm:text-4xl leading-tight font-semibold tracking-tight text-foreground text-balance">
+          {t('What would you like to find today?')}
         </h2>
-        {/* <p className="mt-3 text-lg leading-relaxed text-muted-foreground text-pretty">
-          {t("Choose a starting point below. I'll use the client's address to show the internet plans and digital-equity resources available to them.")}
-        </p> */}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">

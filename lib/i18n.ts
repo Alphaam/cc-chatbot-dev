@@ -4,7 +4,7 @@ export type TranslationValues = Record<string, string | number>;
 export const spanish: Record<string, string> = {
   'Clark County Digital Equity Assistant': 'Asistente de Equidad Digital del Condado de Clark',
   'Clark County, Nevada': 'Condado de Clark, Nevada',
-  'Digital Navigation for Clark County Residents': 'Orientación digital para residentes del condado de Clark',
+  'What would you like to find today?': '¿Qué le gustaría encontrar hoy?',
   'Internet plans & digital resources for Clark County, NV': 'Internet y recursos digitales en el condado de Clark, NV',
   'Find internet plans in Clark County': 'Planes de internet en el condado de Clark',
   'Find free or low-cost devices in Clark County': 'Dispositivos gratis o económicos en el condado de Clark',
