@@ -1,4 +1,4 @@
-import { extractAddress, searchPoints, geocodeAddress, formatParsedAddress, fuzzyCorrectStreet } from '@/lib/address';
+import { extractAddress, searchPoints, geocodeAddress, formatParsedAddress, fuzzyCorrectStreet, findNearbyPoints, type NearbyPoint, type ParsedAddress, type PointsRow } from '@/lib/address';
 import { parseTechRules, matchPlans, groupPlans, type PlanGroups } from '@/lib/plans';
 import { getServicesNearAddress, nationalServicesOnly, type ServiceGroups } from '@/lib/services-lookup';
 import { createTTLCache } from '@/lib/cache';
@@ -15,6 +15,10 @@ interface LookupResponse {
   // before any plans/resources are shown — distinct from `address`, which
   // only exists once a matching FCC dataset row is found.
   confirmAddress?: string;
+  // Nearest known addresses in the FCC dataset, offered when the geocoded
+  // address itself has no exact record — lets the user pick a close match
+  // instead of guessing at spelling or unit numbers.
+  nearbyAddresses?: NearbyPoint[];
 }
 
 // Keyed by normalized address — avoids re-hitting Postgres and the external
@@ -25,8 +29,32 @@ const FOUND_TTL_MS = 30 * 60 * 1000;
 const NOT_FOUND_TTL_MS = 5 * 60 * 1000;
 const lookupCache = createTTLCache<LookupResponse>(FOUND_TTL_MS, 1000);
 
+function buildFoundResponse(row: PointsRow, lat: number, lon: number, confirmAddress: string): LookupResponse {
+  const matched = matchPlans(row.BRANDNAMES, parseTechRules(row.TECHRULES), row.BLD_TYPE);
+  return {
+    planGroups: groupPlans(matched),
+    serviceGroups: getServicesNearAddress(lat, lon),
+    found: true, validated: true, lat, lon,
+    address: `${row.ADDR}, ${row.CITY}, ${row.STATE} ${row.ZIP}`,
+    confirmAddress,
+  };
+}
+
+// A suggestion the user clicked: a dataset row we already know exists, so skip
+// text parsing and geocoding and match it exactly.
+interface ExactPick { addr: string; city: string; state: string; zip: string; lat: number; lon: number }
+
 export async function POST(req: Request) {
-  const { text } = await req.json();
+  const { text, exact }: { text: string; exact?: ExactPick } = await req.json();
+
+  if (exact?.addr && exact.state) {
+    const pick: ParsedAddress = { addr: exact.addr, addrAlt: null, city: exact.city, state: exact.state, zip: exact.zip };
+    const row = await searchPoints(pick);
+    if (row) {
+      const confirmAddress = `${row.ADDR}, ${row.CITY}, ${row.STATE} ${row.ZIP}`;
+      return Response.json(buildFoundResponse(row, row.LATITUDE ?? exact.lat, row.LONGITUDE ?? exact.lon, confirmAddress));
+    }
+  }
 
   const parsed = extractAddress(text);
   if (!parsed) {
@@ -68,21 +96,15 @@ export async function POST(req: Request) {
   const { lat, lon } = geoResult;
 
   if (!row) {
-    const notFound: LookupResponse = { planGroups: null, serviceGroups: nationalServicesOnly(), found: false, validated: true, lat, lon, confirmAddress };
+    // A geocode with no house number is a street-level fallback; its
+    // coordinates are only roughly on the street, so don't quote distances.
+    const nearbyAddresses = await findNearbyPoints(lat, lon, { parsed: effectiveParsed, precise: !!geoResult.formatted });
+    const notFound: LookupResponse = { planGroups: null, serviceGroups: nationalServicesOnly(), found: false, validated: true, lat, lon, confirmAddress, nearbyAddresses };
     lookupCache.set(cacheKey, notFound, NOT_FOUND_TTL_MS);
     return Response.json(notFound);
   }
 
-  const techsAtAddress = parseTechRules(row.TECHRULES);
-  const matched = matchPlans(row.BRANDNAMES, techsAtAddress, row.BLD_TYPE);
-  const planGroups = groupPlans(matched);
-  const serviceGroups = getServicesNearAddress(lat, lon);
-
-  const response: LookupResponse = {
-    planGroups, serviceGroups, found: true, validated: true, lat, lon,
-    address: `${row.ADDR}, ${row.CITY}, ${row.STATE} ${row.ZIP}`,
-    confirmAddress,
-  };
+  const response = buildFoundResponse(row, lat, lon, confirmAddress);
   lookupCache.set(cacheKey, response);
   return Response.json(response);
 }
