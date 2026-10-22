@@ -24,9 +24,9 @@ interface Props {
 export default function PromptSuggestions({ onSelect, showAbout = false }: Props) {
   const { t } = useLanguage();
   return (
-    <div className="flex flex-col gap-7">
-      <div className="text-center mx-auto">
-        <h2 className="text-3xl sm:text-4xl leading-tight font-semibold tracking-tight text-foreground text-balance">
+    <div className="flex flex-col gap-8 sm:gap-10">
+      <div className="text-left">
+        <h2 className="text-2xl sm:text-3xl leading-tight font-semibold tracking-tight text-foreground text-balance">
           {t('What would you like to find today?')}
         </h2>
       </div>
@@ -53,7 +53,7 @@ export default function PromptSuggestions({ onSelect, showAbout = false }: Props
       </div>
 
       {showAbout && (
-        <section aria-labelledby="about-heading" className="mt-3 overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+        <section aria-labelledby="about-heading" className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
           <div className="grid md:grid-cols-2">
             <div className="relative min-h-56 sm:min-h-72 md:min-h-full">
               <img
