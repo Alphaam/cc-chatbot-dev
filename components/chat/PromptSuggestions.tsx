@@ -26,7 +26,7 @@ export default function PromptSuggestions({ onSelect, showAbout = false }: Props
   return (
     <div className="pt-4">
       <div className="flex flex-col gap-8 sm:gap-10">
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-[19px]">
       <div className="text-left">
         <h2 className="text-2xl sm:text-3xl leading-tight font-semibold tracking-tight text-foreground text-balance">
           {t('What would you like to find today?')}
