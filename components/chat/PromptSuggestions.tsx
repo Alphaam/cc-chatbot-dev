@@ -24,7 +24,9 @@ interface Props {
 export default function PromptSuggestions({ onSelect, showAbout = false }: Props) {
   const { t } = useLanguage();
   return (
-    <div className="flex flex-col gap-8 sm:gap-10">
+    <div className="pt-4">
+      <div className="flex flex-col gap-8 sm:gap-10">
+      <div className="flex flex-col gap-4">
       <div className="text-left">
         <h2 className="text-2xl sm:text-3xl leading-tight font-semibold tracking-tight text-foreground text-balance">
           {t('What would you like to find today?')}
@@ -50,6 +52,7 @@ export default function PromptSuggestions({ onSelect, showAbout = false }: Props
             </span>
           </button>
         ))}
+      </div>
       </div>
 
       {showAbout && (
@@ -97,6 +100,7 @@ export default function PromptSuggestions({ onSelect, showAbout = false }: Props
           </div>
         </section>
       )}
+      </div>
     </div>
   );
 }
