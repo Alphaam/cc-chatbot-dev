@@ -5,6 +5,8 @@ import { ArrowDown, House, MapPin, RefreshCw, RotateCcw } from 'lucide-react';
 import ChatInput, { type SendOptions } from './ChatInput';
 import ResetConfirmation from './ResetConfirmation';
 import SessionTimeout from './SessionTimeout';
+import ChatExport from './ChatExport';
+import type { ChatExportData } from '@/lib/chat-export';
 import { LanguageToggle, useLanguage } from './LanguageProvider';
 import { translateCopy, translateServiceType, type Locale, type MessageCopy } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
@@ -747,6 +749,35 @@ export default function Chatbot() {
   // navigation, so the composer is hidden there.
   const atMenu = messages.length === 0 || showMainMenu;
 
+  const getExportData = (): ChatExportData => ({
+    address: lastLookup?.validated ? lastLookup.address ?? lastLookup.confirmAddress : undefined,
+    recommendation: planFlow.step === 'recommended_shown' && planFlow.recommendedPlan
+      ? [describePlan(planFlow.recommendedPlan), planFlow.recommendationNote ? t(planFlow.recommendationNote) : ''].filter(Boolean).join('\n')
+      : undefined,
+    messages: messages.map((m, index) => {
+      const result = m.role === 'assistant' && m.resultsReady ? resultMap.get(messages[index - 1]?.id ?? '') : undefined;
+      const records: string[] = [];
+      if (result?.planGroups && result.intent !== 'services') {
+        records.push(...flattenPlans(result.planGroups).map(describePlan));
+      }
+      if (result?.serviceGroups && result.intent !== 'plans') {
+        for (const [tier] of SERVICE_TIERS) {
+          records.push(...result.serviceGroups[tier].map(service => [describeService(service), service.address, service.url].filter(Boolean).join(' | ')));
+        }
+      }
+      return {
+        role: m.role,
+        text: m.copy ? translateCopy(locale, m.copy) : m.role === 'user' ? (m.workflowPrompt ? t(m.content) : m.content) : m.locale ? m.content : t(m.content),
+        archived: m.archived,
+        superseded: m.superseded,
+        stopped: m.stopped,
+        answerKey: m.answerKey,
+        address: result?.address,
+        records,
+      };
+    }),
+  });
+
   return (
     <div className="flex flex-col h-dvh bg-background">
       {/* Header */}
@@ -788,6 +819,7 @@ export default function Chatbot() {
           </div>
         </div>
       )}
+      {messages.length > 0 && <ChatExport key={inputKey} getData={getExportData} disabled={isStreaming || changingAddress || !!pendingConfirm} />}
       {/* Messages */}
       <main className="relative flex flex-1 min-h-0 flex-col">
       <div ref={viewportRef} tabIndex={0} role="region" aria-label={t('Conversation')} onScroll={() => {
