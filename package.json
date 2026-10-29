@@ -18,6 +18,7 @@
     "ai": "^7.0.41",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "jspdf": "^4.2.1",
     "lucide-react": "^1.27.0",
     "mapbox-gl": "^3.28.1",
     "nanoid": "^6.0.0",
