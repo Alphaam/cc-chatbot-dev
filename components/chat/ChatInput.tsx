@@ -1,7 +1,8 @@
 'use client';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useLanguage } from './LanguageProvider';
-import { Send, MapPin, Loader2, Square, X } from 'lucide-react';
+import { ArrowRight, Send, MapPin, Loader2, Square, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface AddressContext {
   address?: { name?: string };
@@ -206,7 +207,7 @@ export default function ChatInput({ onSend, disabled, onDraftChange, placeholder
           {!suggestions.length && <p className="px-3 py-3 text-sm text-chat-secondary-foreground">{feedback}</p>}
         </div>
       )}
-      <form onSubmit={e => { e.preventDefault(); submit(); }} className="flex items-center gap-2">
+      <form onSubmit={e => { e.preventDefault(); submit(); }} className={cn('flex gap-2', addressOnly ? 'flex-col items-stretch min-[480px]:flex-row min-[480px]:items-center' : 'items-center')}>
         <input ref={inputRef} autoFocus={autoFocus} value={value} onChange={e => change(e.target.value)}
           onKeyDown={e => {
             if (e.nativeEvent.isComposing || e.keyCode === 229) { if (e.key === 'Enter') e.preventDefault(); return; }
@@ -219,10 +220,10 @@ export default function ChatInput({ onSend, disabled, onDraftChange, placeholder
           }}
           placeholder={t(placeholder)} disabled={disabled} role="combobox" aria-label={t(placeholder)} aria-expanded={open}
           aria-controls={open ? listId : undefined} aria-activedescendant={open && suggestions.length ? `${listId}-${activeIndex}` : undefined} aria-autocomplete="list"
-          className={`min-w-0 flex-1 rounded-xl border border-input bg-card px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent disabled:opacity-50 ${addressOnly ? 'py-4' : 'py-2.5'}`} />
+          className={cn('min-w-0 flex-1 rounded-xl border border-input px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent disabled:opacity-50', addressOnly ? 'bg-background/60 py-4' : 'bg-card py-2.5')} />
         {onCancel && <button type="button" aria-label={t('Cancel address change')} title={t('Cancel address change')} onClick={onCancel} className="flex size-11 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring transition-colors"><X aria-hidden="true" size={20} /></button>}
         <button type={onStop ? 'button' : 'submit'} aria-label={t(onStop ? 'Stop' : addressOnly ? 'Find resources' : 'Send message')} title={t(onStop ? 'Stop' : addressOnly ? 'Find resources' : 'Send message')} onClick={onStop} disabled={!onStop && (disabled || !value.trim())} className={`shrink-0 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-40 flex items-center justify-center transition-colors motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${addressOnly ? 'h-14 px-4' : 'size-11'}`}>
-          {onStop ? <Square aria-hidden="true" size={18} className="fill-current" /> : addressOnly ? <span className="text-sm font-medium">{t('Find resources')}</span> : <Send aria-hidden="true" size={18} />}
+          {onStop ? <Square aria-hidden="true" size={18} className="fill-current" /> : addressOnly ? <span className="flex items-center gap-2 text-sm font-medium">{disabled ? <Loader2 aria-hidden="true" size={16} className="animate-spin motion-reduce:animate-none" /> : null}{t('Find resources')}{!disabled && <ArrowRight aria-hidden="true" size={16} />}</span> : <Send aria-hidden="true" size={18} />}
         </button>
       </form>
     </div>

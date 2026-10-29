@@ -410,6 +410,52 @@
   --sidebar-ring: var(--ring);
 }
 
+.resource-finder {
+  --background: #f4f6fa;
+  --foreground: #1d2c44;
+  --primary: #3458bf;
+  --primary-foreground: #ffffff;
+  --card: #ffffff;
+  --card-foreground: var(--foreground);
+  --muted: var(--background);
+  --muted-foreground: #5c6b80;
+  --secondary: var(--background);
+  --secondary-foreground: var(--foreground);
+  --accent: color-mix(in srgb, var(--primary) 7%, var(--card));
+  --accent-foreground: var(--primary);
+  --border: color-mix(in srgb, var(--foreground) 12%, var(--card));
+  --input: color-mix(in srgb, var(--foreground) 20%, var(--card));
+  --ring: var(--primary);
+}
+
+.finder-search-panel {
+  border: 1px solid var(--border);
+  border-radius: 1.25rem;
+  background: var(--card);
+  color: var(--card-foreground);
+  box-shadow: 0 4px 24px color-mix(in srgb, var(--foreground) 4%, transparent);
+}
+
+.resource-card[data-selected="true"] {
+  --tw-ring-color: color-mix(in srgb, var(--primary) 35%, var(--card));
+}
+
+.resource-card[data-selected="true"] [data-slot="card-footer"] {
+  background: var(--accent);
+  color: var(--foreground);
+  border-color: color-mix(in srgb, var(--primary) 18%, var(--card));
+}
+
+.resource-finder [data-slot="button"] {
+  min-height: 2.5rem;
+  font-size: 0.875rem;
+}
+
+.resource-finder :is(a, button, summary, input):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

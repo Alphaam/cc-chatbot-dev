@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Copy, ExternalLink } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Empty,
   EmptyDescription,
@@ -52,21 +53,21 @@ export default function ResourceSection({
     <section
       id={category}
       aria-labelledby={`${category}-title`}
-      className="scroll-mt-6 border-t border-dashed border-border pt-7"
+      className="scroll-mt-6"
     >
       <div className="flex flex-col gap-5">
         <div className="flex flex-col gap-1">
           <h2
             id={`${category}-title`}
-            className="text-2xl font-semibold tracking-tight"
+            className="text-xl font-semibold tracking-tight"
           >
             {t(CATEGORY_LABELS[category])}
           </h2>
           <p className="text-sm leading-relaxed text-muted-foreground">
             {t(
               category === "internet"
-                ? "Compare a lower-cost plan and a faster connection. Prices and availability need provider confirmation."
-                : "Nearby programs first, followed by national and online options. Contact the program to check eligibility.",
+                ? "Compare monthly costs, speeds, and eligibility."
+                : "Local programs, followed by national and online options.",
             )}
           </p>
         </div>
@@ -128,7 +129,7 @@ export default function ResourceSection({
             </EmptyHeader>
           </Empty>
         ) : (
-          <ul className="flex flex-col gap-4">
+          <ul className="grid items-start gap-4 md:grid-cols-2">
             {shown.map((resource) => (
               <ResourceRow
                 key={resource.id}
@@ -190,108 +191,73 @@ function ResourceRow({
     }
   }
   return (
-    <li className="rounded-xl border border-border bg-card p-5 text-card-foreground">
-      <article className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="flex min-w-0 flex-1 flex-col gap-1">
-            <h3 className="text-pretty text-lg font-semibold">
-              {resource.name}
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              {plan
-                ? t(plan.technology)
-                : service?.distanceMiles != null
-                  ? t("{distance} miles away", {
-                      distance: service.distanceMiles.toFixed(1),
-                    })
-                  : t("National / Online")}
-            </p>
-          </div>
-          {plan && (
-            <div className="text-right">
-              <p className="text-xl font-semibold">
-                {priceLabel(plan.price) || t("Price not listed")}
-                <span className="text-sm font-normal text-muted-foreground">
-                  {plan.price.trim() ? t("/mo") : ""}
-                </span>
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {plan.downloadMbps} Mbps {t("download")}
-              </p>
-            </div>
-          )}
-        </div>
-        {service && (
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            {service.address ? t(service.address) : t("Online resource")}
-            {service.phone ? ` · ${service.phone}` : ""}
-          </p>
-        )}
-        <p className="text-sm leading-relaxed">
-          {plan
-            ? t(
-                plan.lowIncome === "Y"
-                  ? "Income-based savings listed. Confirm qualification with the provider."
-                  : "Confirm current pricing, fees, and service at this address.",
-              )
-            : t(
-                "Ask about eligibility, cost, and current openings before referring.",
+    <li>
+      <article aria-label={resource.name}>
+        <Card className="resource-card [--card-spacing:--spacing(5)]" data-selected={selected}>
+          <CardHeader>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <CardTitle><h3 className="text-pretty">{resource.name}</h3></CardTitle>
+                <CardDescription>
+                  {plan ? t(plan.technology) : service?.distanceMiles != null
+                    ? t("{distance} miles away", { distance: service.distanceMiles.toFixed(1) })
+                    : t("National / Online")}
+                </CardDescription>
+              </div>
+              {plan && (
+                <div className="flex flex-col gap-1 text-right">
+                  <p className="text-2xl font-semibold tracking-tight tabular-nums">
+                    {priceLabel(plan.price) || t("Price not listed")}
+                    <span className="text-sm font-normal tracking-normal text-muted-foreground">{plan.price.trim() ? t("/mo") : ""}</span>
+                  </p>
+                  <p className="text-sm text-muted-foreground">{plan.downloadMbps} Mbps {t("download")}</p>
+                </div>
               )}
-        </p>
-        <details>
-          <summary className="cursor-pointer text-sm font-medium text-primary">
-            {t("View details")}
-          </summary>
-          <div className="pt-3">
-            <p className="whitespace-pre-line break-words text-sm leading-relaxed text-muted-foreground">
-              {resourceText(resource, t)}
-            </p>
-          </div>
-        </details>
-        <div className="flex flex-wrap items-center gap-2">
-          {resource.url && (
-            <Button
-              variant="outline"
-              size="sm"
-              render={
-                <a
-                  href={resource.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                />
-              }
-              nativeButton={false}
-            >
-              {t(plan ? "Visit provider" : "Program website")}
-              <ExternalLink data-icon="inline-end" aria-hidden="true" />
-            </Button>
-          )}
-          <Button size="sm" variant="ghost" onClick={() => void copy()}>
-            <Copy data-icon="inline-start" aria-hidden="true" />
-            {t(copied ? "Copied" : "Copy details")}
-          </Button>
-          <Button size="sm" variant="ghost" onClick={onShare}>
-            {t("Send details")}
-          </Button>
-          <Button size="sm" variant="ghost" onClick={onReport}>
-            {t("Report an issue")}
-          </Button>
-        </div>
-        <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={selected}
-            onChange={onToggle}
-            className="size-4 accent-primary"
-          />
-          {t("Include in client shortlist")}
-          <span className="sr-only">: {resource.name}</span>
-        </label>
-        {copied && (
-          <span role="status" className="sr-only">
-            {t("Details copied.")}
-          </span>
-        )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col gap-4">
+              {service && (
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {service.address ? t(service.address) : t("Online resource")}
+                  {service.phone ? ` · ${service.phone}` : ""}
+                </p>
+              )}
+              {plan?.lowIncome === "Y" && (
+                <p className="text-sm leading-relaxed text-muted-foreground">{t("Income-based savings listed. Confirm qualification with the provider.")}</p>
+              )}
+              <details>
+                <summary className="cursor-pointer text-sm font-medium text-primary">{t("Details & sharing")}</summary>
+                <div className="pt-4">
+                  <div className="flex flex-col gap-4">
+                    <p className="whitespace-pre-line break-words text-sm leading-relaxed text-muted-foreground">{resourceText(resource, t)}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button size="sm" variant="outline" onClick={() => void copy()}>
+                        <Copy data-icon="inline-start" aria-hidden="true" />{t(copied ? "Copied" : "Copy details")}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={onShare}>{t("Send details")}</Button>
+                      <Button size="sm" variant="ghost" onClick={onReport}>{t("Report an issue")}</Button>
+                    </div>
+                  </div>
+                </div>
+              </details>
+            </div>
+          </CardContent>
+          <CardFooter className="flex-wrap justify-between gap-3">
+            <label className="flex min-h-10 cursor-pointer items-center gap-2 text-sm font-medium">
+              <input type="checkbox" checked={selected} onChange={onToggle} className="size-4 shrink-0 accent-primary" />
+              {t(selected ? "In shortlist" : "Add to shortlist")}
+              <span className="sr-only">: {resource.name}</span>
+            </label>
+            {resource.url && (
+              <a href={resource.url} target="_blank" rel="noopener noreferrer" className={buttonVariants({ variant: "ghost", size: "lg" })}>
+                {t(plan ? "Visit provider" : "Program website")}
+                <ExternalLink data-icon="inline-end" aria-hidden="true" />
+              </a>
+            )}
+          </CardFooter>
+          {copied && <span role="status" className="sr-only">{t("Details copied.")}</span>}
+        </Card>
       </article>
     </li>
   );

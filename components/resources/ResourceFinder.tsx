@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowDown, Download, MapPin, RotateCcw } from "lucide-react";
+import { ArrowDown, BookOpen, ClipboardList, Download, Laptop, MapPin, RotateCcw, ShieldCheck, Wifi } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import ChatInput, { type SendOptions } from "@/components/chat/ChatInput";
@@ -160,45 +161,40 @@ export default function ResourceFinder() {
   }
 
   return (
-    <div className="min-h-dvh bg-background font-sans text-foreground">
+    <div className="resource-finder flex min-h-dvh flex-col bg-background font-sans text-foreground">
       <SessionTimeout key={session} onExpire={reset} />
-      <header className="bg-primary text-primary-foreground">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-3 sm:px-8">
-          <div className="flex flex-col gap-0.5">
-            <span className="text-lg font-semibold">BACE Hub</span>
-            <span className="text-sm">
-              {t("Clark County digital resources")}
-            </span>
+      <header className="border-b border-border bg-card text-card-foreground">
+        <div className="mx-auto max-w-6xl px-5 py-3 sm:px-8">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <span className="text-xl font-semibold tracking-tight">BACE<span className="font-normal text-muted-foreground"> Hub</span></span>
+              <span className="hidden border-l border-border pl-4 text-sm text-muted-foreground sm:block">{t("Resource finder")}</span>
+            </div>
+            <LanguageToggle tone="neutral" />
           </div>
-          <LanguageToggle />
         </div>
       </header>
-      <main className="mx-auto flex max-w-5xl flex-col px-5 py-8 sm:px-8 sm:py-12">
+      <main className="mx-auto w-full max-w-5xl flex-1 px-5 py-8 sm:px-8 sm:py-10 lg:py-14">
         <div className="flex flex-col gap-8">
           <section
             aria-labelledby="finder-title"
-            className="flex flex-col gap-5"
+            className="flex flex-col gap-7"
           >
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex flex-col gap-2">
-                <p className="text-sm font-medium text-primary">
-                  {t("One client. One place to start.")}
+            <div className={cn("flex items-start justify-between gap-4", !result && "justify-center")}>
+              <div className={cn("flex flex-col gap-3", !result && "max-w-2xl items-center text-center")}>
+                <p className="flex items-center gap-1.5 text-sm font-medium text-primary">
+                  <MapPin className="size-4" aria-hidden="true" />
+                  {t("Clark County, Nevada")}
                 </p>
                 <h1
                   id="finder-title"
-                  className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl"
+                  className={cn("text-balance font-semibold tracking-tight", result ? "text-3xl" : "text-4xl leading-tight sm:text-5xl")}
                 >
-                  {t(
-                    result
-                      ? "Your resource overview"
-                      : "Find a path to getting connected.",
-                  )}
+                  {t(result ? "Your resource overview" : "Connection starts here.")}
                 </h1>
                 {!result && (
-                  <p className="max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground">
-                    {t(
-                      "Enter a Clark County address to find internet plans, device programs, and digital skills support together.",
-                    )}
+                  <p className="max-w-lg text-pretty text-base leading-relaxed text-muted-foreground">
+                    {t("Internet, devices, and digital skills. Find the right support for your client, all in one place.")}
                   </p>
                 )}
               </div>
@@ -249,8 +245,9 @@ export default function ResourceFinder() {
               </div>
             )}
             {editing && (
-              <div className="flex flex-col gap-3">
-                <p className="text-sm font-medium">{t("Client address")}</p>
+              <div className="finder-search-panel p-5 sm:p-7">
+                <div className="flex flex-col gap-4">
+                <h2 className="text-lg font-semibold tracking-tight">{t(result ? "Client address" : "Start with an address")}</h2>
                 <ChatInput
                   key={session}
                   addressOnly
@@ -258,10 +255,9 @@ export default function ResourceFinder() {
                   onSend={lookup}
                   placeholder={t("Street address, city, NV ZIP")}
                 />
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  {t(
-                    "No client name needed. Changing the address starts a new shortlist.",
-                  )}
+                <p className="flex items-start gap-2 text-sm leading-relaxed text-muted-foreground">
+                  <ShieldCheck className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                  {t(result ? "Changing the address starts a new shortlist." : "No client name or personal details needed.")}
                 </p>
                 {busy && (
                   <p role="status" className="text-sm text-primary">
@@ -306,30 +302,31 @@ export default function ResourceFinder() {
                     </AlertDescription>
                   </Alert>
                 )}
+                </div>
               </div>
             )}
           </section>
           {!result ? (
-            <div className="border-t border-dashed border-border pt-6">
-              <div className="grid gap-6 sm:grid-cols-3">
-                {CATEGORIES.map((category) => (
-                  <div key={category} className="flex flex-col gap-2">
-                    <h2 className="text-base font-semibold">
-                      {t(CATEGORY_LABELS[category])}
-                    </h2>
-                    <p className="text-sm leading-relaxed text-muted-foreground">
-                      {t(
-                        category === "internet"
-                          ? "Compare costs and connection speeds."
-                          : category === "devices"
-                            ? "Find device programs and computer access."
-                            : "Find classes and help using technology.",
-                      )}
-                    </p>
-                  </div>
-                ))}
+            <section aria-label={t("Explore together")}>
+              <div className="grid gap-6 sm:grid-cols-3 sm:gap-8">
+                {CATEGORIES.map((category) => {
+                  const Icon = { internet: Wifi, devices: Laptop, skills: BookOpen }[category];
+                  return (
+                    <div key={category} className="flex items-start gap-3">
+                      <Icon className="mt-0.5 size-5 shrink-0 text-primary" strokeWidth={1.7} aria-hidden="true" />
+                      <div className="flex flex-col gap-1.5">
+                        <h2 className="text-base font-semibold tracking-tight">
+                          {t(category === "internet" ? "Internet plans" : category === "devices" ? "Devices & access" : "Digital skills")}
+                        </h2>
+                        <p className="text-sm leading-relaxed text-muted-foreground">
+                          {t(category === "internet" ? "Compare costs and connection speeds." : category === "devices" ? "Find device programs and computer access." : "Find classes and help using technology.")}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            </div>
+            </section>
           ) : (
             <div key={address} className="flex flex-col gap-8">
               {!result.found && (
@@ -364,26 +361,24 @@ export default function ResourceFinder() {
               )}
               <section
                 aria-labelledby="shortlist-title"
-                className="rounded-xl border border-border bg-card p-5 text-card-foreground"
+                className="rounded-2xl border border-border bg-card p-5 text-card-foreground sm:p-6"
               >
                 <div className="flex flex-col gap-4">
-                  <div className="flex flex-col gap-1">
-                    <h2
-                      id="shortlist-title"
-                      ref={resultsHeading}
-                      tabIndex={-1}
-                      className="text-xl font-semibold focus:outline-none"
-                    >
-                      {t("Client shortlist")}{" "}
-                      <span className="text-sm font-normal text-muted-foreground">
-                        ({shortlist.length})
-                      </span>
-                    </h2>
-                    <p className="text-sm leading-relaxed text-muted-foreground">
-                      {t(
-                        "A starting option from each category is selected. Review the matches and choose what to share.",
-                      )}
-                    </p>
+                  <div className="flex items-start gap-3">
+                    <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground"><ClipboardList className="size-5" aria-hidden="true" /></span>
+                    <div className="flex flex-col gap-1">
+                      <h2
+                        id="shortlist-title"
+                        ref={resultsHeading}
+                        tabIndex={-1}
+                        className="text-lg font-semibold tracking-tight focus:outline-none"
+                      >
+                        {t("Client shortlist")} <span className="font-normal text-muted-foreground">({shortlist.length})</span>
+                      </h2>
+                      <p className="text-sm leading-relaxed text-muted-foreground">
+                        {t("Review your selections below, then share a single handoff.")}
+                      </p>
+                    </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Button
@@ -396,7 +391,7 @@ export default function ResourceFinder() {
                       {t(
                         downloading
                           ? "Preparing PDF…"
-                          : "Download recommendations PDF",
+                          : "Download PDF",
                       )}
                     </Button>
                     <Button
@@ -413,17 +408,17 @@ export default function ResourceFinder() {
                         setShare({ resources: shortlist, note: true })
                       }
                     >
-                      {t("Copy Case Note")}
+                      {t("Copy case note")}
                     </Button>
                   </div>
                   <p className="text-sm leading-relaxed text-muted-foreground">
                     {t(
-                      "Directory matches only. Contact each provider to confirm availability, cost, and eligibility. Service receipt is not confirmed.",
+                      "Confirm availability, pricing, and eligibility with each provider. A match does not confirm service.",
                     )}
                   </p>
-                  <p role="status" className="text-sm text-primary">
+                  <div role="status" className={cn("text-sm text-primary", !status && "sr-only")}>
                     {t(status)}
-                  </p>
+                  </div>
                 </div>
               </section>
               <nav
@@ -434,7 +429,7 @@ export default function ResourceFinder() {
                   <a
                     key={category}
                     href={`#${category}`}
-                    className="flex min-h-11 items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm text-card-foreground hover:bg-accent hover:text-accent-foreground"
+                    className="flex min-h-11 items-center gap-2 rounded-full border border-border bg-card px-4 text-sm font-medium text-card-foreground transition-colors hover:border-primary/30 hover:bg-accent hover:text-accent-foreground"
                   >
                     {t(CATEGORY_LABELS[category])}{" "}
                     <span className="text-muted-foreground">
