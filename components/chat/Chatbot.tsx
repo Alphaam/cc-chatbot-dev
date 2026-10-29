@@ -45,6 +45,7 @@ interface Message {
   suppressResults?: boolean;
   resultsReady?: boolean;
   addressChange?: boolean;
+  exportRecords?: string[];
 }
 
 type Intent = PromptIntent | 'both';
@@ -626,11 +627,11 @@ export default function Chatbot() {
     focusInput();
   }, [invalidateRequest, focusInput]);
 
-  const recordAnswer = useCallback((answerKey: NonNullable<Message['answerKey']>, content: string, role: Message['role'] = 'user', copy?: MessageCopy) => {
+  const recordAnswer = useCallback((answerKey: NonNullable<Message['answerKey']>, content: string, role: Message['role'] = 'user', copy?: MessageCopy, exportRecords?: string[]) => {
     setRetryJob(null);
     setError(null);
     nearBottom.current = true;
-    setMessages(prev => [...prev.map(m => !m.archived && m.answerKey === answerKey && m.role === role ? { ...m, superseded: true } : m), { id: nanoid(), role, content, answerKey, copy }]);
+    setMessages(prev => [...prev.map(m => !m.archived && m.answerKey === answerKey && m.role === role ? { ...m, superseded: true } : m), { id: nanoid(), role, content, answerKey, copy, exportRecords }]);
     setAnnouncement(copy ? translateCopy(localeRef.current, copy) : content);
   }, [localeRef]);
   const invalidateAnswers = useCallback((keys: Array<NonNullable<Message['answerKey']>>) => {
@@ -713,7 +714,7 @@ export default function Chatbot() {
       : "No matching plan was found for this address.";
     const label = USAGE_PROFILE_OPTIONS.find(o => o.value === usage)!.label;
     recordAnswer('usage', `Internet use: ${label}`, 'user', { key: 'Internet use: {value}', values: { value: label } });
-    recordAnswer('recommendation', `${intro} ${closingLine}`, 'assistant', { key: intro, suffix: closingLine });
+    recordAnswer('recommendation', `${intro} ${closingLine}`, 'assistant', { key: intro, suffix: closingLine }, plan ? [describePlan(plan)] : []);
     setPlanFlow(f => ({
       ...f,
       usageProfile: usage,
@@ -750,13 +751,21 @@ export default function Chatbot() {
   const atMenu = messages.length === 0 || showMainMenu;
 
   const getExportData = (): ChatExportData => ({
+    query: workflow ? t(workflow.prompt) : undefined,
     address: lastLookup?.validated ? lastLookup.address ?? lastLookup.confirmAddress : undefined,
+    referrals: serviceFlow.step !== 'idle' && serviceFlow.serviceGroups
+      ? SERVICE_TIERS.flatMap(([tier]) => serviceFlow.serviceGroups![tier])
+        .filter(service => serviceFlow.step !== 'filtered_shown' || service.type.split(',').map(type => type.trim()).includes(serviceFlow.selectedType ?? ''))
+        .map(service => [describeService(service), service.address, service.url].filter(Boolean).join(' | '))
+      : planFlow.step !== 'idle' && planFlow.planGroups
+        ? flattenPlans(planFlow.planGroups).map(describePlan)
+        : undefined,
     recommendation: planFlow.step === 'recommended_shown' && planFlow.recommendedPlan
       ? [describePlan(planFlow.recommendedPlan), planFlow.recommendationNote ? t(planFlow.recommendationNote) : ''].filter(Boolean).join('\n')
       : undefined,
     messages: messages.map((m, index) => {
       const result = m.role === 'assistant' && m.resultsReady ? resultMap.get(messages[index - 1]?.id ?? '') : undefined;
-      const records: string[] = [];
+      const records: string[] = [...(m.exportRecords ?? [])];
       if (result?.planGroups && result.intent !== 'services') {
         records.push(...flattenPlans(result.planGroups).map(describePlan));
       }
@@ -772,8 +781,9 @@ export default function Chatbot() {
         superseded: m.superseded,
         stopped: m.stopped,
         answerKey: m.answerKey,
+        workflowPrompt: m.workflowPrompt,
         address: result?.address,
-        records,
+        records: result || m.exportRecords ? records : undefined,
       };
     }),
   });
