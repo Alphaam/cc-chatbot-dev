@@ -110,6 +110,7 @@ export default function ResourceFinder() {
       setPending(null);
       setError("");
       void chat.send(text);
+      requestAnimationFrame(() => document.getElementById("latest-resource-question")?.scrollIntoView({ block: "start" }));
     }
   }
 
@@ -324,7 +325,6 @@ export default function ResourceFinder() {
               </div>
             )}
           </section>
-          {!result && <ResourceConversation key={session} chat={chat} onSend={send} />}
           {result && (
             <div key={address} className="flex flex-col gap-8">
               <ResourceCategories resources={resources} />
@@ -344,7 +344,6 @@ export default function ResourceFinder() {
                       >
                         {t("Resources to share")} <span className="font-normal text-muted-foreground">({shortlist.length})</span>
                       </h2>
-                      <p className="text-sm leading-relaxed text-muted-foreground">{t("Use the checkboxes below to change this selection.")}</p>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -426,6 +425,7 @@ export default function ResourceFinder() {
               )}
             </div>
           )}
+          <ResourceConversation key={session} chat={chat} />
           <footer className="border-t border-dashed border-border pt-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
 
@@ -440,7 +440,11 @@ export default function ResourceFinder() {
           </footer>
         </div>
       </main>
-      {result && !editing && <ResourceConversation key={`${session}:${address}`} floating chat={chat} onSend={send} disabled={busy} />}
+      {result && !editing && <div className="finder-chat-dock">
+        <div className="finder-chat-composer">
+          <ChatInput key={`${session}:${address}`} disabled={busy || chat.busy} onStop={chat.busy ? chat.cancel : undefined} placeholder="Ask about these resources, or @ to search address" onSend={send} />
+        </div>
+      </div>}
       <ResetConfirmation
         addressFirst
         open={resetOpen}
