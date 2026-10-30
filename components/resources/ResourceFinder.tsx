@@ -171,13 +171,13 @@ export default function ResourceFinder() {
   return (
     <div className="resource-finder flex min-h-dvh flex-col bg-background font-sans text-foreground">
       <SessionTimeout key={session} onExpire={reset} />
-      <header className="finder-header border-b border-border bg-card text-card-foreground">
+      <header className="finder-header bg-primary text-primary-foreground">
         <div className="mx-auto max-w-5xl px-5 py-4 sm:px-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <span className="max-w-72 text-base font-semibold leading-snug tracking-tight">{t("Clark County Digital Equity Assistant")}</span>
             <div className="flex items-center gap-2">
               <HowToUse />
-              <LanguageToggle tone="neutral" />
+              <LanguageToggle tone="inverse" />
             </div>
           </div>
         </div>
@@ -251,11 +251,8 @@ export default function ResourceFinder() {
                   addressOnly
                   disabled={busy}
                   onSend={lookup}
-                  placeholder={t("Street address, city, NV ZIP")}
+                  placeholder={t("@ to search address")}
                 />
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  {t("@ to search address")}
-                </p>
                 {busy && (
                   <p role="status" className="text-sm text-primary">
                     {t("Checking internet plans and nearby programs…")}
@@ -354,7 +351,7 @@ export default function ResourceFinder() {
                         setShare({ resources: shortlist, note: true })
                       }
                     >
-                      {t("Preview case note")}
+                      {t("Share case note")}
                     </Button>
                   </div>
 

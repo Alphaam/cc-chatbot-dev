@@ -53,7 +53,7 @@ export default function ShareRecommendations({
           <div className="flex flex-col gap-5">
             <div className="flex flex-col gap-2">
               <Dialog.Title className="text-xl font-semibold">
-                {t(note ? "Preview case note" : "Share resource list")}
+                {t(note ? "Share case note" : "Share resource list")}
               </Dialog.Title>
               <Dialog.Description className="text-sm leading-relaxed text-muted-foreground">
                 {t(

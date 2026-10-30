@@ -65,9 +65,8 @@ export default function ResourceWalkthrough() {
                     value={draft}
                     onChange={(event) => { setDraft(event.target.value); setAddressPicked(false); }}
                     onKeyDown={(event) => { if (event.key === "Enter" && (event.nativeEvent.isComposing || event.keyCode === 229)) event.preventDefault(); }}
-                    aria-describedby="practice-address-hint"
                     autoComplete="off"
-                    placeholder="@123"
+                    placeholder={t("@ to search address")}
                     className="min-h-14 w-full rounded-lg border border-input bg-card px-3 text-base text-card-foreground focus-visible:outline-2 focus-visible:outline-ring"
                   />
                   {!addressPicked && draft.trim().startsWith("@") && draft.trim().length >= 4 && (
@@ -76,7 +75,6 @@ export default function ResourceWalkthrough() {
                       {exampleAddress}
                     </button>
                   )}
-                  <p id="practice-address-hint" className="text-sm text-muted-foreground">{t("@ to search address")}</p>
                   <Button type="submit" disabled={!addressPicked}>
                     {t("Find resources")}<ArrowRight data-icon="inline-end" aria-hidden="true" />
                   </Button>

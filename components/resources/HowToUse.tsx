@@ -13,7 +13,7 @@ export default function HowToUse() {
     <Dialog.Root>
       <Dialog.Trigger render={<Button variant="ghost" size="sm" />}>
         <CircleHelp data-icon="inline-start" aria-hidden="true" />
-        {t("How to use")}
+        {t("How to use this tool")}
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Backdrop className="fixed inset-0 bg-background/60 backdrop-blur-md" />
@@ -22,7 +22,7 @@ export default function HowToUse() {
             <div className="shrink-0 border-b border-border p-5 sm:p-6">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex flex-col gap-1">
-                  <Dialog.Title className="text-xl font-semibold tracking-tight">{t("How to use")}</Dialog.Title>
+                  <Dialog.Title className="text-xl font-semibold tracking-tight">{t("How to use this tool")}</Dialog.Title>
                   <Dialog.Description className="text-sm leading-relaxed text-muted-foreground">{t("Try it with example data. Your search stays unchanged.")}</Dialog.Description>
                 </div>
                 <Dialog.Close render={<Button variant="ghost" size="icon" />} aria-label={t("Close guide")}>
