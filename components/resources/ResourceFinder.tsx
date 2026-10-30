@@ -188,7 +188,6 @@ export default function ResourceFinder() {
             aria-labelledby="finder-title"
             className="flex flex-col gap-7"
           >
-            {!result && <p className="text-sm font-medium text-primary">{t("Clark County, Nevada")}</p>}
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex flex-col gap-2">
                 <h1 id="finder-title" className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
@@ -242,10 +241,11 @@ export default function ResourceFinder() {
                 </div>
               </div>
             )}
+            {!result && <ResourceCategories />}
             {editing && (
               <div className="finder-search-panel p-5 sm:p-7">
                 <div className="flex flex-col gap-4">
-                <h2 className="text-base font-semibold">{t("Client address")}</h2>
+                <h2 className="text-base font-semibold">{t("Enter a client address to find nearby resources.")}</h2>
                 <ChatInput
                   key={session}
                   addressOnly
@@ -299,7 +299,6 @@ export default function ResourceFinder() {
                 </div>
               </div>
             )}
-            {!result && <ResourceCategories />}
           </section>
           {result && (
             <div key={address} className="flex flex-col gap-8">

@@ -14,6 +14,7 @@ export const resourceSpanish: Record<string, string> = {
   "results": "resultados",
   "Select Share resource list to preview what your client receives.": "Pulse Compartir lista de recursos para ver lo que recibirá su cliente.",
   "@ to search address": "@ para buscar dirección",
+  "Enter a client address to find nearby resources.": "Ingrese la dirección del cliente para encontrar recursos cercanos.",
   "Filter plans": "Filtrar planes",
   "Income-based discount": "Descuento según ingresos",
   "No matches: {categories}": "Sin resultados: {categories}",
