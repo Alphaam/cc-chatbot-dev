@@ -1,4 +1,19 @@
 export const resourceSpanish: Record<string, string> = {
+  "@ to search address or ask a question": "@ para buscar una dirección o hacer una pregunta",
+  "Ask about these resources, or @ to search address": "Pregunte sobre los recursos, o @ para buscar dirección",
+  "Start with an address or a question.": "Comience con una dirección o una pregunta.",
+  "Find the right support for your client.": "Encuentre el apoyo adecuado para su cliente.",
+  "Internet, devices, and digital skills, all in one place.": "Internet, dispositivos y habilidades digitales en un solo lugar.",
+  "Ask the assistant": "Pregunte al asistente",
+  "Show conversation": "Mostrar conversación",
+  "Hide conversation": "Ocultar conversación",
+  "Assistant": "Asistente",
+  "You": "Usted",
+  "Thinking…": "Pensando…",
+  "Reply stopped.": "Respuesta detenida.",
+  "Latest reply": "Última respuesta",
+  "Conversation updated.": "Conversación actualizada.",
+  "The assistant is unavailable right now. You can still search an address.": "El asistente no está disponible en este momento. Aún puede buscar una dirección.",
   "Resources to share": "Recursos para compartir",
   "Select to share": "Seleccionar para compartir",
   "Selected to share": "Seleccionado para compartir",
@@ -206,6 +221,6 @@ export const resourceSpanish: Record<string, string> = {
   "Confirm with provider": "Confirmar con el proveedor",
   "Clear this client and start again?":
     "¿Borrar este cliente y empezar de nuevo?",
-  "This clears the address and shortlist from this screen. Saved issue reports are not deleted.":
-    "Se borran la dirección y la selección de esta pantalla. Los reportes guardados no se eliminan.",
+  "This clears the conversation, address, and shortlist from this screen. Saved issue reports are not deleted.":
+    "Se borran la conversación, la dirección y la selección de esta pantalla. Los reportes guardados no se eliminan.",
 };

@@ -8,8 +8,14 @@ import {
   resourceCaseNote,
   categoryCounts,
   safeWebsite,
+  isAddressQuery,
 } from "../lib/resource-finder.ts";
 import { translate } from "../lib/i18n.ts";
+
+test("mixed input routes addresses without treating household questions as addresses", () => {
+  for (const address of ["@ 500 S Grand Central Pkwy", "500 S Grand Central Pkwy, Las Vegas, NV 89155", "123 Main", "Find plans at 123 Main St, Las Vegas", "123 Main Coirt"]) assert.equal(isAddressQuery(address), true, address);
+  for (const question of ["What is broadband?", "Which plan costs less?", "100 Mbps for 2 people?", "2 people need internet", "3 devices", "How do I sign up?", "¿Qué plan es más barato?"]) assert.equal(isAddressQuery(question), false, question);
+});
 
 const t = (key, values) => translate("en", key, values);
 const plan = (name, price, speed) => ({

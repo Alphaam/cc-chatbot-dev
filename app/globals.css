@@ -413,12 +413,13 @@
 .resource-finder {
   --background: #f4f6fa;
   --foreground: #1d2c44;
-  --primary: #3458bf;
+  --primary: #245794;
+  --resource: #286749;
   --primary-foreground: #ffffff;
   --card: #ffffff;
   --card-foreground: var(--foreground);
   --muted: var(--background);
-  --muted-foreground: #5c6b80;
+  --muted-foreground: color-mix(in srgb, var(--foreground) 73%, var(--card));
   --secondary: var(--background);
   --secondary-foreground: var(--foreground);
   --accent: color-mix(in srgb, var(--primary) 7%, var(--card));
@@ -441,35 +442,66 @@
   box-shadow: 0 8px 0 -3px var(--accent), 0 18px 40px -20px color-mix(in srgb, var(--primary) 30%, transparent);
 }
 
-.finder-coverage {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem 1.5rem;
-  color: var(--muted-foreground);
-  font-size: .875rem;
-  line-height: 1.5;
+.resource-finder [data-category] {
+  --topic: var(--primary);
+  --topic-muted: color-mix(in srgb, var(--topic) 7%, var(--card));
 }
-.finder-coverage li { display: flex; align-items: center; gap: .625rem; }
-.finder-coverage svg { color: var(--primary); }
+.resource-finder [data-category="devices"],
+.resource-finder [data-category="skills"] { --topic: var(--resource); }
+.finder-coverage { display: flex; flex-wrap: wrap; gap: 1rem; font-size: 1rem; line-height: 1.5; }
+.finder-coverage li {
+  flex: 1 1 13rem;
+  display: flex;
+  align-items: center;
+  gap: .875rem;
+  padding: 1.25rem;
+  border: 1px solid color-mix(in srgb, var(--topic) 18%, var(--card));
+  border-radius: 1rem;
+  background: var(--topic-muted);
+  color: var(--topic);
+  font-weight: 600;
+}
+.finder-coverage-icon { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 2.75rem; height: 2.75rem; border-radius: .75rem; background: var(--card); color: var(--topic); }
 .finder-categories { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }
 .finder-category {
   display: flex;
   flex-direction: column;
   border-radius: 1rem;
   padding: 1rem;
-  border: 1px solid var(--border);
-  background: var(--card);
-  color: var(--primary);
+  border: 1px solid color-mix(in srgb, var(--topic) 20%, var(--card));
+  background: var(--topic-muted);
+  color: var(--topic);
   box-shadow: 0 4px 12px -6px color-mix(in srgb, var(--foreground) 20%, transparent);
   transition: border-color .15s, box-shadow .15s;
 }
-.finder-category:hover { border-color: var(--primary); box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--primary) 25%, transparent); }
+.finder-category:hover { border-color: var(--topic); box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--topic) 25%, transparent); }
 .finder-category-top { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
 .finder-category-count { font-size: 1.75rem; font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; }
 .finder-category-label { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding-top: .75rem; color: var(--foreground); font-size: .875rem; line-height: 1.5; font-weight: 500; }
 .finder-category[data-empty="true"] { background: var(--background); color: var(--muted-foreground); box-shadow: none; }
 .finder-handoff { border: 1px solid color-mix(in srgb, var(--primary) 16%, var(--card)); border-radius: 1.25rem; background: var(--accent); color: var(--foreground); }
 .resource-card { box-shadow: 0 5px 16px -8px color-mix(in srgb, var(--foreground) 20%, transparent); }
+.finder-resource-section[data-category="devices"],
+.finder-resource-section[data-category="skills"] {
+  --primary: var(--resource);
+  --accent: color-mix(in srgb, var(--resource) 7%, var(--card));
+  --accent-foreground: var(--resource);
+  --ring: var(--resource);
+}
+.finder-resource-section h2 { color: var(--topic); }
+.finder-resource-section .resource-card [data-slot="card-header"] {
+  background: var(--topic-muted);
+  color: var(--card-foreground);
+  padding-block: var(--card-spacing);
+  margin-top: calc(-1 * var(--card-spacing));
+}
+.finder-with-chat { padding-bottom: calc(10rem + env(safe-area-inset-bottom)); }
+.finder-chat-dock { position: fixed; z-index: 20; bottom: max(1rem, env(safe-area-inset-bottom)); inset-inline: 0; width: min(100%, 52rem); margin-inline: auto; padding-inline: 1rem; }
+.finder-chat-surface { border: 1px solid var(--border); border-radius: 1.25rem; background: var(--card); color: var(--card-foreground); box-shadow: 0 8px 40px color-mix(in srgb, var(--foreground) 12%, transparent); }
+.finder-chat-inline .finder-chat-surface { box-shadow: none; }
+.finder-chat-transcript { height: min(38dvh, 22rem); border-top: 1px solid var(--border); }
+.finder-chat-surface [data-slot="message-header"] { font-size: .875rem; }
+.finder-chat-surface [data-slot="message-scroller-viewport"] { scroll-behavior: auto; }
 @media (max-width: 519px) {
   .finder-categories { grid-template-columns: 1fr; }
   .finder-category { flex-direction: row; align-items: center; padding: .875rem 1rem; }

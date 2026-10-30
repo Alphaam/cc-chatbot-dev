@@ -48,7 +48,7 @@ export default function ResetConfirmation({
             <AlertDialog.Description className="text-sm leading-relaxed text-muted-foreground">
               {t(
                 addressFirst
-                  ? "This clears the address and shortlist from this screen. Saved issue reports are not deleted."
+                  ? "This clears the conversation, address, and shortlist from this screen. Saved issue reports are not deleted."
                   : "This clears the conversation, draft, address, answers, and results from this screen, and returns to the three starting options.",
               )}
             </AlertDialog.Description>

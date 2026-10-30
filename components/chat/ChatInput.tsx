@@ -30,6 +30,7 @@ function outsideArea(context?: AddressContext): boolean {
 }
 export interface SendOptions {
   addressConfirmed?: boolean;
+  addressSearch?: boolean;
   // A suggested dataset address the user picked; the lookup matches it exactly.
   exact?: { addr: string; city: string; state: string; zip: string; lat: number; lon: number };
 }
@@ -42,6 +43,7 @@ interface ChatInputProps {
   onStop?: () => void;
   onCancel?: () => void;
   addressOnly?: boolean;
+  spacious?: boolean;
 }
 type SearchState = 'idle' | 'short' | 'loading' | 'success' | 'empty' | 'unavailable' | 'outside';
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_API_KEY;
@@ -51,7 +53,7 @@ const DEBOUNCE_MS = 150;
 const CLARK_PROXIMITY = '-115.1398,36.1699';
 const CLARK_BBOX = '-115.9,35.0,-114.0,36.85';
 
-export default function ChatInput({ onSend, disabled, onDraftChange, placeholder = 'Type @ to search an address, or ask a question…', autoFocus, onStop, onCancel, addressOnly = false }: ChatInputProps) {
+export default function ChatInput({ onSend, disabled, onDraftChange, placeholder = 'Type @ to search an address, or ask a question…', autoFocus, onStop, onCancel, addressOnly = false, spacious = false }: ChatInputProps) {
   const { t } = useLanguage();
   const [value, setValue] = useState('');
   const valueRef = useRef('');
@@ -176,7 +178,7 @@ export default function ChatInput({ onSend, disabled, onDraftChange, placeholder
     setOpen(false);
     setState('idle');
     setSuggestions([]);
-    onSend(text.replace(/@(?=\S)/g, ''), { addressConfirmed });
+    onSend(text.replace(/@\s*(?=\d)/g, ''), { addressConfirmed, addressSearch: /(?:^|\s)@\s*\d/.test(text) });
   };
   const feedback = state === 'success'
     ? t('{count} address suggestions available. Use the arrow keys to select.', { count: suggestions.length })
@@ -190,7 +192,7 @@ export default function ChatInput({ onSend, disabled, onDraftChange, placeholder
     <div ref={wrapperRef} className="relative">
       <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">{open ? feedback : ''}</div>
       {open && (
-        <div className={`absolute left-0 right-0 z-10 rounded-xl border border-border bg-background text-foreground shadow-lg overflow-hidden ${addressOnly ? 'top-full mt-2' : 'bottom-full mb-2'}`}>
+        <div className={`absolute left-0 right-0 z-10 rounded-xl border border-border bg-background text-foreground shadow-lg overflow-hidden ${addressOnly || spacious ? 'top-full mt-2' : 'bottom-full mb-2'}`}>
           <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-muted text-muted-foreground">
             <MapPin size={16} /><span className="text-sm font-medium">{t('Clark County addresses')}</span>
             {state === 'loading' && <Loader2 size={16} className="animate-spin motion-reduce:animate-none" />}
@@ -220,7 +222,7 @@ export default function ChatInput({ onSend, disabled, onDraftChange, placeholder
           }}
           placeholder={t(placeholder)} disabled={disabled} role="combobox" aria-label={t(placeholder)} aria-expanded={open}
           aria-controls={open ? listId : undefined} aria-activedescendant={open && suggestions.length ? `${listId}-${activeIndex}` : undefined} aria-autocomplete="list"
-          className={cn('min-w-0 flex-1 rounded-xl border border-input px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent disabled:opacity-50', addressOnly ? 'bg-background/60 py-4' : 'bg-card py-2.5')} />
+          className={cn('min-w-0 flex-1 rounded-xl border border-input px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent disabled:opacity-50', addressOnly || spacious ? 'bg-background/60 py-5' : 'bg-card py-2.5')} />
         {onCancel && <button type="button" aria-label={t('Cancel address change')} title={t('Cancel address change')} onClick={onCancel} className="flex size-11 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring transition-colors"><X aria-hidden="true" size={20} /></button>}
         <button type={onStop ? 'button' : 'submit'} aria-label={t(onStop ? 'Stop' : addressOnly ? 'Find resources' : 'Send message')} title={t(onStop ? 'Stop' : addressOnly ? 'Find resources' : 'Send message')} onClick={onStop} disabled={!onStop && (disabled || !value.trim())} className={`shrink-0 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-40 flex items-center justify-center transition-colors motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${addressOnly ? 'h-14 px-4' : 'size-11'}`}>
           {onStop ? <Square aria-hidden="true" size={18} className="fill-current" /> : addressOnly ? <span className="flex items-center gap-2 text-sm font-medium">{disabled ? <Loader2 aria-hidden="true" size={16} className="animate-spin motion-reduce:animate-none" /> : null}{t('Find resources')}{!disabled && <ArrowRight aria-hidden="true" size={16} />}</span> : <Send aria-hidden="true" size={18} />}

@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ClipboardList, Download, MapPin, RotateCcw } from "lucide-react";
 import ResourceCategories from "./ResourceCategories";
+import ResourceConversation from "./ResourceConversation";
+import { useResourceChat } from "./useResourceChat";
 import HowToUse from "./HowToUse";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -17,6 +19,7 @@ import {
 import {
   CATEGORIES,
   CATEGORY_LABELS,
+  isAddressQuery,
   defaultShortlist,
   recommendationsText,
   resourcesFromLookup,
@@ -30,6 +33,9 @@ import ReportIssue from "./ReportIssue";
 export default function ResourceFinder() {
   const { t } = useLanguage();
   const [result, setResult] = useState<LookupResponse | null>(null);
+  const chat = useResourceChat(result);
+  const clearChat = chat.clear;
+  const searchPanel = useRef<HTMLDivElement>(null);
   const [pending, setPending] = useState<LookupResponse | null>(null);
   const [address, setAddress] = useState("");
   const [editing, setEditing] = useState(true);
@@ -63,6 +69,7 @@ export default function ResourceFinder() {
   useEffect(() => () => request.current?.abort(), []);
 
   const reset = useCallback(() => {
+    clearChat();
     generation.current += 1;
     setResetOpen(false);
     request.current?.abort();
@@ -78,9 +85,10 @@ export default function ResourceFinder() {
     setLastQuery("");
     setStatus("");
     setSession((value) => value + 1);
-  }, []);
+  }, [clearChat]);
 
   function accept(data: LookupResponse, query: string) {
+    clearChat();
     generation.current += 1;
     setShare(null);
     setReport(null);
@@ -94,7 +102,21 @@ export default function ResourceFinder() {
     requestAnimationFrame(() => resultsHeading.current?.focus());
   }
 
+  function send(text: string, options?: SendOptions) {
+    if (busy || chat.busy) return;
+    if (options?.addressSearch || options?.addressConfirmed || options?.exact || isAddressQuery(text)) {
+      void lookup(text, options);
+    } else {
+      setPending(null);
+      setError("");
+      void chat.send(text);
+    }
+  }
+
   async function lookup(text: string, options?: SendOptions) {
+    if (chat.busy) chat.cancel();
+    setEditing(true);
+    requestAnimationFrame(() => searchPanel.current?.scrollIntoView({ block: "center" }));
     request.current?.abort();
     const controller = new AbortController();
     request.current = controller;
@@ -169,7 +191,7 @@ export default function ResourceFinder() {
   }
 
   return (
-    <div className="resource-finder flex min-h-dvh flex-col bg-background font-sans text-foreground">
+    <div className={cn("resource-finder flex min-h-dvh flex-col bg-background font-sans text-foreground", result && !editing && "finder-with-chat")}>
       <SessionTimeout key={session} onExpire={reset} />
       <header className="finder-header bg-primary text-primary-foreground">
         <div className="mx-auto max-w-5xl px-5 py-4 sm:px-8">
@@ -191,11 +213,11 @@ export default function ResourceFinder() {
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex flex-col gap-2">
                 <h1 id="finder-title" className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
-                  {t(result ? "Your resource overview" : "Find local support")}
+                  {t(result ? "Your resource overview" : "Find the right support for your client.")}
                 </h1>
-
+                {!result && <p className="text-pretty text-base leading-relaxed text-muted-foreground">{t("Internet, devices, and digital skills, all in one place.")}</p>}
               </div>
-              {result && (
+              {(result || chat.messages.length > 0) && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -243,15 +265,17 @@ export default function ResourceFinder() {
             )}
             {!result && <ResourceCategories />}
             {editing && (
-              <div className="finder-search-panel p-5 sm:p-7">
+              <div ref={searchPanel} className="finder-search-panel p-5 sm:p-7">
                 <div className="flex flex-col gap-4">
-                <h2 className="text-base font-semibold">{t("Enter a client address to find nearby resources.")}</h2>
+                <h2 className="text-base font-semibold">{t(result ? "Enter a client address to find nearby resources." : "Start with an address or a question.")}</h2>
                 <ChatInput
                   key={session}
-                  addressOnly
-                  disabled={busy}
-                  onSend={lookup}
-                  placeholder={t("@ to search address")}
+                  addressOnly={!!result}
+                  spacious
+                  disabled={busy || chat.busy}
+                  onStop={chat.busy ? chat.cancel : undefined}
+                  onSend={result ? lookup : send}
+                  placeholder={t(result ? "@ to search address" : "@ to search address or ask a question")}
                 />
                 {busy && (
                   <p role="status" className="text-sm text-primary">
@@ -300,6 +324,7 @@ export default function ResourceFinder() {
               </div>
             )}
           </section>
+          {!result && <ResourceConversation key={session} chat={chat} onSend={send} />}
           {result && (
             <div key={address} className="flex flex-col gap-8">
               <ResourceCategories resources={resources} />
@@ -415,6 +440,7 @@ export default function ResourceFinder() {
           </footer>
         </div>
       </main>
+      {result && !editing && <ResourceConversation key={`${session}:${address}`} floating chat={chat} onSend={send} disabled={busy} />}
       <ResetConfirmation
         addressFirst
         open={resetOpen}

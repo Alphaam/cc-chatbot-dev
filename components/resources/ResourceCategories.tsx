@@ -14,7 +14,7 @@ export default function ResourceCategories({ resources }: { resources?: Resource
       <ul aria-label={t("Resource categories")} className="finder-coverage">
         {categories.map(({ category }) => {
           const Icon = icons[category];
-          return <li key={category}><Icon className="size-5 shrink-0" aria-hidden="true" /><span>{t(CATEGORY_LABELS[category])}</span></li>;
+          return <li key={category} data-category={category}><span className="finder-coverage-icon"><Icon className="size-5 shrink-0" aria-hidden="true" /></span><span>{t(CATEGORY_LABELS[category])}</span></li>;
         })}
       </ul>
     );
@@ -24,7 +24,7 @@ export default function ResourceCategories({ resources }: { resources?: Resource
       {categories.map(({ category, count }) => {
         const Icon = icons[category];
         return (
-          <a key={category} href={`#${category}`} className="finder-category" data-empty={count === 0}>
+          <a key={category} href={`#${category}`} className="finder-category" data-category={category} data-empty={count === 0}>
             <div className="finder-category-top">
               <Icon className="size-5" aria-hidden="true" />
               <span className="finder-category-count">{count}<span className="sr-only"> {t("results")}</span></span>

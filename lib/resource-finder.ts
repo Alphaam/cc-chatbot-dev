@@ -8,6 +8,12 @@ import {
 } from "./plan-utils.ts";
 import type { ServiceGroups, ServiceWithDistance } from "./services-lookup";
 
+export function isAddressQuery(text: string) {
+  return /(?:^|\s)@\s*\d/.test(text)
+    || /\b\d+[\w\s.#-]+\s(?:street|avenue|boulevard|drive|road|lane|court|place|circle|highway|parkway|square|st|ave|blvd|dr|rd|ln|ct|way|pl|cir|hwy|pkwy|loop|sq)\b/i.test(text)
+    || /^\s*\d+\s+(?!(?:mbps|gbps|gb|devices?|people|person|dollars?|computers?|laptops?|tablets?|months?|years?)\b)[a-z][\w\s.,#-]+$/i.test(text);
+}
+
 export type ResourceCategory = "internet" | "devices" | "skills";
 export const CATEGORIES: ResourceCategory[] = ["internet", "devices", "skills"];
 export const CATEGORY_LABELS: Record<ResourceCategory, string> = {

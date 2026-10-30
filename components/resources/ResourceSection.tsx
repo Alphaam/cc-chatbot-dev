@@ -53,7 +53,8 @@ export default function ResourceSection({
     <section
       id={category}
       aria-labelledby={`${category}-title`}
-      className="scroll-mt-6"
+      className="finder-resource-section scroll-mt-6"
+      data-category={category}
     >
       <div className="flex flex-col gap-5">
         <div className="flex flex-col gap-1">
