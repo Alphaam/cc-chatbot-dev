@@ -6,6 +6,8 @@ export const resourceSpanish: Record<string, string> = {
   "Internet, devices, and digital skills, all in one place.": "Internet, dispositivos y habilidades digitales en un solo lugar.",
   "Ask the assistant": "Pregunte al asistente",
   "Ask me about:": "Pregúnteme sobre:",
+  "Give feedback/report issues": "Dar comentarios/reportar problemas",
+  "Have a suggestion or found something that needs fixing?": "¿Tiene una sugerencia o encontró algo que necesita corregirse?",
   "Free or low-cost devices": "Dispositivos gratuitos o de bajo costo",
   "Compare broadband options at your client’s address, including monthly prices, speeds, and income-based discounts.": "Compare opciones de internet en la dirección de su cliente, incluidos precios mensuales, velocidades y descuentos según los ingresos.",
   "Explore classes and one-on-one support for everyday computer skills, online safety, and using digital services.": "Explore clases y apoyo individual para el uso cotidiano de computadoras, la seguridad en línea y los servicios digitales.",

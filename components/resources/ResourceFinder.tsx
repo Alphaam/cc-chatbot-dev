@@ -427,23 +427,21 @@ export default function ResourceFinder() {
             </div>
           )}
           <ResourceConversation key={session} chat={chat} />
-          {!result && chat.messages.length === 0 && (
-            <div className="flex flex-col gap-10">
-              <ResourceTopics />
-              <ResourceIntro />
-            </div>
-          )}
-          <footer className="border-t border-dashed border-border pt-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setReport("general")}
-              >
-                {t("Give feedback")}
-              </Button>
-            </div>
+          {!result && chat.messages.length === 0 && <ResourceTopics />}
+          <footer>
+            {!result && chat.messages.length === 0 ? (
+              <ResourceIntro onFeedback={() => setReport("general")} />
+            ) : (
+              <div className="border-t border-dashed border-border pt-5">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setReport("general")}
+                >
+                  {t("Give feedback/report issues")}
+                </Button>
+              </div>
+            )}
           </footer>
         </div>
       </main>
