@@ -6,12 +6,12 @@ import { CircleHelp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/components/chat/LanguageProvider";
 
-export default function HowToUse() {
+export default function HowToUse({ variant = "ghost" }: { variant?: "ghost" | "outline" }) {
   const { t } = useLanguage();
 
   return (
     <Dialog.Root>
-      <Dialog.Trigger render={<Button variant="ghost" size="sm" />}>
+      <Dialog.Trigger render={<Button variant={variant} size="sm" />}>
         <CircleHelp data-icon="inline-start" aria-hidden="true" />
         {t("How to use this tool")}
       </Dialog.Trigger>

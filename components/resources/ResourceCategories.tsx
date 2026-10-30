@@ -6,19 +6,9 @@ import { categoryCounts, CATEGORY_LABELS, type Resource } from "@/lib/resource-f
 
 const icons = { internet: Wifi, devices: Laptop, skills: GraduationCap };
 
-export default function ResourceCategories({ resources }: { resources?: Resource[] }) {
+export default function ResourceCategories({ resources }: { resources: Resource[] }) {
   const { t } = useLanguage();
-  const categories = categoryCounts(resources ?? []);
-  if (!resources) {
-    return (
-      <ul aria-label={t("Resource categories")} className="finder-coverage">
-        {categories.map(({ category }) => {
-          const Icon = icons[category];
-          return <li key={category} data-category={category}><span className="finder-coverage-icon"><Icon className="size-5 shrink-0" aria-hidden="true" /></span><span>{t(CATEGORY_LABELS[category])}</span></li>;
-        })}
-      </ul>
-    );
-  }
+  const categories = categoryCounts(resources);
   return (
     <nav aria-label={t("Resource categories")} className="finder-categories">
       {categories.map(({ category, count }) => {
