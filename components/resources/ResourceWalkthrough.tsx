@@ -11,8 +11,8 @@ const exampleAddress = "123 Example St, Las Vegas, NV 89101";
 const steps = [
   { title: "Search an address", instruction: "Type @123, choose the example address, then select Find resources." },
   { title: "Open the details", instruction: "Select Details & sharing to learn more about this option." },
-  { title: "Choose an option", instruction: "Check Add to shortlist to include this example." },
-  { title: "Share the shortlist", instruction: "Select Send or copy to preview what your client receives." },
+  { title: "Choose an option", instruction: "Check the box to include this resource." },
+  { title: "Share the shortlist", instruction: "Select Share resource list to preview what your client receives." },
 ];
 
 export default function ResourceWalkthrough() {
@@ -85,7 +85,7 @@ export default function ResourceWalkthrough() {
             ) : (
               <div className="flex flex-col gap-4">
                 <div aria-hidden={step === 2 || undefined} className={cn("flex flex-col gap-1", step === 2 && "select-none blur-[3px]")}>
-                  <p className="text-base font-semibold">{t(step === 3 ? "Client shortlist" : "Example internet plan")}{step === 3 ? " (1)" : ""}</p>
+                  <p className="text-base font-semibold">{t(step === 3 ? "Resources to share" : "Example internet plan")}{step === 3 ? " (1)" : ""}</p>
                   {step !== 3 && <p className="text-sm text-muted-foreground">$25{t("/mo")} · 100 Mbps</p>}
                 </div>
                 {step === 1 && (
@@ -102,12 +102,12 @@ export default function ResourceWalkthrough() {
                 {step === 2 && (
                   <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm font-medium">
                     <input type="checkbox" checked={selected} onChange={(event) => setSelected(event.target.checked)} className="size-4 accent-primary" />
-                    {t(selected ? "In shortlist" : "Add to shortlist")}
+                    {t(selected ? "Selected to share" : "Select to share")}
                   </label>
                 )}
                 {step === 3 && (
                   <>
-                    <Button variant="outline" onClick={() => setShareOpen(true)} aria-expanded={shareOpen}>{t("Send or copy")}</Button>
+                    <Button variant="outline" onClick={() => setShareOpen(true)} aria-expanded={shareOpen}>{t("Share resource list")}</Button>
                     {shareOpen && (
                       <div className="flex flex-col gap-3">
                         <label htmlFor="practice-share" className="text-sm font-medium">{t("Example message")}</label>
@@ -132,7 +132,7 @@ export default function ResourceWalkthrough() {
           </aside>
         </div>
         <div aria-hidden="true" inert className="select-none rounded-xl border border-border bg-muted p-3 text-muted-foreground blur-[3px]">
-          <p className="text-sm">{t(step === 0 ? "Client shortlist" : "Devices & computer access")}</p>
+          <p className="text-sm">{t(step === 0 ? "Resources to share" : "Devices & computer access")}</p>
           <p className="text-sm">{t(step === 0 ? "Internet plans" : "Digital skills training")}</p>
         </div>
       </div>

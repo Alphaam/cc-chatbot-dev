@@ -5,6 +5,8 @@ import {
   defaultShortlist,
   resourceText,
   recommendationsText,
+  resourceCaseNote,
+  categoryCounts,
   safeWebsite,
 } from "../lib/resource-finder.ts";
 import { translate } from "../lib/i18n.ts";
@@ -133,6 +135,32 @@ test("service descriptions and labels retain Spanish support", () => {
   assert.match(text, /Teléfono|Idiomas/);
   assert.doesNotMatch(text, /Open to Clark County residents/);
   assert.match(text, /1.2 millas/);
+});
+
+test("all three category counts remain visible with empty categories last", () => {
+  const resources = resourcesFromLookup(lookup);
+  assert.deepEqual(categoryCounts(resources), [
+    { category: "internet", count: 3 }, { category: "devices", count: 1 }, { category: "skills", count: 1 },
+  ]);
+  assert.deepEqual(categoryCounts(resources.filter((resource) => resource.category === "skills")), [
+    { category: "skills", count: 1 }, { category: "internet", count: 0 }, { category: "devices", count: 0 },
+  ]);
+  assert.deepEqual(categoryCounts([]).map(({ count }) => count), [0, 0, 0]);
+});
+
+test("case note includes every selected resource, not unselected options, and keeps address opt-in", () => {
+  const resources = resourcesFromLookup(lookup);
+  const selected = resources.filter((resource) => resource.plan?.planName === "Lower cost" || resource.service);
+  const note = resourceCaseNote(selected, t);
+  assert.match(note, /Search query: Internet, device access, and digital skills resources/);
+  assert.match(note, /Lower cost/);
+  assert.match(note, /Test library · Devices & computer access/);
+  assert.match(note, /Test library · Digital skills training/);
+  assert.doesNotMatch(note, /Faster|Middle|Test client address|Select a matched resource/);
+  assert.match(note, /unconfirmed/);
+  assert.match(resourceCaseNote(selected, t, "Test client address"), /Current address: Test client address/);
+  assert.match(resourceCaseNote(selected, (key) => translate("es", key)), /Recursos seleccionados/);
+  assert.doesNotMatch(resourceCaseNote([], t), /Test library|Lower cost/);
 });
 
 test("website links reject unsafe schemes", () => {

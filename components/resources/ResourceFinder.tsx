@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowDown, ClipboardList, Download, MapPin, RotateCcw } from "lucide-react";
+import { ClipboardList, Download, MapPin, RotateCcw } from "lucide-react";
+import ResourceCategories from "./ResourceCategories";
 import HowToUse from "./HowToUse";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -170,11 +171,14 @@ export default function ResourceFinder() {
   return (
     <div className="resource-finder flex min-h-dvh flex-col bg-background font-sans text-foreground">
       <SessionTimeout key={session} onExpire={reset} />
-      <header className="border-b border-border bg-card text-card-foreground">
-        <div className="mx-auto max-w-5xl px-5 py-3 sm:px-8">
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-lg font-semibold tracking-tight">{t("Resource finder")}</span>
-            <LanguageToggle tone="neutral" />
+      <header className="finder-header border-b border-border bg-card text-card-foreground">
+        <div className="mx-auto max-w-5xl px-5 py-4 sm:px-8">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span className="max-w-72 text-base font-semibold leading-snug tracking-tight">{t("Clark County Digital Equity Assistant")}</span>
+            <div className="flex items-center gap-2">
+              <HowToUse />
+              <LanguageToggle tone="neutral" />
+            </div>
           </div>
         </div>
       </header>
@@ -184,10 +188,7 @@ export default function ResourceFinder() {
             aria-labelledby="finder-title"
             className="flex flex-col gap-7"
           >
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-medium text-primary">{t("Clark County, Nevada")}</p>
-              <HowToUse />
-            </div>
+            {!result && <p className="text-sm font-medium text-primary">{t("Clark County, Nevada")}</p>}
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex flex-col gap-2">
                 <h1 id="finder-title" className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
@@ -301,13 +302,14 @@ export default function ResourceFinder() {
                 </div>
               </div>
             )}
+            {!result && <ResourceCategories />}
           </section>
           {result && (
             <div key={address} className="flex flex-col gap-8">
-
+              <ResourceCategories resources={resources} />
               <section
                 aria-labelledby="shortlist-title"
-                className="rounded-2xl border border-border bg-card p-5 text-card-foreground sm:p-6"
+                className="finder-handoff p-5 sm:p-6"
               >
                 <div className="flex flex-col gap-4">
                   <div className="flex items-start gap-3">
@@ -319,9 +321,9 @@ export default function ResourceFinder() {
                         tabIndex={-1}
                         className="text-lg font-semibold tracking-tight focus:outline-none"
                       >
-                        {t("Client shortlist")} <span className="font-normal text-muted-foreground">({shortlist.length})</span>
+                        {t("Resources to share")} <span className="font-normal text-muted-foreground">({shortlist.length})</span>
                       </h2>
-
+                      <p className="text-sm leading-relaxed text-muted-foreground">{t("Use the checkboxes below to change this selection.")}</p>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -335,7 +337,7 @@ export default function ResourceFinder() {
                       {t(
                         downloading
                           ? "Preparing PDF…"
-                          : "Download PDF",
+                          : "Download resource list (PDF)",
                       )}
                     </Button>
                     <Button
@@ -343,7 +345,7 @@ export default function ResourceFinder() {
                       disabled={!shortlist.length || editing || busy}
                       onClick={() => setShare({ resources: shortlist })}
                     >
-                      {t("Send or copy")}
+                      {t("Share resource list")}
                     </Button>
                     <Button
                       variant="ghost"
@@ -352,7 +354,7 @@ export default function ResourceFinder() {
                         setShare({ resources: shortlist, note: true })
                       }
                     >
-                      {t("Copy case note")}
+                      {t("Preview case note")}
                     </Button>
                   </div>
 
@@ -361,28 +363,6 @@ export default function ResourceFinder() {
                   </div>
                 </div>
               </section>
-              <nav
-                aria-label={t("Resource categories")}
-                className="flex flex-wrap gap-2"
-              >
-                {availableCategories.map((category) => (
-                  <a
-                    key={category}
-                    href={`#${category}`}
-                    className="flex min-h-11 items-center gap-2 rounded-full border border-border bg-card px-4 text-sm font-medium text-card-foreground transition-colors hover:border-primary/30 hover:bg-accent hover:text-accent-foreground"
-                  >
-                    {t(CATEGORY_LABELS[category])}{" "}
-                    <span className="text-muted-foreground">
-                      {
-                        resources.filter(
-                          (resource) => resource.category === category,
-                        ).length
-                      }
-                    </span>
-                    <ArrowDown className="size-4" aria-hidden="true" />
-                  </a>
-                ))}
-              </nav>
               {availableCategories.map((category) => (
                 <ResourceSection
                   key={category}
@@ -396,11 +376,14 @@ export default function ResourceFinder() {
                   onReport={setReport}
                 />
               ))}
-              {emptyCategories.length > 0 && (
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  {t("No matches: {categories}", { categories: emptyCategories.map((category) => t(CATEGORY_LABELS[category])).join(", ") })}
-                </p>
-              )}
+              {emptyCategories.map((category) => (
+                <section key={category} id={category} aria-labelledby={`${category}-title`} className="scroll-mt-6 rounded-xl border border-dashed border-border p-5">
+                  <div className="flex flex-col gap-2">
+                    <h2 id={`${category}-title`} className="text-base font-semibold">{t(CATEGORY_LABELS[category])}</h2>
+                    <p className="text-sm text-muted-foreground">{t("No matches to show")}</p>
+                  </div>
+                </section>
+              ))}
               {!result.found && (
                 <details className="text-sm text-muted-foreground">
                   <summary className="cursor-pointer font-medium">{t("No exact broadband record")}</summary>

@@ -181,6 +181,24 @@ export function recommendationsText(
     ),
   ].join("\n\n");
 }
+export function resourceCaseNote(resources: Resource[], t: Translate, address?: string) {
+  return [
+    t("Clark County resource case note"),
+    `${t("Search query")}: ${t("Internet, device access, and digital skills resources")}`,
+    ...(address ? [`${t("Current address")}: ${address}`] : []),
+    `${t("Selected resources")}:`,
+    ...resources.map((resource) => `- ${resource.name} · ${t(CATEGORY_LABELS[resource.category])}${resource.url ? ` | ${resource.url}` : ""}`),
+    `${t("Status")}: ${t("Directory match only. Referral completion and service receipt are unconfirmed.")}`,
+  ].join("\n");
+}
+
+export function categoryCounts(resources: Resource[]) {
+  return CATEGORIES.map((category) => ({
+    category,
+    count: resources.filter((resource) => resource.category === category).length,
+  })).sort((a, b) => Number(a.count === 0) - Number(b.count === 0));
+}
+
 export const ISSUE_REASONS = {
   "incorrect-details": "Incorrect contact or program details",
   unavailable: "Resource is no longer available",
