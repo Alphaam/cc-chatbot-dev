@@ -125,44 +125,52 @@ type Translate = (
   key: string,
   values?: Record<string, string | number>,
 ) => string;
-export function resourceText(resource: Resource, t: Translate) {
-  const lines = [resource.name];
+export function isOnlineOrNational(service: ServiceWithDistance) {
+  return /^(?:online\s*\/\s*national|national\s*\/\s*online|online resource)$/i.test(service.address?.trim() ?? "");
+}
+
+export function serviceLocationLabel(service: ServiceWithDistance, t: Translate) {
+  if (isOnlineOrNational(service)) return t("Online or nationwide");
+  if (service.distanceMiles != null)
+    return t("{distance} miles away", { distance: service.distanceMiles.toFixed(1) });
+  return t(service.address?.trim() ? "Local program" : "Location not listed");
+}
+
+export function resourceDetails(resource: Resource, t: Translate) {
+  const details: Array<{ label: string; value: string }> = [];
+  const add = (label: string, value: string) => details.push({ label, value });
   if (resource.plan) {
     const p = resource.plan;
-    lines.push(
-      `${priceLabel(p.price) || t("Price not listed")}${p.price.trim() ? t("/mo") : ""} | ${p.downloadMbps}/${p.uploadMbps} Mbps | ${t(p.technology)}`,
-    );
-    if (p.lowIncome === "Y")
-      lines.push(
-        `${t("Low-income discount")}: ${priceLabel(p.liDiscount) || t("Confirm with provider")}`,
-      );
-    if (p.contract === "Y")
-      lines.push(t("Contract: {months} months", { months: p.contractMonths }));
-    if (p.contract === "N") lines.push(t("No contract"));
-    if (p.introDiscount)
-      lines.push(
-        t("Intro: {discount} for {months} mo", {
-          discount: p.introDiscount,
-          months: p.introPeriod,
-        }),
-      );
-    if (p.installFee) lines.push(`${t("Installation")}: ${p.installFee}`);
-    if (p.otherFeesNote) lines.push(p.otherFeesNote);
+    add("Monthly price", `${priceLabel(p.price) || t("Price not listed")}${p.price.trim() ? t("/mo") : ""}`);
+    add("Download speed", `${p.downloadMbps} Mbps`);
+    add("Upload speed", `${p.uploadMbps} Mbps`);
+    add("Connection type", t(p.technology));
+    if (p.lowIncome === "Y") add("Low-income discount", priceLabel(p.liDiscount) || t("Confirm with provider"));
+    if (p.contract === "Y") add("Contract", p.contractMonths ? t("{months} months", { months: p.contractMonths }) : t("Confirm with provider"));
+    if (p.contract === "N") add("Contract", t("No contract"));
+    if (p.introDiscount) add("Introductory offer", t("Intro: {discount} for {months} mo", { discount: p.introDiscount, months: p.introPeriod }));
+    if (p.installFee) add("Installation", p.installFee);
+    if (p.otherFeesNote) add("Other fees", p.otherFeesNote);
   }
   if (resource.service) {
     const s = resource.service;
-    if (s.description) lines.push(t(s.description));
-    if (s.address) lines.push(t(s.address));
-    if (s.distanceMiles != null)
-      lines.push(
-        t("{distance} miles away", { distance: s.distanceMiles.toFixed(1) }),
-      );
-    else lines.push(t("National / Online"));
-    if (s.phone) lines.push(`${t("Phone")}: ${s.phone}`);
-    if (s.languages) lines.push(`${t("Languages")}: ${t(s.languages)}`);
+    if (s.description) add("About this program", t(s.description));
+    if (isOnlineOrNational(s)) add("Access", t("Online or nationwide"));
+    else if (s.address?.trim()) add("Address", t(s.address));
+    else add("Address", t("Location not listed"));
+    if (!isOnlineOrNational(s) && s.distanceMiles != null) add("Distance", serviceLocationLabel(s, t));
+    if (s.phone) add("Phone", s.phone);
+    if (s.languages) add("Languages", t(s.languages));
   }
-  if (resource.url) lines.push(resource.url);
-  return lines.join("\n");
+  return details;
+}
+
+export function resourceText(resource: Resource, t: Translate) {
+  return [
+    resource.name,
+    ...resourceDetails(resource, t).map(({ label, value }) => `${t(label)}: ${value}`),
+    ...(resource.url ? [resource.url] : []),
+  ].join("\n");
 }
 export function recommendationsText(
   resources: Resource[],

@@ -4,6 +4,8 @@ import {
   resourcesFromLookup,
   defaultShortlist,
   resourceText,
+  resourceDetails,
+  serviceLocationLabel,
   recommendationsText,
   resourceCaseNote,
   categoryCounts,
@@ -167,6 +169,35 @@ test("case note includes every selected resource, not unselected options, and ke
   assert.match(resourceCaseNote(selected, t, "Test client address"), /Current address: Test client address/);
   assert.match(resourceCaseNote(selected, (key) => translate("es", key)), /Recursos seleccionados/);
   assert.doesNotMatch(resourceCaseNote([], t), /Test library|Lower cost/);
+});
+
+test("online program locations appear once in shared details", () => {
+  for (const address of ["Online / National", "National / Online", " online / national "]) {
+    const remote = { ...service, address, distanceMiles: null };
+    const resource = { id: "remote", name: remote.name, category: "skills", service: remote };
+    const text = resourceText(resource, t);
+    assert.equal(serviceLocationLabel(remote, t), "Online or nationwide");
+    assert.equal(text.match(/Online or nationwide/g)?.length, 1);
+    assert.doesNotMatch(text, /Online \/ National|National \/ Online/);
+    assert.equal(resourceDetails(resource, t).find(({ label }) => label === "Languages")?.value, "English");
+  }
+});
+
+test("missing distance does not imply nationwide access", () => {
+  const local = { ...service, distanceMiles: null };
+  assert.equal(serviceLocationLabel(local, t), "Local program");
+  assert.equal(serviceLocationLabel({ ...local, address: "" }, t), "Location not listed");
+  assert.doesNotMatch(resourceText({ id: "local", name: local.name, category: "devices", service: local }, t), /nationwide|National/);
+});
+
+test("structured details retain plan costs and terms", () => {
+  const detailed = { ...cheap, contract: "Y", contractMonths: "12", lowIncome: "Y", liDiscount: "10", introDiscount: "5", introPeriod: "3", installFee: "$20", otherFeesNote: "Equipment rental may apply" };
+  const fields = resourceDetails({ id: "plan", name: "Plan", category: "internet", plan: detailed }, t);
+  assert.equal(fields.find(({ label }) => label === "Contract")?.value, "12 months");
+  assert.equal(fields.find(({ label }) => label === "Low-income discount")?.value, "$10");
+  assert.equal(fields.find(({ label }) => label === "Installation")?.value, "$20");
+  assert.equal(fields.find(({ label }) => label === "Other fees")?.value, detailed.otherFeesNote);
+  assert.ok(fields.some(({ label }) => label === "Introductory offer"));
 });
 
 test("website links reject unsafe schemes", () => {

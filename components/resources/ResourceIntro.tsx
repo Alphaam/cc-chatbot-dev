@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import { useLanguage } from "@/components/chat/LanguageProvider";
-import HowToUse from "./HowToUse";
 
 export default function ResourceIntro() {
   const { t } = useLanguage();
@@ -11,12 +10,17 @@ export default function ResourceIntro() {
     <section aria-labelledby="finder-intro-title" className="border-t border-dashed border-border pt-8">
       <div className="flex flex-col items-stretch gap-6 sm:flex-row sm:items-center sm:gap-10">
         <div className="flex flex-1 flex-col items-start gap-4">
-          <h2 id="finder-intro-title" className="text-balance text-2xl font-semibold tracking-tight">{t("Connection starts here.")}</h2>
-          <p className="max-w-lg text-pretty text-base leading-relaxed text-muted-foreground">{t("Find internet plans, device programs, and digital skills training for Clark County clients, then share the resources that fit.")}</p>
-          <div className="flex flex-col items-start gap-3">
-            <p className="text-sm leading-relaxed text-muted-foreground">{t("Select How to use this tool for a full tour.")}</p>
-            <HowToUse variant="outline" />
-          </div>
+          <h2 id="finder-intro-title" className="text-balance text-2xl font-semibold tracking-tight">{t("Local help. Wider possibilities.")}</h2>
+          <dl className="flex max-w-lg flex-col gap-5 text-sm leading-relaxed">
+            <div className="flex flex-col gap-1">
+              <dt className="font-semibold text-foreground">{t("Nearby programs")}</dt>
+              <dd className="text-muted-foreground">{t("Libraries and community organizations can offer computer access, device support, and hands-on learning close to home.")}</dd>
+            </div>
+            <div className="flex flex-col gap-1">
+              <dt className="font-semibold text-foreground">{t("Online or nationwide")}</dt>
+              <dd className="text-muted-foreground">{t("Explore remote learning and programs with a wider reach. Delivery, eligibility, and in-person requirements vary by provider.")}</dd>
+            </div>
+          </dl>
         </div>
         <Image
           src="/images/clark-county-valley.png"

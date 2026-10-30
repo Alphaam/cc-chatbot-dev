@@ -16,6 +16,8 @@ import {
   CATEGORY_LABELS,
   priceLabel,
   resourceText,
+  resourceDetails,
+  serviceLocationLabel,
   type Resource,
   type ResourceCategory,
 } from "@/lib/resource-finder";
@@ -194,9 +196,7 @@ function ResourceRow({
               <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <CardTitle><h3 className="text-pretty">{resource.name}</h3></CardTitle>
                 <CardDescription>
-                  {plan ? t(plan.technology) : service?.distanceMiles != null
-                    ? t("{distance} miles away", { distance: service.distanceMiles.toFixed(1) })
-                    : t("National / Online")}
+                  {plan ? t(plan.technology) : service ? serviceLocationLabel(service, t) : null}
                 </CardDescription>
               </div>
               {plan && (
@@ -212,11 +212,11 @@ function ResourceRow({
           </CardHeader>
           <CardContent>
             <div className="flex flex-col gap-4">
-              {service && (
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  {service.address ? t(service.address) : t("Online resource")}
-                  {service.phone ? ` · ${service.phone}` : ""}
-                </p>
+              {service?.description && (
+                <div className="flex flex-col gap-1 text-sm leading-relaxed">
+                  <p className="font-semibold text-muted-foreground">{t("About this program")}</p>
+                  <p className="text-pretty">{t(service.description)}</p>
+                </div>
               )}
               {plan?.lowIncome === "Y" && (
                 <p className="text-sm leading-relaxed text-muted-foreground">{t("Income-based discount")}</p>
@@ -225,7 +225,16 @@ function ResourceRow({
                 <summary className="cursor-pointer text-sm font-medium text-primary">{t("Details & sharing")}</summary>
                 <div className="pt-4">
                   <div className="flex flex-col gap-4">
-                    <p className="whitespace-pre-line break-words text-sm leading-relaxed text-muted-foreground">{resourceText(resource, t)}</p>
+                    <dl className="flex flex-col gap-3 text-sm leading-relaxed">
+                      {resourceDetails(resource, t)
+                        .filter(({ label }) => !["About this program", "Access", "Distance"].includes(label))
+                        .map(({ label, value }) => (
+                          <div key={label} className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                            <dt className="font-semibold text-muted-foreground">{t(label)}:</dt>
+                            <dd className="min-w-0 break-words">{value}</dd>
+                          </div>
+                        ))}
+                    </dl>
                     <div className="flex flex-wrap items-center gap-2">
                       <Button size="sm" variant="outline" onClick={() => void copy()}>
                         <Copy data-icon="inline-start" aria-hidden="true" />{t(copied ? "Copied" : "Copy details")}
