@@ -63,18 +63,12 @@ export default function ResourceSection({
           >
             {t(CATEGORY_LABELS[category])}
           </h2>
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            {t(
-              category === "internet"
-                ? "Compare monthly costs, speeds, and eligibility."
-                : "Local programs, followed by national and online options.",
-            )}
-          </p>
+
         </div>
         {category === "internet" && resources.length > 0 && (
           <details className="rounded-lg border border-border bg-card px-4 py-3 text-card-foreground">
             <summary className="cursor-pointer text-sm font-medium">
-              {t("Refine internet plans (optional)")}
+              {t("Filter plans")}
             </summary>
             <div className="pt-4">
               <FieldGroup>
@@ -224,7 +218,7 @@ function ResourceRow({
                 </p>
               )}
               {plan?.lowIncome === "Y" && (
-                <p className="text-sm leading-relaxed text-muted-foreground">{t("Income-based savings listed. Confirm qualification with the provider.")}</p>
+                <p className="text-sm leading-relaxed text-muted-foreground">{t("Income-based discount")}</p>
               )}
               <details>
                 <summary className="cursor-pointer text-sm font-medium text-primary">{t("Details & sharing")}</summary>

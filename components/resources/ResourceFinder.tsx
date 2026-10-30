@@ -52,6 +52,12 @@ export default function ResourceFinder() {
   const downloadLock = useRef(false);
   const resources = result ? resourcesFromLookup(result) : [];
   const shortlist = resources.filter((resource) => selected.has(resource.id));
+  const availableCategories = CATEGORIES.filter((category) =>
+    resources.some((resource) => resource.category === category),
+  );
+  const emptyCategories = CATEGORIES.filter((category) =>
+    !availableCategories.includes(category),
+  );
 
   useEffect(() => () => request.current?.abort(), []);
 
@@ -167,10 +173,7 @@ export default function ResourceFinder() {
       <header className="border-b border-border bg-card text-card-foreground">
         <div className="mx-auto max-w-5xl px-5 py-3 sm:px-8">
           <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <span className="text-xl font-semibold tracking-tight">BACE<span className="font-normal text-muted-foreground"> Hub</span></span>
-              <span className="hidden border-l border-border pl-4 text-sm text-muted-foreground sm:block">{t("Resource finder")}</span>
-            </div>
+            <span className="text-lg font-semibold tracking-tight">{t("Resource finder")}</span>
             <LanguageToggle tone="neutral" />
           </div>
         </div>
@@ -190,11 +193,7 @@ export default function ResourceFinder() {
                 <h1 id="finder-title" className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
                   {t(result ? "Your resource overview" : "Find local support")}
                 </h1>
-                {!result && (
-                  <p className="text-base leading-relaxed text-muted-foreground">
-                    {t("Internet, devices, and digital skills.")}
-                  </p>
-                )}
+
               </div>
               {result && (
                 <Button
@@ -254,7 +253,7 @@ export default function ResourceFinder() {
                   placeholder={t("Street address, city, NV ZIP")}
                 />
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  {t(result ? "Changing the address starts a new shortlist." : "No client name needed.")}
+                  {t("@ to search address")}
                 </p>
                 {busy && (
                   <p role="status" className="text-sm text-primary">
@@ -305,36 +304,7 @@ export default function ResourceFinder() {
           </section>
           {result && (
             <div key={address} className="flex flex-col gap-8">
-              {!result.found && (
-                <Alert>
-                  <AlertTitle>{t("No exact broadband record")}</AlertTitle>
-                  <AlertDescription>
-                    <p>
-                      {t(
-                        "We located the address, but could not match an internet record. Only national programs are shown. Try a complete address or a nearby dataset address below.",
-                      )}
-                    </p>
-                    {!!result.nearbyAddresses?.length && (
-                      <div className="flex flex-col gap-2">
-                        {result.nearbyAddresses.slice(0, 3).map((pick) => (
-                          <Button
-                            key={JSON.stringify(pick)}
-                            variant="outline"
-                            className="h-auto min-h-9 justify-start whitespace-normal text-left"
-                            disabled={busy}
-                            onClick={() =>
-                              void lookup(
-                                `${pick.addr}, ${pick.city}, ${pick.state} ${pick.zip}`,
-                                { exact: pick },
-                              )
-                            }
-                          >{`${pick.addr}, ${pick.city}, ${pick.state} ${pick.zip}`}</Button>
-                        ))}
-                      </div>
-                    )}
-                  </AlertDescription>
-                </Alert>
-              )}
+
               <section
                 aria-labelledby="shortlist-title"
                 className="rounded-2xl border border-border bg-card p-5 text-card-foreground sm:p-6"
@@ -351,9 +321,7 @@ export default function ResourceFinder() {
                       >
                         {t("Client shortlist")} <span className="font-normal text-muted-foreground">({shortlist.length})</span>
                       </h2>
-                      <p className="text-sm leading-relaxed text-muted-foreground">
-                        {t("Choose resources below, then share.")}
-                      </p>
+
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -387,11 +355,7 @@ export default function ResourceFinder() {
                       {t("Copy case note")}
                     </Button>
                   </div>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
-                    {t(
-                      "Confirm cost, eligibility, and availability with each provider before referring.",
-                    )}
-                  </p>
+
                   <div role="status" className={cn("text-sm text-primary", !status && "sr-only")}>
                     {t(status)}
                   </div>
@@ -401,7 +365,7 @@ export default function ResourceFinder() {
                 aria-label={t("Resource categories")}
                 className="flex flex-wrap gap-2"
               >
-                {CATEGORIES.map((category) => (
+                {availableCategories.map((category) => (
                   <a
                     key={category}
                     href={`#${category}`}
@@ -419,7 +383,7 @@ export default function ResourceFinder() {
                   </a>
                 ))}
               </nav>
-              {CATEGORIES.map((category) => (
+              {availableCategories.map((category) => (
                 <ResourceSection
                   key={category}
                   category={category}
@@ -432,6 +396,30 @@ export default function ResourceFinder() {
                   onReport={setReport}
                 />
               ))}
+              {emptyCategories.length > 0 && (
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {t("No matches: {categories}", { categories: emptyCategories.map((category) => t(CATEGORY_LABELS[category])).join(", ") })}
+                </p>
+              )}
+              {!result.found && (
+                <details className="text-sm text-muted-foreground">
+                  <summary className="cursor-pointer font-medium">{t("No exact broadband record")}</summary>
+                  <div className="pt-3">
+                    <div className="flex flex-col gap-3">
+                      <p>{t("National programs shown. Try another address for internet plans.")}</p>
+                      {result.nearbyAddresses?.slice(0, 3).map((pick) => (
+                        <Button
+                          key={JSON.stringify(pick)}
+                          variant="outline"
+                          className="h-auto min-h-9 justify-start whitespace-normal text-left"
+                          disabled={busy}
+                          onClick={() => void lookup(`${pick.addr}, ${pick.city}, ${pick.state} ${pick.zip}`, { exact: pick })}
+                        >{`${pick.addr}, ${pick.city}, ${pick.state} ${pick.zip}`}</Button>
+                      ))}
+                    </div>
+                  </div>
+                </details>
+              )}
             </div>
           )}
           <footer className="border-t border-dashed border-border pt-5">
