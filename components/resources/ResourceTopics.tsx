@@ -48,7 +48,7 @@ export default function ResourceTopics() {
                   <h3 className="text-pretty text-lg font-semibold">{t(title)}</h3>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="-mt-2">
                 <p className="text-pretty text-base leading-relaxed text-muted-foreground">{t(description)}</p>
               </CardContent>
             </Card>
