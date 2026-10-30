@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ClipboardList, Download, MapPin, RotateCcw } from "lucide-react";
 import ResourceCategories from "./ResourceCategories";
-import ResourceIntro from "./ResourceIntro";
 import ResourceTopics from "./ResourceTopics";
 import ResourceConversation from "./ResourceConversation";
 import { useResourceChat } from "./useResourceChat";
@@ -428,22 +427,17 @@ export default function ResourceFinder() {
           )}
           <ResourceConversation key={session} chat={chat} />
           {!result && chat.messages.length === 0 && <ResourceTopics />}
-          {(result || chat.messages.length > 0) && (
-            <footer className="border-t border-dashed border-border pt-5">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setReport("general")}
-                >
-                  {t("Give feedback/report issues")}
-                </Button>
-            </footer>
-          )}
+          <div className="flex justify-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setReport("general")}
+            >
+              {t("Give feedback/report issues")}
+            </Button>
+          </div>
         </div>
       </main>
-      {!result && chat.messages.length === 0 && (
-        <ResourceIntro onFeedback={() => setReport("general")} />
-      )}
       {result && !editing && <div className="finder-chat-dock">
         <div className="finder-chat-composer">
           <ChatInput key={`${session}:${address}`} disabled={busy || chat.busy} onStop={chat.busy ? chat.cancel : undefined} placeholder="Ask about these resources, or @ to search address" onSend={send} />

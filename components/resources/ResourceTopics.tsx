@@ -36,7 +36,7 @@ export default function ResourceTopics() {
             <Card className="h-full rounded-3xl pt-0 shadow-sm [--card-spacing:--spacing(6)]">
               <div className="relative aspect-[8/5] w-full overflow-hidden">
                 <Image
-                  src={category === "skills" ? "/images/topic-skills-real.jpg" : `/images/topic-${category}.png`}
+                  src={category === "skills" ? "/images/senior-woman-learning-on-computer.jpg" : `/images/topic-${category}.png`}
                   alt=""
                   fill
                   sizes="(max-width: 767px) calc(100vw - 40px), (max-width: 1023px) 30vw, 307px"
