@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ClipboardList, Download, MapPin, RotateCcw } from "lucide-react";
 import ResourceCategories from "./ResourceCategories";
 import ResourceIntro from "./ResourceIntro";
+import ResourceTopics from "./ResourceTopics";
 import ResourceConversation from "./ResourceConversation";
 import { useResourceChat } from "./useResourceChat";
 import HowToUse from "./HowToUse";
@@ -426,7 +427,12 @@ export default function ResourceFinder() {
             </div>
           )}
           <ResourceConversation key={session} chat={chat} />
-          {!result && chat.messages.length === 0 && <ResourceIntro />}
+          {!result && chat.messages.length === 0 && (
+            <div className="flex flex-col gap-10">
+              <ResourceTopics />
+              <ResourceIntro />
+            </div>
+          )}
           <footer className="border-t border-dashed border-border pt-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
 
