@@ -428,11 +428,8 @@ export default function ResourceFinder() {
           )}
           <ResourceConversation key={session} chat={chat} />
           {!result && chat.messages.length === 0 && <ResourceTopics />}
-          <footer>
-            {!result && chat.messages.length === 0 ? (
-              <ResourceIntro onFeedback={() => setReport("general")} />
-            ) : (
-              <div className="border-t border-dashed border-border pt-5">
+          {(result || chat.messages.length > 0) && (
+            <footer className="border-t border-dashed border-border pt-5">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -440,11 +437,13 @@ export default function ResourceFinder() {
                 >
                   {t("Give feedback/report issues")}
                 </Button>
-              </div>
-            )}
-          </footer>
+            </footer>
+          )}
         </div>
       </main>
+      {!result && chat.messages.length === 0 && (
+        <ResourceIntro onFeedback={() => setReport("general")} />
+      )}
       {result && !editing && <div className="finder-chat-dock">
         <div className="finder-chat-composer">
           <ChatInput key={`${session}:${address}`} disabled={busy || chat.busy} onStop={chat.busy ? chat.cancel : undefined} placeholder="Ask about these resources, or @ to search address" onSend={send} />

@@ -8,14 +8,14 @@ export default function ResourceIntro({ onFeedback }: { onFeedback: () => void }
   const { t } = useLanguage();
 
   return (
-    <section aria-labelledby="finder-intro-title" className="overflow-hidden rounded-3xl border border-border bg-card text-card-foreground shadow-sm">
+    <footer aria-labelledby="finder-intro-title" className="w-full border-t border-border bg-card text-card-foreground">
       <div className="flex flex-col md:flex-row">
         <div className="relative min-h-44 md:min-h-60 md:w-1/3 md:shrink-0">
           <Image
             src="/images/clark-county-valley.png"
             alt={t("A view of the Las Vegas Valley and surrounding mountains.")}
             fill
-            sizes="(max-width: 767px) calc(100vw - 40px), (max-width: 1023px) calc((100vw - 64px) / 3), 320px"
+            sizes="(max-width: 767px) 100vw, 33vw"
             className="object-cover object-center"
           />
         </div>
@@ -32,6 +32,6 @@ export default function ResourceIntro({ onFeedback }: { onFeedback: () => void }
           </div>
         </div>
       </div>
-    </section>
+    </footer>
   );
 }

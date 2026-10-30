@@ -33,17 +33,17 @@ export default function ResourceTopics() {
       <ul className="flex flex-col gap-5 md:flex-row">
         {topics.map(({ title, category, description }) => (
           <li key={title} data-category={category} className="min-w-0 flex-1">
-            <Card className="h-full rounded-3xl shadow-sm [--card-spacing:--spacing(6)]">
-              <CardHeader className="gap-5">
-                <div className="relative aspect-[8/5] w-full overflow-hidden rounded-2xl">
-                  <Image
-                    src={`/images/topic-${category}.png`}
-                    alt=""
-                    fill
-                    sizes="(max-width: 767px) calc(100vw - 88px), (max-width: 1023px) 28vw, 256px"
-                    className="object-cover"
-                  />
-                </div>
+            <Card className="h-full rounded-3xl pt-0 shadow-sm [--card-spacing:--spacing(6)]">
+              <div className="relative aspect-[8/5] w-full overflow-hidden">
+                <Image
+                  src={category === "skills" ? "/images/topic-skills-real.jpg" : `/images/topic-${category}.png`}
+                  alt=""
+                  fill
+                  sizes="(max-width: 767px) calc(100vw - 40px), (max-width: 1023px) 30vw, 307px"
+                  className="object-cover"
+                />
+              </div>
+              <CardHeader>
                 <CardTitle>
                   <h3 className="text-pretty text-lg font-semibold">{t(title)}</h3>
                 </CardTitle>
