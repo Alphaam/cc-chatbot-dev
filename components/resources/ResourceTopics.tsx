@@ -36,7 +36,7 @@ export default function ResourceTopics() {
             <Card className="h-full rounded-3xl pt-0 shadow-sm [--card-spacing:--spacing(6)]">
               <div className="relative aspect-[8/5] w-full overflow-hidden">
                 <Image
-                  src={category === "skills" ? "/images/senior-woman-learning-on-computer.jpg" : `/images/topic-${category}.png`}
+                  src={category === "skills" ? "/images/senior-computer-class.jpg" : `/images/topic-${category}.png`}
                   alt=""
                   fill
                   sizes="(max-width: 767px) calc(100vw - 40px), (max-width: 1023px) 30vw, 307px"
@@ -55,6 +55,27 @@ export default function ResourceTopics() {
           </li>
         ))}
       </ul>
+      <p className="text-sm leading-relaxed text-muted-foreground md:text-right">
+        {t("Classroom photo")}: {" "}
+        <a
+          href="https://commons.wikimedia.org/wiki/File:Workshop_in_project_Viki_Senior_in_the_Belgrade_city_Library_01.jpg"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-4 hover:text-foreground"
+        >
+          Milica Buha
+        </a>
+        {" · "}
+        <a
+          href="https://creativecommons.org/licenses/by-sa/4.0/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-4 hover:text-foreground"
+        >
+          CC BY-SA 4.0
+        </a>
+        {" "}({t("cropped")})
+      </p>
     </section>
   );
 }
