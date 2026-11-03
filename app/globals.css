@@ -468,6 +468,12 @@
 .finder-category-count { font-size: 1.75rem; font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; }
 .finder-category-label { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding-top: .75rem; color: inherit; font-size: .875rem; line-height: 1.5; font-weight: 500; }
 .finder-category[data-empty="true"] { box-shadow: none; }
+.finder-category[data-dimmed="true"] { opacity: .55; box-shadow: none; }
+.finder-category[data-dimmed="true"]:hover { opacity: 1; }
+.finder-focus { background: var(--card); }
+.finder-focus [data-slot="toggle-group-item"][data-pressed] { background: var(--topic, var(--primary)); color: var(--primary-foreground); border-color: var(--topic, var(--primary)); }
+.finder-share-trigger { gap: .375rem; }
+.finder-share-count { min-width: 1.25rem; padding: 0 .375rem; border-radius: 999px; background: var(--primary-foreground); color: var(--primary); font-size: .75rem; font-weight: 600; line-height: 1.25rem; text-align: center; font-variant-numeric: tabular-nums; }
 .finder-handoff { border: 1px solid color-mix(in srgb, var(--primary) 16%, var(--card)); border-radius: 1.25rem; background: var(--accent); color: var(--foreground); }
 .resource-card { box-shadow: 0 5px 16px -8px color-mix(in srgb, var(--foreground) 20%, transparent); }
 .finder-resource-section[data-category="devices"],

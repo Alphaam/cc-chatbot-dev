@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ClipboardList, Download, MapPin, RotateCcw } from "lucide-react";
-import ResourceCategories from "./ResourceCategories";
+import { MapPin, RotateCcw } from "lucide-react";
+import ResourceCategories, { type ResourceFocus } from "./ResourceCategories";
+import { ShareMenu, SharePanel } from "./SharePanel";
 import ResourceTopics from "./ResourceTopics";
 import ResourceConversation from "./ResourceConversation";
 import { useResourceChat } from "./useResourceChat";
@@ -34,7 +35,8 @@ import ReportIssue from "./ReportIssue";
 export default function ResourceFinder() {
   const { t } = useLanguage();
   const [result, setResult] = useState<LookupResponse | null>(null);
-  const chat = useResourceChat(result);
+  const [focus, setFocus] = useState<ResourceFocus>("all");
+  const chat = useResourceChat(result, focus);
   const clearChat = chat.clear;
   const searchPanel = useRef<HTMLDivElement>(null);
   const [pending, setPending] = useState<LookupResponse | null>(null);
@@ -59,13 +61,23 @@ export default function ResourceFinder() {
   const resultsHeading = useRef<HTMLHeadingElement>(null);
   const downloadLock = useRef(false);
   const resources = result ? resourcesFromLookup(result) : [];
-  const shortlist = resources.filter((resource) => selected.has(resource.id));
-  const availableCategories = CATEGORIES.filter((category) =>
+  const visibleResources = focus === "all" ? resources : resources.filter((resource) => resource.category === focus);
+  const shortlist = visibleResources.filter((resource) => selected.has(resource.id));
+  const visibleCategories = focus === "all" ? CATEGORIES : CATEGORIES.filter((category) => category === focus);
+  const availableCategories = visibleCategories.filter((category) =>
     resources.some((resource) => resource.category === category),
   );
-  const emptyCategories = CATEGORIES.filter((category) =>
+  const emptyCategories = visibleCategories.filter((category) =>
     !availableCategories.includes(category),
   );
+  const shareActions = {
+    count: shortlist.length,
+    disabled: editing || busy,
+    downloading,
+    onDownload: () => void download(),
+    onShareList: () => setShare({ resources: shortlist }),
+    onShareNote: () => setShare({ resources: shortlist, note: true }),
+  };
 
   useEffect(() => () => request.current?.abort(), []);
 
@@ -75,6 +87,7 @@ export default function ResourceFinder() {
     setResetOpen(false);
     request.current?.abort();
     setResult(null);
+    setFocus("all");
     setPending(null);
     setAddress("");
     setSelected(new Set());
@@ -94,6 +107,7 @@ export default function ResourceFinder() {
     setShare(null);
     setReport(null);
     setResult(data);
+    setFocus("all");
     setAddress(data.address || data.confirmAddress || query);
     setSelected(defaultShortlist(resourcesFromLookup(data)));
     setEditing(false);
@@ -196,17 +210,25 @@ export default function ResourceFinder() {
     <div className={cn("resource-finder flex min-h-dvh flex-col bg-background font-sans text-foreground", result && !editing && "finder-with-chat")}>
       <SessionTimeout key={session} onExpire={reset} />
       <header className="finder-header bg-primary text-primary-foreground">
-        <div className="mx-auto max-w-5xl px-5 py-4 sm:px-8">
+        <div className={cn("mx-auto px-5 py-3 sm:px-8", result ? "max-w-6xl" : "max-w-5xl")}>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <span className="max-w-72 text-base font-semibold leading-snug tracking-tight">{t("Clark County Digital Equity Assistant")}</span>
+            <div className="flex flex-col">
+              <span className="text-xs font-medium uppercase tracking-widest opacity-80">{t("Clark County")}</span>
+              <span className="text-xl font-semibold leading-tight tracking-tight">BaseHub</span>
+            </div>
             <div className="flex items-center gap-2">
+              {result && (
+                <div className="lg:hidden">
+                  <ShareMenu {...shareActions} />
+                </div>
+              )}
               <HowToUse />
               <LanguageToggle tone="inverse" />
             </div>
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-5xl flex-1 px-5 py-8 sm:px-8 sm:py-10 lg:py-14">
+      <main className={cn("mx-auto w-full flex-1 px-5 py-8 sm:px-8 sm:py-10 lg:py-14", result ? "max-w-6xl" : "max-w-5xl")}>
         <div className="flex flex-col gap-8">
           <section
             aria-labelledby="finder-title"
@@ -214,7 +236,7 @@ export default function ResourceFinder() {
           >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex flex-col gap-2">
-                <h1 id="finder-title" className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
+                <h1 id="finder-title" ref={resultsHeading} tabIndex={-1} className="text-balance text-3xl font-semibold tracking-tight focus:outline-none sm:text-4xl">
                   {t(result ? "Your resource overview" : "Find the right support for your client.")}
                 </h1>
                 {!result && <p className="text-pretty text-base leading-relaxed text-muted-foreground">{t("Internet, devices, and digital skills, all in one place.")}</p>}
@@ -326,63 +348,9 @@ export default function ResourceFinder() {
             )}
           </section>
           {result && (
-            <div key={address} className="flex flex-col gap-8">
-              <ResourceCategories resources={resources} />
-              <section
-                aria-labelledby="shortlist-title"
-                className="finder-handoff p-5 sm:p-6"
-              >
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-start gap-3">
-                    <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground"><ClipboardList className="size-5" aria-hidden="true" /></span>
-                    <div className="flex flex-col gap-1">
-                      <h2
-                        id="shortlist-title"
-                        ref={resultsHeading}
-                        tabIndex={-1}
-                        className="text-lg font-semibold tracking-tight focus:outline-none"
-                      >
-                        {t("Resources to share")} <span className="font-normal text-muted-foreground">({shortlist.length})</span>
-                      </h2>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      disabled={
-                        !shortlist.length || downloading || editing || busy
-                      }
-                      onClick={() => void download()}
-                    >
-                      <Download data-icon="inline-start" aria-hidden="true" />
-                      {t(
-                        downloading
-                          ? "Preparing PDF…"
-                          : "Download resource list (PDF)",
-                      )}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      disabled={!shortlist.length || editing || busy}
-                      onClick={() => setShare({ resources: shortlist })}
-                    >
-                      {t("Share resource list")}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      disabled={!shortlist.length || editing || busy}
-                      onClick={() =>
-                        setShare({ resources: shortlist, note: true })
-                      }
-                    >
-                      {t("Share case note")}
-                    </Button>
-                  </div>
-
-                  <div role="status" className={cn("text-sm text-primary", !status && "sr-only")}>
-                    {t(status)}
-                  </div>
-                </div>
-              </section>
+            <div key={address} className="flex flex-col gap-8 lg:flex-row lg:items-start">
+              <div className="flex min-w-0 flex-1 flex-col gap-8">
+              <ResourceCategories resources={resources} focus={focus} onFocusChange={setFocus} />
               {availableCategories.map((category) => (
                 <ResourceSection
                   key={category}
@@ -423,8 +391,13 @@ export default function ResourceFinder() {
                   </div>
                 </details>
               )}
+              </div>
+              <aside className="hidden w-72 shrink-0 lg:sticky lg:top-6 lg:block">
+                <SharePanel {...shareActions} status={status} />
+              </aside>
             </div>
           )}
+          <div role="status" className="sr-only">{t(status)}</div>
           <ResourceConversation key={session} chat={chat} />
           {!result && chat.messages.length === 0 && <ResourceTopics />}
           <div className="flex justify-center">

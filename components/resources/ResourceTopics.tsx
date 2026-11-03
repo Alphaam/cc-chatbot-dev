@@ -33,7 +33,7 @@ export default function ResourceTopics() {
       <ul className="flex flex-col gap-5 md:flex-row">
         {topics.map(({ title, category, description }) => (
           <li key={title} data-category={category} className="min-w-0 flex-1">
-            <Card className="h-full rounded-3xl pt-0 shadow-sm [--card-spacing:--spacing(6)]">
+            <Card className="h-full rounded-3xl pt-0 shadow-none [--card-spacing:--spacing(6)]">
               <div className="relative aspect-[8/5] w-full overflow-hidden">
                 <Image
                   src={category === "skills" ? "/images/senior-computer-class.jpg" : `/images/topic-${category}.png`}
