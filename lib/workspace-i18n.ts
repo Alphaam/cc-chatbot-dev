@@ -61,7 +61,7 @@ export const workspaceSpanish: Record<string, string> = {
   "No mapped locations in this view. Online resources and entries without coordinates are listed separately.": "No hay ubicaciones en esta vista. Los recursos en línea y sin coordenadas aparecen por separado.",
   "Guide": "Guía",
   "Type an example address…": "Escriba una dirección de ejemplo…",
-  "Type @ to search for an address, or type a question…": "Escriba @ para buscar una dirección o escriba una pregunta…",
+  "Type @ to search for an address, type a question, or click one of the options below to start": "Escriba @ para buscar una dirección, escriba una pregunta o elija una de las opciones de abajo para empezar",
   "Explore internet plans, device access, and digital skills training for your client.": "Explore planes de internet, acceso a dispositivos y capacitación digital para su cliente.",
   "Choose a resource to start a question": "Elija un recurso para comenzar una pregunta",
   "Search an address, ask questions, compare options, and share a tailored resource list. Providers confirm cost, availability, and eligibility.": "Busque una dirección, haga preguntas, compare opciones y comparta una lista personalizada de recursos. Los proveedores confirman el costo, la disponibilidad y los requisitos.",
