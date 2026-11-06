@@ -1,0 +1,26 @@
+"use client";
+
+import useSWR from "swr";
+import type { LookupResponse } from "@/lib/resource-finder";
+import type { ResidentNeeds, ResourceFocus } from "@/lib/resident-needs";
+import type { ResourceMessage } from "./useResourceChat";
+
+export interface ResourceMapSession {
+  result: LookupResponse | null;
+  address: string;
+  focus: ResourceFocus;
+  needs: ResidentNeeds;
+  needsDraft: ResidentNeeds;
+  selected: string[];
+  messages: ResourceMessage[];
+  showHome: boolean;
+  lastQuestion?: string;
+}
+
+export function useResourceMapSession() {
+  return useSWR<ResourceMapSession | null>("bace-resident-map-session", null, {
+    fallbackData: null,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  });
+}

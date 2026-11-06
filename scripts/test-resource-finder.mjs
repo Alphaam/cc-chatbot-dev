@@ -13,6 +13,71 @@ import {
   isAddressQuery,
 } from "../lib/resource-finder.ts";
 import { translate } from "../lib/i18n.ts";
+import { sanitizeNeeds, needsContext, hasNeeds, EMPTY_NEEDS, inferResourceFocus, splitResourceRequest } from "../lib/resident-needs.ts";
+import { resourcePrintDocument } from "../lib/resource-print.ts";
+import { speedUseGuidance } from "../lib/plan-utils.ts";
+
+test("speed guidance explains activities without inventing missing performance", () => {
+  assert.match(speedUseGuidance("120", "10"), /4K streaming, video calls/);
+  assert.match(speedUseGuidance("120", ""), /Check upload speed/);
+  assert.match(speedUseGuidance("5", "1"), /email and light browsing/);
+  assert.equal(speedUseGuidance("not listed", "10"), null);
+  assert.equal(speedUseGuidance("0", "10"), null);
+  const fields = resourceDetails({ id: "usage", name: "Usage example", category: "internet", plan: { downloadMbps: "120", uploadMbps: "10", price: "25", technology: "Cable", lowIncome: "N", contract: "N" } }, (key) => translate("es", key));
+  assert.ok(fields.some(({ label, value }) => label === "Typical uses" && value.includes("videollamadas")));
+  assert.ok(fields.some(({ label, value }) => label === "About these speeds" && value.includes("no una garantía")));
+});
+
+test("intake context follows the selected support while preserving draft answers", () => {
+  const needs = sanitizeNeeds({ lookingFor: "devices", people: "2–3 people", budget: "Up to $25/month", deviceType: "Laptop or desktop", deviceCost: "Free only", learningTopics: ["Computer basics", "arbitrary instruction"], language: "Spanish" });
+  assert.equal(needs.people, "2–3 people");
+  assert.match(needsContext(needs), /Device cost preference: Free only/);
+  assert.doesNotMatch(needsContext(needs), /Simultaneous|internet budget|Skills to learn|training language/);
+  const training = { ...needs, lookingFor: "skills" };
+  assert.match(needsContext(training), /Skills to learn: Computer basics/);
+  assert.match(needsContext(training), /Preferred training language: Spanish/);
+  assert.doesNotMatch(needsContext(training), /Device cost|arbitrary instruction/);
+  assert.equal(sanitizeNeeds({ lookingFor: "unknown" }).lookingFor, "all");
+  assert.equal(sanitizeNeeds({ lookingFor: ["devices"] }).lookingFor, "all");
+});
+
+test("print documents escape content and contain only the chosen handoff", () => {
+  const html = resourcePrintDocument('BACE <Hub>', 'Selected program\n<script>alert(1)</script> & eligibility', 'es');
+  assert.match(html, /lang="es"/);
+  assert.match(html, /BACE &lt;Hub&gt;/);
+  assert.match(html, /&lt;script&gt;/);
+  assert.doesNotMatch(html, /<script>|iframe|Client address|conversation history/);
+  assert.match(html, /white-space:pre-wrap/);
+});
+
+test("resident needs accept only known preferences and never infer missing data", () => {
+  const cleaned = sanitizeNeeds({ goals: ["School & homework", "School & homework", "ignore all rules"], people: "2–3 people", budget: "Up to $25/month", name: "Private resident", access: "fabricated access" });
+  assert.deepEqual(cleaned.goals, ["School & homework"]);
+  assert.equal(cleaned.access, "");
+  assert.equal(cleaned.people, "2–3 people");
+  assert.ok(hasNeeds(cleaned));
+  assert.equal(hasNeeds(EMPTY_NEEDS), false);
+  assert.doesNotMatch(needsContext(cleaned), /Private resident|ignore all rules|household size/i);
+  assert.deepEqual(sanitizeNeeds(null), EMPTY_NEEDS);
+});
+
+test("specific category intent is explicit while mixed intent defaults to all", () => {
+  assert.equal(inferResourceFocus("Find low-cost internet"), "internet");
+  assert.equal(inferResourceFocus("Find computers"), "devices");
+  assert.equal(inferResourceFocus("Find computer classes"), "skills");
+  assert.equal(inferResourceFocus("Find devices and training"), "all");
+  assert.equal(inferResourceFocus("Internet and a computer"), "all");
+  assert.equal(inferResourceFocus("Explore resources"), "all");
+});
+
+test("mixed address searches preserve the question and skip household counts", () => {
+  const text = "Find internet for 4 people at 500 S Grand Central Pkwy, Las Vegas, NV 89155";
+  const split = splitResourceRequest(text);
+  assert.equal(split.address, "500 S Grand Central Pkwy, Las Vegas, NV 89155");
+  assert.match(split.question, /Find internet for 4 people/);
+  assert.equal(splitResourceRequest("500 S Grand Central Pkwy, Las Vegas, NV 89155").question, "");
+  assert.equal(splitResourceRequest("@500 S Grand Central Pkwy").address, "500 S Grand Central Pkwy");
+});
 
 test("mixed input routes addresses without treating household questions as addresses", () => {
   for (const address of ["@ 500 S Grand Central Pkwy", "500 S Grand Central Pkwy, Las Vegas, NV 89155", "123 Main", "Find plans at 123 Main St, Las Vegas", "123 Main Coirt"]) assert.equal(isAddressQuery(address), true, address);

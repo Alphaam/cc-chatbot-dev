@@ -3,6 +3,7 @@ import {
   getCheapestPlan,
   getFastestPlan,
   getProviderWebsite,
+  speedUseGuidance,
   type Plan,
   type PlanGroups,
 } from "./plan-utils.ts";
@@ -144,6 +145,11 @@ export function resourceDetails(resource: Resource, t: Translate) {
     add("Monthly price", `${priceLabel(p.price) || t("Price not listed")}${p.price.trim() ? t("/mo") : ""}`);
     add("Download speed", `${p.downloadMbps} Mbps`);
     add("Upload speed", `${p.uploadMbps} Mbps`);
+    const uses = speedUseGuidance(p.downloadMbps, p.uploadMbps);
+    if (uses) {
+      add("Typical uses", t(uses));
+      add("About these speeds", t("Mbps means megabits per second. This is a general guide, not a guarantee: Wi-Fi, upload speed, latency, and simultaneous users affect performance."));
+    }
     add("Connection type", t(p.technology));
     if (p.lowIncome === "Y") add("Low-income discount", priceLabel(p.liDiscount) || t("Confirm with provider"));
     if (p.contract === "Y") add("Contract", p.contractMonths ? t("{months} months", { months: p.contractMonths }) : t("Confirm with provider"));

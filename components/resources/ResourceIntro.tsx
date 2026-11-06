@@ -1,40 +1,23 @@
 "use client";
 
 import Image from "next/image";
+import type { ReactNode } from "react";
+import { MapPin, ArrowRight } from "lucide-react";
 import { useLanguage } from "@/components/chat/LanguageProvider";
+import { Button } from "@/components/ui/button";
 
-export default function ResourceIntro() {
+export default function ResourceIntro({ onTour, heading }: { onTour: () => void; heading?: ReactNode }) {
   const { t } = useLanguage();
-
   return (
-    <section aria-labelledby="finder-intro-title" className="overflow-hidden rounded-3xl border border-border bg-card text-card-foreground shadow-sm">
-      <div className="flex flex-col md:flex-row">
-        <div className="relative min-h-60 md:min-h-96 md:w-1/2 md:shrink-0">
-          <Image
-            src="/images/clark-county-valley.png"
-            alt={t("A view of the Las Vegas Valley and surrounding mountains.")}
-            fill
-            sizes="(max-width: 767px) calc(100vw - 40px), (max-width: 1023px) calc((100vw - 64px) / 2), 480px"
-            className="object-cover object-center"
-          />
-        </div>
-        <div className="flex-1 p-7 sm:p-8 lg:p-10">
-          <div className="flex flex-col items-start gap-5">
-            <p className="text-sm font-semibold text-primary">{t("Clark County, Nevada")}</p>
-            <h2 id="finder-intro-title" className="text-balance text-2xl font-semibold tracking-tight">{t("Local help. Wider possibilities.")}</h2>
-            <dl className="flex max-w-lg flex-col gap-5 text-sm leading-relaxed">
-              <div className="flex flex-col gap-1">
-                <dt className="font-semibold text-foreground">{t("Nearby programs")}</dt>
-                <dd className="text-muted-foreground">{t("Libraries and community organizations can offer computer access, device support, and hands-on learning close to home.")}</dd>
-              </div>
-              <div className="flex flex-col gap-1">
-                <dt className="font-semibold text-foreground">{t("Online or nationwide")}</dt>
-                <dd className="text-muted-foreground">{t("Explore remote learning and programs with a wider reach. Delivery, eligibility, and in-person requirements vary by provider.")}</dd>
-              </div>
-            </dl>
-          </div>
-        </div>
+    <div className="bace-about-content">
+      <div className="bace-about-image"><Image src="/images/clark-county-valley.png" alt={t("A view of the Las Vegas Valley and surrounding mountains.")} fill sizes="(max-width: 639px) 100vw, 400px" className="object-cover" /></div>
+      <div className="flex flex-1 flex-col items-start justify-center gap-5 p-6 sm:p-8">
+        {heading ?? <span className="bace-location"><MapPin className="size-4" aria-hidden="true" />{t("Clark County, Nevada")}</span>}
+        <h3 className="text-balance text-3xl font-medium tracking-tight">{t("Local help. Wider possibilities.")}</h3>
+        <p className="text-pretty text-base leading-relaxed">{t("BACE Hub helps staff and community partners connect Clark County residents with internet plans, free or low-cost device access, and digital skills training.")}</p>
+        <p className="text-pretty text-base leading-relaxed">{t("Search an address, ask questions, compare options, and share a tailored resource list. Providers confirm cost, availability, and eligibility.")}</p>
+        <Button onClick={onTour}>{t("Start tour")}<ArrowRight data-icon="inline-end" aria-hidden="true" /></Button>
       </div>
-    </section>
+    </div>
   );
 }

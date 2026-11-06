@@ -2,17 +2,18 @@
 
 import { useRef, useState } from "react";
 import { Dialog } from "@base-ui/react/dialog";
-import { ArrowLeft, ArrowRight, ArrowUp, Check, MapPin } from "lucide-react";
+import { ArrowRight, ArrowUp, Check, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/components/chat/LanguageProvider";
 import { cn } from "@/lib/utils";
+import { speedUseGuidance } from "@/lib/plan-utils";
 
 const exampleAddress = "123 Example St, Las Vegas, NV 89101";
 const steps = [
-  { title: "Search an address", instruction: "Type @123, choose the example address, then select Find resources." },
-  { title: "Open the details", instruction: "Select Details & sharing to learn more about this option." },
+  { title: "Search an address", instruction: "Type 123, choose the example address, then select Find resources." },
+  { title: "Open the details", instruction: "Select View details to learn more about this option." },
   { title: "Choose an option", instruction: "Check the box to include this resource." },
-  { title: "Share the shortlist", instruction: "Select Share resource list to preview what your client receives." },
+  { title: "Share the shortlist", instruction: "Open Share in the side panel, then choose Share resource list to review your handoff." },
 ];
 
 export default function ResourceWalkthrough() {
@@ -25,7 +26,7 @@ export default function ResourceWalkthrough() {
   const [shareOpen, setShareOpen] = useState(false);
   const [copyStatus, setCopyStatus] = useState("");
   const heading = useRef<HTMLHeadingElement>(null);
-  const canContinue = step === 1 ? detailsOpen : step === 2 ? selected : shareOpen;
+  const canContinue = step === 0 ? addressPicked : step === 1 ? detailsOpen : step === 2 ? selected : shareOpen;
   const exampleText = `${t("Example internet plan")}\n$25${t("/mo")} · 100 Mbps\n${t("Example only. Not an available offer.")}`;
 
   function goTo(next: number) {
@@ -44,32 +45,24 @@ export default function ResourceWalkthrough() {
 
   return (
     <div className="flex min-h-0 flex-col gap-5">
-      <div className="flex shrink-0 items-center justify-between gap-3">
-        <span className="text-sm text-muted-foreground">{t("Example walkthrough")}</span>
-        <span className="text-sm tabular-nums text-muted-foreground">{t("Step {step} of {total}", { step: step + 1, total: steps.length })}</span>
-      </div>
+      <p className="text-sm tabular-nums text-muted-foreground">{t("Step {step} / {total}", { step: step + 1, total: steps.length })}</p>
       <div className="flex min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain">
-        {step > 0 && (
-          <div aria-hidden="true" inert className="select-none rounded-xl border border-border bg-muted p-3 text-muted-foreground blur-[3px]">
-            <p className="text-sm">{exampleAddress}</p>
-          </div>
-        )}
-        <div className="grid items-start gap-4 sm:grid-cols-[minmax(0,1fr)_13rem]">
+        <div className="grid items-start gap-4 md:grid-cols-[minmax(0,1fr)_13rem]">
           <section aria-label={t("Practice area")} data-tour-target className="min-w-0 rounded-xl border-2 border-primary bg-background p-4 text-foreground shadow-sm">
             {step === 0 ? (
               <form onSubmit={(event) => { event.preventDefault(); if (addressPicked) goTo(1); }}>
                 <div className="flex flex-col gap-3">
-                  <label htmlFor="practice-address" className="text-sm font-semibold">{t("Client address")}</label>
+                  <label htmlFor="practice-address" className="text-sm font-semibold">{t("Resident address")}</label>
                   <input
                     id="practice-address"
                     value={draft}
                     onChange={(event) => { setDraft(event.target.value); setAddressPicked(false); }}
                     onKeyDown={(event) => { if (event.key === "Enter" && (event.nativeEvent.isComposing || event.keyCode === 229)) event.preventDefault(); }}
                     autoComplete="off"
-                    placeholder={t("@ to search address")}
+                    placeholder={t("Type an example address…")}
                     className="min-h-14 w-full rounded-lg border border-input bg-card px-3 text-base text-card-foreground focus-visible:outline-2 focus-visible:outline-ring"
                   />
-                  {!addressPicked && draft.trim().startsWith("@") && draft.trim().length >= 4 && (
+                  {!addressPicked && /^@?\s*\d{3}/.test(draft.trim()) && (
                     <button type="button" onClick={() => { setDraft(exampleAddress); setAddressPicked(true); }} className="flex min-h-11 items-start gap-2 rounded-lg border border-border bg-accent p-3 text-left text-sm leading-relaxed text-accent-foreground focus-visible:outline-2 focus-visible:outline-ring">
                       <MapPin className="size-4 shrink-0" aria-hidden="true" />
                       {exampleAddress}
@@ -88,10 +81,11 @@ export default function ResourceWalkthrough() {
                 </div>
                 {step === 1 && (
                   <details open={detailsOpen} onToggle={(event) => setDetailsOpen(event.currentTarget.open)}>
-                    <summary className="cursor-pointer text-sm font-medium text-primary focus-visible:outline-2 focus-visible:outline-ring">{t("Details & sharing")}</summary>
+                    <summary className="cursor-pointer text-sm font-medium text-primary focus-visible:outline-2 focus-visible:outline-ring">{t("View details")}</summary>
                     <div className="pt-3">
                       <div className="flex flex-col gap-2 text-sm leading-relaxed text-muted-foreground">
                         <p>100 Mbps · {t("No contract")}</p>
+                        <p>{t("Typical uses")}: {t(speedUseGuidance("100", "10") || "")}</p>
                         <p>{t("Example only. Not an available offer.")}</p>
                       </div>
                     </div>
@@ -100,7 +94,7 @@ export default function ResourceWalkthrough() {
                 {step === 2 && (
                   <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm font-medium">
                     <input type="checkbox" checked={selected} onChange={(event) => setSelected(event.target.checked)} className="size-4 accent-primary" />
-                    {t(selected ? "Selected to share" : "Select to share")}
+                    {t(selected ? "Added to share list" : "Add to share list")}
                   </label>
                 )}
                 {step === 3 && (
@@ -120,8 +114,7 @@ export default function ResourceWalkthrough() {
             )}
           </section>
           <aside className="flex items-start gap-2" aria-live="polite" aria-atomic="true">
-            <ArrowLeft className="hidden size-6 shrink-0 text-primary sm:block" aria-hidden="true" />
-            <ArrowUp className="size-6 shrink-0 text-primary sm:hidden" aria-hidden="true" />
+            <ArrowUp className="size-6 shrink-0 text-primary" aria-hidden="true" />
             <div className="flex flex-col gap-2">
               <h3 ref={heading} tabIndex={-1} className="text-base font-semibold outline-none">{t(steps[step].title)}</h3>
               <p className="text-sm leading-relaxed text-muted-foreground">{t(steps[step].instruction)}</p>
@@ -129,20 +122,13 @@ export default function ResourceWalkthrough() {
             </div>
           </aside>
         </div>
-        <div aria-hidden="true" inert className="select-none rounded-xl border border-border bg-muted p-3 text-muted-foreground blur-[3px]">
-          <p className="text-sm">{t(step === 0 ? "Resources to share" : "Devices & computer access")}</p>
-          <p className="text-sm">{t(step === 0 ? "Internet plans" : "Digital skills training")}</p>
-        </div>
       </div>
       <div className="flex shrink-0 items-center justify-between gap-3">
         <Button variant="ghost" disabled={step === 0} onClick={() => goTo(step - 1)}>{t("Back")}</Button>
-        {step === 3 ? (
-          <Dialog.Close disabled={!canContinue} render={<Button />}>
-            {t("Finish")}
-          </Dialog.Close>
-        ) : step > 0 ? (
-          <Button disabled={!canContinue} onClick={() => goTo(step + 1)}>{t("Next")}<ArrowRight data-icon="inline-end" aria-hidden="true" /></Button>
-        ) : <Dialog.Close render={<Button variant="ghost" />}>{t("Skip tour")}</Dialog.Close>}
+        <div className="flex items-center gap-2">
+          {step < 3 && <Button variant="outline" aria-label={t("Skip step")} onClick={() => goTo(step + 1)}>{t("Skip")}</Button>}
+          {step === 3 ? <Dialog.Close disabled={!canContinue} render={<Button />}>{t("Finish")}</Dialog.Close> : <Button disabled={!canContinue} onClick={() => goTo(step + 1)}>{t("Next")}<ArrowRight data-icon="inline-end" aria-hidden="true" /></Button>}
+        </div>
       </div>
     </div>
   );
