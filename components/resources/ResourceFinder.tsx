@@ -227,7 +227,7 @@ export default function ResourceFinder() {
             <div className="flex flex-col items-center gap-4 text-center">
               <span className="bace-location"><MapPin className="size-4" aria-hidden="true" />{t("Clark County, Nevada")}</span>
               <h1 id="finder-title" className="bace-home-title text-balance">{t("What can we help your resident find?")}</h1>
-              <p className="max-w-lg text-pretty text-base leading-relaxed text-muted-foreground">{t("Explore internet plans, device access, and digital skills training for residents.")}</p>
+              <p className="max-w-3xl text-balance text-base leading-relaxed text-muted-foreground">{t("Explore internet plans, device access, and digital skills training for residents.")}</p>
             </div>
             <div ref={inputPanel} className="flex w-full flex-col gap-4">{input()}{lookupFeedback}</div>
             {hasSession && <Button variant="link" className="self-center" onClick={() => setShowHome(false)}>{t("Return to current session")}<ArrowUpRight data-icon="inline-end" aria-hidden="true" /></Button>}
