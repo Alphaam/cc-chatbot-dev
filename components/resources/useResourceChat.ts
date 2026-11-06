@@ -16,9 +16,9 @@ export interface ResourceMessage {
   incomplete?: boolean;
 }
 
-export function useResourceChat(result: LookupResponse | null, focus: ResourceFocus = "all", needs: ResidentNeeds = EMPTY_NEEDS) {
+export function useResourceChat(result: LookupResponse | null, focus: ResourceFocus = "all", needs: ResidentNeeds = EMPTY_NEEDS, initialMessages: ResourceMessage[] = []) {
   const { locale, t } = useLanguage();
-  const [messages, setMessages] = useState<ResourceMessage[]>([]);
+  const [messages, setMessages] = useState<ResourceMessage[]>(initialMessages);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const revision = useRef(0);

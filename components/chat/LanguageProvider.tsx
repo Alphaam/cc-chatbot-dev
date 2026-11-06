@@ -10,7 +10,7 @@ const LanguageContext = createContext({
   t: (key: string, values?: TranslationValues) => translate('en', key, values),
 });
 
-export function LanguageProvider({ children, initialLocale }: { children: ReactNode; initialLocale: Locale }) {
+export function LanguageProvider({ children, initialLocale, pageTitle }: { children: ReactNode; initialLocale: Locale; pageTitle?: string }) {
   const [locale, setLanguage] = useState<Locale>(initialLocale);
   const localeRef = useRef(initialLocale);
   const setLocale = useCallback((next: Locale) => {
@@ -21,9 +21,9 @@ export function LanguageProvider({ children, initialLocale }: { children: ReactN
   const t = useCallback((key: string, values?: TranslationValues) => translate(locale, key, values), [locale]);
   useEffect(() => {
     document.documentElement.lang = locale;
-    document.title = `BACE Hub | ${translate(locale, 'Clark County')}`;
+    document.title = pageTitle ? translate(locale, pageTitle) : `BACE Hub | ${translate(locale, 'Clark County')}`;
     return () => { document.documentElement.lang = 'en'; };
-  }, [locale]);
+  }, [locale, pageTitle]);
   const value = useMemo(() => ({ locale, localeRef, setLocale, t }), [locale, setLocale, t]);
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }

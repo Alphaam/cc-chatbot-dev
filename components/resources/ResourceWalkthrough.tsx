@@ -55,7 +55,7 @@ export default function ResourceWalkthrough() {
             <p className="text-sm">{exampleAddress}</p>
           </div>
         )}
-        <div className="flex flex-col gap-4">
+        <div className="grid items-start gap-4 md:grid-cols-[minmax(0,1fr)_13rem]">
           <section aria-label={t("Practice area")} data-tour-target className="min-w-0 rounded-xl border-2 border-primary bg-background p-4 text-foreground shadow-sm">
             {step === 0 ? (
               <form onSubmit={(event) => { event.preventDefault(); if (addressPicked) goTo(1); }}>
@@ -67,7 +67,7 @@ export default function ResourceWalkthrough() {
                     onChange={(event) => { setDraft(event.target.value); setAddressPicked(false); }}
                     onKeyDown={(event) => { if (event.key === "Enter" && (event.nativeEvent.isComposing || event.keyCode === 229)) event.preventDefault(); }}
                     autoComplete="off"
-                    placeholder={t("Enter an address or ask a question…")}
+                    placeholder={t("Type an example address…")}
                     className="min-h-14 w-full rounded-lg border border-input bg-card px-3 text-base text-card-foreground focus-visible:outline-2 focus-visible:outline-ring"
                   />
                   {!addressPicked && /^@?\s*\d{3}/.test(draft.trim()) && (
