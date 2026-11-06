@@ -2,6 +2,7 @@ import { streamText, smoothStream } from 'ai';
 import { nanoid } from 'nanoid';
 import { extractAddress, geocodeAddress } from '@/lib/address';
 import { logChat } from '@/lib/analytics';
+import { sanitizeNeeds, needsContext } from '@/lib/resident-needs';
 
 const SYSTEM_PROMPT = `You are a digital equity lookup tool for caseworkers and service providers in Clark County, Nevada. The user is looking up internet service options and digital inclusion resources on behalf of a client, not for themselves.
 
@@ -25,6 +26,18 @@ Guidelines:
 - If the user has provided what looks like an address but you receive no context block at all, don't describe why or speculate about tools — just tell them you weren't able to process that address and ask them to resend the full street address, city, and ZIP`;
 
 export async function POST(req: Request) {
+  const body = await req.json().catch(() => null);
+  if (!body || !Array.isArray(body.messages) || body.messages.length > 32 || !body.messages.length || body.messages.some((message: { role?: unknown; content?: unknown } | null) => !message || !['user', 'assistant'].includes(String(message.role)) || typeof message.content !== 'string' || message.content.length > 16000)) {
+    return Response.json({ error: 'Invalid conversation.' }, { status: 400 });
+  }
+  if (body.scope !== undefined && !['all', 'internet', 'devices', 'skills'].includes(body.scope)) return Response.json({ error: 'Invalid resource scope.' }, { status: 400 });
+  if (body.contextBlock !== undefined && (typeof body.contextBlock !== 'string' || body.contextBlock.length > 200000)) return Response.json({ error: 'Invalid resource context.' }, { status: 400 });
+  const scope = body.scope ?? 'all';
+  const residentContext = needsContext(sanitizeNeeds(body.residentNeeds));
+  const scopeInstruction = scope === 'all'
+    ? 'The staff member is viewing all resource types: internet, devices, and digital skills.'
+    : `The staff member has explicitly focused on ${scope}. Keep your answer within this resource type. Do not import resources from other types or earlier scopes. If asked for another type, offer to switch the view through Browse, but do not pretend you changed it. The interface controls the view.`;
+  const tailoringInstruction = residentContext ? `Resident preferences for this turn:\n${residentContext}\nUse these preferences to explain tradeoffs where source data supports them. Do not treat preferences as verified eligibility. Never invent a household size, price, program fit, or availability. If the preferences cannot be matched to a record, explain what to verify with the provider.` : '';
   const {
     messages,
     sessionId = nanoid(),
@@ -36,7 +49,7 @@ export async function POST(req: Request) {
     lat: clientLat,
     lon: clientLon,
     logOnly,
-  } = await req.json();
+  } = body;
 
   // contextBlock is pre-built by the client from /api/lookup and passed here
   // so we avoid a second DB round-trip in this route
@@ -74,7 +87,7 @@ export async function POST(req: Request) {
   const result = streamText({
     model: 'anthropic/claude-sonnet-4.6',
     abortSignal: req.signal,
-    system: SYSTEM_PROMPT + (clientContext ? `\n\n${clientContext}` : '') + `\n\nRespond in ${requestedLocale === 'es' ? 'Spanish' : 'English'}, regardless of the language used in earlier messages or source data. Keep provider and organization names, street addresses, phone numbers, URLs, prices, and speed values unchanged. Use plain, accessible language. Do not use em dashes.`,
+    system: SYSTEM_PROMPT + (clientContext ? `\n\nCurrent resource reference data:\n${clientContext}` : '') + `\n\n${scopeInstruction}\n\n${tailoringInstruction}` + `\n\nRespond in ${requestedLocale === 'es' ? 'Spanish' : 'English'}, regardless of the language used in earlier messages or source data. Keep provider and organization names, street addresses, phone numbers, URLs, prices, and speed values unchanged. Use plain, accessible language. Do not use em dashes.`,
     messages,
     maxOutputTokens: 1024,
     experimental_transform: smoothStream({ chunking: 'word' }),

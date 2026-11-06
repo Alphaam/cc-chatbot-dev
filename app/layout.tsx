@@ -9,13 +9,13 @@ const publicSans = Public_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "BaseHub | Clark County",
+  title: "BACE Hub | Clark County",
   description:
     "Search an address or ask a question about internet plans, device access, and digital skills training in Clark County, Nevada. Explore resources together and share a client shortlist in English or Spanish.",
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f4f6fa",
+  themeColor: "#ffffff",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",

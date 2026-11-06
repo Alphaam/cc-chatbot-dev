@@ -21,7 +21,7 @@ export function LanguageProvider({ children, initialLocale }: { children: ReactN
   const t = useCallback((key: string, values?: TranslationValues) => translate(locale, key, values), [locale]);
   useEffect(() => {
     document.documentElement.lang = locale;
-    document.title = `BaseHub | ${translate(locale, 'Clark County')}`;
+    document.title = `BACE Hub | ${translate(locale, 'Clark County')}`;
     return () => { document.documentElement.lang = 'en'; };
   }, [locale]);
   const value = useMemo(() => ({ locale, localeRef, setLocale, t }), [locale, setLocale, t]);

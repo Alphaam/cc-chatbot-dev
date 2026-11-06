@@ -42,6 +42,7 @@ export default function ResourceSection({
   const [expanded, setExpanded] = useState(false);
   const [budget, setBudget] = useState("");
   const [noContract, setNoContract] = useState(false);
+  const [sort, setSort] = useState("default");
   const filtered = resources.filter(
     ({ plan }) =>
       !plan ||
@@ -50,7 +51,13 @@ export default function ResourceSection({
           toNumber(plan.price)! <= Number(budget))) &&
         (!noContract || plan.contract === "N")),
   );
-  const shown = expanded ? filtered : filtered.slice(0, 2);
+  const ordered = sort === "default" ? filtered : filtered.slice().sort((a, b) => {
+    if (sort === "name") return a.name.localeCompare(b.name);
+    const first = sort === "price" ? toNumber(a.plan?.price ?? "") : a.service?.distanceMiles;
+    const second = sort === "price" ? toNumber(b.plan?.price ?? "") : b.service?.distanceMiles;
+    return ((first ?? Infinity) - (second ?? Infinity)) || a.name.localeCompare(b.name);
+  });
+  const shown = expanded ? ordered : ordered.slice(0, 3);
   return (
     <section
       id={category}
@@ -59,14 +66,19 @@ export default function ResourceSection({
       data-category={category}
     >
       <div className="flex flex-col gap-5">
-        <div className="flex flex-col gap-1">
-          <h2
-            id={`${category}-title`}
-            className="text-xl font-semibold tracking-tight"
-          >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 id={`${category}-title`} tabIndex={-1} className="flex items-center gap-3 text-xl font-medium tracking-tight focus:outline-none">
             {t(CATEGORY_LABELS[category])}
+            <span className="text-sm font-normal tabular-nums text-muted-foreground">{resources.length}</span>
           </h2>
-
+          {resources.length > 1 && <label className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="sr-only">{t("Sort resources")}: {t(CATEGORY_LABELS[category])}</span>
+            <select aria-label={`${t("Sort resources")}: ${t(CATEGORY_LABELS[category])}`} value={sort} onChange={(event) => setSort(event.target.value)} className="min-h-10 max-w-44 rounded-lg border-0 bg-background px-2 text-sm text-muted-foreground">
+              <option value="default">{t("Default order")}</option>
+              <option value={category === "internet" ? "price" : "distance"}>{t(category === "internet" ? "Price: low to high" : "Distance: nearest first")}</option>
+              <option value="name">{t("Name: A to Z")}</option>
+            </select>
+          </label>}
         </div>
         {category === "internet" && resources.length > 0 && (
           <details className="rounded-lg border border-border bg-card px-4 py-3 text-card-foreground">
@@ -126,7 +138,7 @@ export default function ResourceSection({
             </EmptyHeader>
           </Empty>
         ) : (
-          <ul className="grid items-start gap-4 md:grid-cols-2">
+          <ul className="flex flex-col gap-3">
             {shown.map((resource) => (
               <ResourceRow
                 key={resource.id}
@@ -139,7 +151,7 @@ export default function ResourceSection({
             ))}
           </ul>
         )}
-        {filtered.length > 2 && (
+        {filtered.length > 3 && (
           <div>
             <Button
               variant="outline"
@@ -222,7 +234,7 @@ function ResourceRow({
                 <p className="text-sm leading-relaxed text-muted-foreground">{t("Income-based discount")}</p>
               )}
               <details>
-                <summary className="cursor-pointer text-sm font-medium text-primary">{t("Details & sharing")}</summary>
+                <summary className="cursor-pointer text-sm font-medium text-primary">{t("View details")}</summary>
                 <div className="pt-4">
                   <div className="flex flex-col gap-4">
                     <dl className="flex flex-col gap-3 text-sm leading-relaxed">
@@ -239,7 +251,7 @@ function ResourceRow({
                       <Button size="sm" variant="outline" onClick={() => void copy()}>
                         <Copy data-icon="inline-start" aria-hidden="true" />{t(copied ? "Copied" : "Copy details")}
                       </Button>
-                      <Button size="sm" variant="outline" onClick={onShare}>{t("Send details")}</Button>
+                      <Button size="sm" variant="outline" onClick={onShare}>{t("Review share list")}</Button>
                       <Button size="sm" variant="ghost" onClick={onReport}>{t("Report an issue")}</Button>
                     </div>
                   </div>
@@ -250,7 +262,7 @@ function ResourceRow({
           <CardFooter className="flex-wrap justify-between gap-3">
             <label className="flex min-h-10 cursor-pointer items-center gap-2 text-sm font-medium">
               <input type="checkbox" checked={selected} onChange={onToggle} className="size-4 shrink-0 accent-primary" />
-              {t(selected ? "Selected to share" : "Select to share")}
+              {t(selected ? "Added to share list" : "Add to share list")}
               <span className="sr-only">: {resource.name}</span>
             </label>
             {resource.url && (

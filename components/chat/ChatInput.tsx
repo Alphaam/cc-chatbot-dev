@@ -44,6 +44,7 @@ interface ChatInputProps {
   onCancel?: () => void;
   addressOnly?: boolean;
   spacious?: boolean;
+  initialValue?: string;
 }
 type SearchState = 'idle' | 'short' | 'loading' | 'success' | 'empty' | 'unavailable' | 'outside';
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_API_KEY;
@@ -53,10 +54,10 @@ const DEBOUNCE_MS = 150;
 const CLARK_PROXIMITY = '-115.1398,36.1699';
 const CLARK_BBOX = '-115.9,35.0,-114.0,36.85';
 
-export default function ChatInput({ onSend, disabled, onDraftChange, placeholder = 'Type @ to search an address, or ask a question…', autoFocus, onStop, onCancel, addressOnly = false, spacious = false }: ChatInputProps) {
+export default function ChatInput({ onSend, disabled, onDraftChange, placeholder = 'Enter an address or ask a question…', autoFocus, onStop, onCancel, addressOnly = false, spacious = false, initialValue = '' }: ChatInputProps) {
   const { t } = useLanguage();
-  const [value, setValue] = useState('');
-  const valueRef = useRef('');
+  const [value, setValue] = useState(initialValue);
+  const valueRef = useRef(initialValue);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [open, setOpen] = useState(false);
   const [state, setState] = useState<SearchState>('idle');
@@ -99,7 +100,7 @@ export default function ChatInput({ onSend, disabled, onDraftChange, placeholder
     setSuggestions([]);
     setActiveIndex(0);
     const at = text.lastIndexOf('@');
-    if (at < 0 && !addressOnly) { setOpen(false); setState('idle'); return; }
+    if (at < 0 && !addressOnly && !/^\s*\d+[a-z]?\s+[a-z]/i.test(text)) { setOpen(false); setState('idle'); return; }
     setOpen(true);
     const query = text.slice(at + 1).trim();
     if (query.length < MIN_QUERY) { setState('short'); return; }
@@ -209,7 +210,7 @@ export default function ChatInput({ onSend, disabled, onDraftChange, placeholder
           {!suggestions.length && <p className="px-3 py-3 text-sm text-chat-secondary-foreground">{feedback}</p>}
         </div>
       )}
-      <form onSubmit={e => { e.preventDefault(); submit(); }} className={cn('flex gap-2', addressOnly ? 'flex-col items-stretch min-[480px]:flex-row min-[480px]:items-center' : 'items-center')}>
+      <form onSubmit={e => { e.preventDefault(); submit(); }} className={cn('bace-composer flex gap-2', addressOnly ? 'flex-col items-stretch min-[480px]:flex-row min-[480px]:items-center' : 'items-center')}>
         <input ref={inputRef} autoFocus={autoFocus} value={value} onChange={e => change(e.target.value)}
           onKeyDown={e => {
             if (e.nativeEvent.isComposing || e.keyCode === 229) { if (e.key === 'Enter') e.preventDefault(); return; }

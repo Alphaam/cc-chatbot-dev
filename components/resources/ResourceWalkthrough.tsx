@@ -9,10 +9,10 @@ import { cn } from "@/lib/utils";
 
 const exampleAddress = "123 Example St, Las Vegas, NV 89101";
 const steps = [
-  { title: "Search an address", instruction: "Type @123, choose the example address, then select Find resources." },
-  { title: "Open the details", instruction: "Select Details & sharing to learn more about this option." },
+  { title: "Search an address", instruction: "Type 123, choose the example address, then select Find resources." },
+  { title: "Open the details", instruction: "Select View details to learn more about this option." },
   { title: "Choose an option", instruction: "Check the box to include this resource." },
-  { title: "Share the shortlist", instruction: "Select Share resource list to preview what your client receives." },
+  { title: "Share the shortlist", instruction: "Open Share in the side panel, then choose Prepare resource list to review your handoff." },
 ];
 
 export default function ResourceWalkthrough() {
@@ -66,10 +66,10 @@ export default function ResourceWalkthrough() {
                     onChange={(event) => { setDraft(event.target.value); setAddressPicked(false); }}
                     onKeyDown={(event) => { if (event.key === "Enter" && (event.nativeEvent.isComposing || event.keyCode === 229)) event.preventDefault(); }}
                     autoComplete="off"
-                    placeholder={t("@ to search address")}
+                    placeholder={t("Enter an address or ask a question…")}
                     className="min-h-14 w-full rounded-lg border border-input bg-card px-3 text-base text-card-foreground focus-visible:outline-2 focus-visible:outline-ring"
                   />
-                  {!addressPicked && draft.trim().startsWith("@") && draft.trim().length >= 4 && (
+                  {!addressPicked && /^@?\s*\d{3}/.test(draft.trim()) && (
                     <button type="button" onClick={() => { setDraft(exampleAddress); setAddressPicked(true); }} className="flex min-h-11 items-start gap-2 rounded-lg border border-border bg-accent p-3 text-left text-sm leading-relaxed text-accent-foreground focus-visible:outline-2 focus-visible:outline-ring">
                       <MapPin className="size-4 shrink-0" aria-hidden="true" />
                       {exampleAddress}
@@ -88,7 +88,7 @@ export default function ResourceWalkthrough() {
                 </div>
                 {step === 1 && (
                   <details open={detailsOpen} onToggle={(event) => setDetailsOpen(event.currentTarget.open)}>
-                    <summary className="cursor-pointer text-sm font-medium text-primary focus-visible:outline-2 focus-visible:outline-ring">{t("Details & sharing")}</summary>
+                    <summary className="cursor-pointer text-sm font-medium text-primary focus-visible:outline-2 focus-visible:outline-ring">{t("View details")}</summary>
                     <div className="pt-3">
                       <div className="flex flex-col gap-2 text-sm leading-relaxed text-muted-foreground">
                         <p>100 Mbps · {t("No contract")}</p>
@@ -100,12 +100,12 @@ export default function ResourceWalkthrough() {
                 {step === 2 && (
                   <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm font-medium">
                     <input type="checkbox" checked={selected} onChange={(event) => setSelected(event.target.checked)} className="size-4 accent-primary" />
-                    {t(selected ? "Selected to share" : "Select to share")}
+                    {t(selected ? "Added to share list" : "Add to share list")}
                   </label>
                 )}
                 {step === 3 && (
                   <>
-                    <Button variant="outline" onClick={() => setShareOpen(true)} aria-expanded={shareOpen}>{t("Share resource list")}</Button>
+                    <Button variant="outline" onClick={() => setShareOpen(true)} aria-expanded={shareOpen}>{t("Prepare resource list")}</Button>
                     {shareOpen && (
                       <div className="flex flex-col gap-3">
                         <label htmlFor="practice-share" className="text-sm font-medium">{t("Example message")}</label>

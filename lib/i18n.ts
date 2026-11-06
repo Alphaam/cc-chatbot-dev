@@ -1,4 +1,5 @@
 import { resourceSpanish } from './resource-i18n.ts';
+import { workspaceSpanish } from './workspace-i18n.ts';
 import { resourceSpanish as programSpanish } from './resource-translations.ts';
 
 export type Locale = 'en' | 'es';
@@ -7,6 +8,7 @@ export type TranslationValues = Record<string, string | number>;
 export const spanish: Record<string, string> = {
   ...programSpanish,
   ...resourceSpanish,
+  ...workspaceSpanish,
   'Close': 'Cerrar',
   'Download PDF': 'Descargar PDF',
   'Preparing PDF…': 'Preparando PDF…',
