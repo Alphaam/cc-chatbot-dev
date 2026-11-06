@@ -488,7 +488,7 @@
 .bace-app { isolation: isolate; }
 .bace-main-shell { isolation: isolate; display: flex; min-height: calc(100dvh - var(--bace-header-height, 5rem)); flex-direction: column; }
 .bace-header { position: sticky; top: 0; z-index: 20; --ring: var(--primary-foreground); display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.125rem 2rem; background: var(--primary); color: var(--primary-foreground); }
-.bace-header-utilities { margin-left: auto; }
+.bace-header-utilities { margin-left: auto; margin-right: -.5rem; }
 .bace-header [data-slot="button"] { color: var(--primary-foreground); }
 .bace-header [data-slot="button"]:is(:hover, [aria-expanded="true"], [data-popup-open]) { background: color-mix(in srgb, var(--primary-foreground) 14%, transparent); color: var(--primary-foreground); }
 .bace-header select { color: var(--primary-foreground); }
@@ -577,7 +577,7 @@
 }
 @media (max-width: 639px) {
   .bace-header { flex-wrap: wrap; padding: .875rem 1.25rem; gap: .5rem; }
-  .bace-header-help { margin-left: auto; justify-content: flex-end; }
+  .bace-header-help { justify-content: flex-end; }
   .bace-header-help [data-slot="button"] { padding-left: 0; }
   .bace-main { padding: 2rem 1.25rem; }
   .bace-home { min-height: calc(100svh - 10rem); padding-block: 2.5rem; }
