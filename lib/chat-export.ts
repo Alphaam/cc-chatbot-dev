@@ -49,7 +49,7 @@ export function buildChatExport(data: ChatExportData, t: Translate, now = new Da
   const section = (title: string, value: string) => `${t(title)}:\n${value}`;
 
   const transcript = [
-    t('Clark County Digital Equity Assistant'),
+    `BACE Hub | ${t('Clark County')}`,
     t('Chat transcript'),
     section('Exported at (UTC)', timestamp),
     t('Conversation text and lookup records are included. Suggested resources do not confirm eligibility, availability, or receipt of service.'),

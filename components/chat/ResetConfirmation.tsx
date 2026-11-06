@@ -41,8 +41,8 @@ export default function ResetConfirmation({
             <AlertDialog.Title className="text-lg font-semibold">
               {t(
                 addressFirst
-                  ? "Clear this client and start again?"
-                  : "Clear this client's conversation and restart?",
+                  ? "Clear this resident session and start again?"
+                  : "Clear this resident's conversation and restart?",
               )}
             </AlertDialog.Title>
             <AlertDialog.Description className="text-sm leading-relaxed text-muted-foreground">
