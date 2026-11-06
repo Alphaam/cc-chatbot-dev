@@ -13,7 +13,6 @@ export default function ResourceTopics({ onChoose }: { onChoose: (prompt: string
   const { t } = useLanguage();
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-center text-sm text-muted-foreground">{t("Alternatively, choose a resource to draft a question")}</p>
       <nav aria-label={t("Suggested questions")} className="bace-suggestions">
       {suggestions.map(({ icon: Icon, title, prompt }) => (
         <button type="button" key={title} className="bace-suggestion" onClick={() => onChoose(t(prompt))}>

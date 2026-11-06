@@ -501,7 +501,7 @@
 .bace-main { width: 100%; max-width: 52rem; margin-inline: auto; padding: 2.5rem 2rem; flex: 1; }
 .bace-home { display: flex; align-items: center; justify-content: center; min-height: calc(100svh - 12rem); padding-block: 2rem 3rem; }
 .bace-home-content { display: flex; width: 100%; flex-direction: column; gap: 1.75rem; }
-.bace-home-title { max-width: 38rem; font-size: clamp(2rem, 4.5vw, 3rem); font-weight: 500; letter-spacing: -.05em; line-height: 1.18; }
+.bace-home-title { max-width: 60rem; font-size: clamp(2rem, 4.5vw, 3rem); font-weight: 500; letter-spacing: -.05em; line-height: 1.18; }
 .bace-eyebrow { display: flex; align-items: center; gap: .5rem; color: var(--muted-foreground); font-size: .875rem; line-height: 1.5; }
 .bace-composer { align-items: center; border: 1px solid var(--border); border-radius: 1.75rem; background: var(--muted); color: var(--foreground); padding: .625rem; box-shadow: 0 2px 3px color-mix(in srgb, var(--foreground) 2%, transparent); transition: border-color 150ms; }
 .bace-composer:focus-within { border-color: color-mix(in srgb, var(--primary) 50%, var(--card)); }
