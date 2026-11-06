@@ -38,7 +38,7 @@ export function SharePanel({ resources, address, focus, downloading, disabled, s
         <div className="flex flex-col gap-2">
           <Button disabled={disabled} onClick={() => setPreview("list")}>{t("Share resource list")}<ArrowUpRight data-icon="inline-end" aria-hidden="true" /></Button>
           <Button variant="outline" disabled={disabled || downloading} onClick={() => onDownload(false)}><Download data-icon="inline-start" aria-hidden="true" />{t(downloading ? "Preparing PDF…" : "Download resource list (PDF)")}</Button>
-          <Button variant="outline" disabled={disabled} onClick={() => printResourceText(t("Client recommendations"), recommendationsText(resources, t), locale)}><Printer data-icon="inline-start" aria-hidden="true" />{t("Print resources")}</Button>
+          <Button variant="outline" disabled={disabled} onClick={() => printResourceText(t("Resident recommendations"), recommendationsText(resources, t), locale)}><Printer data-icon="inline-start" aria-hidden="true" />{t("Print resources")}</Button>
           <Button variant="ghost" disabled={disabled} onClick={() => setPreview("note")}><FileText data-icon="inline-start" aria-hidden="true" />{t("Share case note")}</Button>
           <p className="text-sm leading-relaxed text-muted-foreground">{t("Copy, email, and text are available in Share resource list. Quick download and print exclude the address.")}</p>
         </div>

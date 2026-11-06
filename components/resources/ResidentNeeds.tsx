@@ -43,8 +43,8 @@ export default function ResidentNeeds({ draft, onChange, onApply, onClear }: {
     <form className="flex flex-col gap-6" onSubmit={(event) => { event.preventDefault(); onApply(); }}>
       <p className="text-sm leading-relaxed text-muted-foreground">{t("Choose the support they need. We’ll show just the relevant questions, and every answer is optional.")}</p>
       <details open className="bace-needs-selector">
-        <summary className="cursor-pointer text-sm font-semibold">{t("What is your client looking for?")}</summary>
-        <ToggleGroup orientation="vertical" value={[draft.lookingFor]} onValueChange={(value) => onChange({ ...draft, lookingFor: value[0] as ResourceFocus || "all" })} className="bace-scope-options mt-4" aria-label={t("What is your client looking for?")}>
+        <summary className="cursor-pointer text-sm font-semibold">{t("What is the resident looking for?")}</summary>
+        <ToggleGroup orientation="vertical" value={[draft.lookingFor]} onValueChange={(value) => onChange({ ...draft, lookingFor: value[0] as ResourceFocus || "all" })} className="bace-scope-options mt-4" aria-label={t("What is the resident looking for?")}>
           {options.map(({ value, label, icon: Icon }) => <ToggleGroupItem key={value} value={value} className="bace-scope-option"><Icon aria-hidden="true" /><span className="flex-1 whitespace-normal text-left leading-relaxed">{t(label)}</span></ToggleGroupItem>)}
         </ToggleGroup>
       </details>

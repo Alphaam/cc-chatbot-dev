@@ -31,7 +31,7 @@ export default function ShareRecommendations({ resources, address, note, downloa
         <p className="text-sm leading-relaxed text-muted-foreground">{t("Review before sharing. Email and text open your own app; nothing is sent automatically.")}</p>
       </div>
       <FieldGroup>
-        {address && <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={includeAddress} onChange={(event) => { setIncludeAddress(event.target.checked); setStatus(""); }} className="size-4 accent-primary" />{t("Include client address")}</label>}
+        {address && <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={includeAddress} onChange={(event) => { setIncludeAddress(event.target.checked); setStatus(""); }} className="size-4 accent-primary" />{t("Include resident address")}</label>}
         <Field>
           <FieldLabel htmlFor="recommendation-preview">{t(note ? "Case note" : "Details to share")}</FieldLabel>
           <Textarea ref={textRef} id="recommendation-preview" readOnly value={text} rows={10} className="min-h-56" />
@@ -41,7 +41,7 @@ export default function ShareRecommendations({ resources, address, note, downloa
         <Button onClick={() => void copy()} disabled={!resources.length}><Copy data-icon="inline-start" aria-hidden="true" />{t(note ? "Copy case note" : "Copy resource list")}</Button>
         {!note && resources.length > 0 && <>
           <Button variant="outline" disabled={downloading} onClick={() => onDownload(includeAddress)}><Download data-icon="inline-start" aria-hidden="true" />{t(downloading ? "Preparing PDF…" : "Download resource list (PDF)")}</Button>
-          <Button variant="outline" onClick={() => printResourceText(t("Client recommendations"), text, locale)}><Printer data-icon="inline-start" aria-hidden="true" />{t("Print resources")}</Button>
+          <Button variant="outline" onClick={() => printResourceText(t("Resident recommendations"), text, locale)}><Printer data-icon="inline-start" aria-hidden="true" />{t("Print resources")}</Button>
           <a className={buttonVariants({ variant: "outline" })} href={email}><Mail data-icon="inline-start" aria-hidden="true" />{t("Open email app")}</a>
           <a className={buttonVariants({ variant: "outline" })} href={sms}><MessageSquare data-icon="inline-start" aria-hidden="true" />{t("Open text app")}</a>
         </>}

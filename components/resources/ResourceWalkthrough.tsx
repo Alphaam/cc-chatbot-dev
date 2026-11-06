@@ -26,7 +26,7 @@ export default function ResourceWalkthrough() {
   const [shareOpen, setShareOpen] = useState(false);
   const [copyStatus, setCopyStatus] = useState("");
   const heading = useRef<HTMLHeadingElement>(null);
-  const canContinue = step === 1 ? detailsOpen : step === 2 ? selected : shareOpen;
+  const canContinue = step === 0 ? addressPicked : step === 1 ? detailsOpen : step === 2 ? selected : shareOpen;
   const exampleText = `${t("Example internet plan")}\n$25${t("/mo")} · 100 Mbps\n${t("Example only. Not an available offer.")}`;
 
   function goTo(next: number) {
@@ -45,22 +45,14 @@ export default function ResourceWalkthrough() {
 
   return (
     <div className="flex min-h-0 flex-col gap-5">
-      <div className="flex shrink-0 items-center justify-between gap-3">
-        <span className="text-sm text-muted-foreground">{t("Example walkthrough")}</span>
-        <span className="text-sm tabular-nums text-muted-foreground">{t("Step {step} of {total}", { step: step + 1, total: steps.length })}</span>
-      </div>
+      <p className="text-sm tabular-nums text-muted-foreground">{t("Step {step} / {total}", { step: step + 1, total: steps.length })}</p>
       <div className="flex min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain">
-        {step > 0 && (
-          <div aria-hidden="true" inert className="select-none rounded-xl border border-border bg-muted p-3 text-muted-foreground blur-[3px]">
-            <p className="text-sm">{exampleAddress}</p>
-          </div>
-        )}
         <div className="grid items-start gap-4 md:grid-cols-[minmax(0,1fr)_13rem]">
           <section aria-label={t("Practice area")} data-tour-target className="min-w-0 rounded-xl border-2 border-primary bg-background p-4 text-foreground shadow-sm">
             {step === 0 ? (
               <form onSubmit={(event) => { event.preventDefault(); if (addressPicked) goTo(1); }}>
                 <div className="flex flex-col gap-3">
-                  <label htmlFor="practice-address" className="text-sm font-semibold">{t("Client address")}</label>
+                  <label htmlFor="practice-address" className="text-sm font-semibold">{t("Resident address")}</label>
                   <input
                     id="practice-address"
                     value={draft}
@@ -130,16 +122,13 @@ export default function ResourceWalkthrough() {
             </div>
           </aside>
         </div>
-        <div aria-hidden="true" inert className="select-none rounded-xl border border-border bg-muted p-3 text-muted-foreground blur-[3px]">
-          <p className="text-sm">{t(step === 0 ? "Resources to share" : "Devices & computer access")}</p>
-          <p className="text-sm">{t(step === 0 ? "Internet plans" : "Digital skills training")}</p>
-        </div>
       </div>
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
+      <div className="flex shrink-0 items-center justify-between gap-3">
         <Button variant="ghost" disabled={step === 0} onClick={() => goTo(step - 1)}>{t("Back")}</Button>
-        <Dialog.Close render={<Button variant="ghost" />}>{t("Skip tour")}</Dialog.Close>
-        {step < 3 && <Button variant="outline" onClick={() => goTo(step + 1)}>{t("Skip step")}</Button>}
-        {step === 3 ? <Dialog.Close disabled={!canContinue} render={<Button />}>{t("Finish")}</Dialog.Close> : step > 0 ? <Button disabled={!canContinue} onClick={() => goTo(step + 1)}>{t("Next")}<ArrowRight data-icon="inline-end" aria-hidden="true" /></Button> : null}
+        <div className="flex items-center gap-2">
+          {step < 3 && <Button variant="outline" aria-label={t("Skip step")} onClick={() => goTo(step + 1)}>{t("Skip")}</Button>}
+          {step === 3 ? <Dialog.Close disabled={!canContinue} render={<Button />}>{t("Finish")}</Dialog.Close> : <Button disabled={!canContinue} onClick={() => goTo(step + 1)}>{t("Next")}<ArrowRight data-icon="inline-end" aria-hidden="true" /></Button>}
+        </div>
       </div>
     </div>
   );

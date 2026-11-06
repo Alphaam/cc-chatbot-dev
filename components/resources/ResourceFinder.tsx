@@ -144,7 +144,7 @@ export default function ResourceFinder() {
       void lookup(parsed.address, options);
     } else {
       setPending(null); setError("");
-      if (/find|help|near|available|client|busc|ayud|cerca/i.test(text)) lastQuestion.current = text;
+      if (/find|help|near|available|resident|client|busc|ayud|cerca/i.test(text)) lastQuestion.current = text;
       void chat.send(text);
       requestAnimationFrame(() => document.getElementById("latest-resource-question")?.scrollIntoView({ block: "start" }));
     }
@@ -185,7 +185,7 @@ export default function ResourceFinder() {
     downloadLock.current = true; setDownloading(true); setStatus("");
     try {
       const { createChatPdf, loadPdfFont } = await import("@/lib/chat-pdf");
-      const pdf = createChatPdf(recommendationsText(shortlist, t, includeAddress ? address : undefined), await loadPdfFont(), t("Client recommendations"));
+      const pdf = createChatPdf(recommendationsText(shortlist, t, includeAddress ? address : undefined), await loadPdfFont(), t("Resident recommendations"));
       if (activeGeneration !== generation.current) return;
       const url = URL.createObjectURL(pdf.output("blob"));
       const link = document.createElement("a"); link.href = url; link.download = "bace-hub-resources.pdf"; link.click();
@@ -195,7 +195,7 @@ export default function ResourceFinder() {
     finally { setDownloading(false); downloadLock.current = false; }
   }
 
-  const input = (addressOnly = false) => <ChatInput key={`${session}:${draft.revision}:${addressOnly}`} initialValue={draft.text} autoFocus={draft.revision > 0} spacious={home || addressOnly} addressOnly={addressOnly} disabled={busy || chat.busy} onStop={chat.busy ? chat.cancel : undefined} onCancel={addressOnly ? () => { request.current?.abort(); setBusy(false); setEditing(false); setPending(null); setError(""); } : undefined} onSend={(text, options) => send(text, addressOnly ? { ...options, addressSearch: true } : options)} placeholder={t(addressOnly ? "Enter a new client address…" : result ? "Ask a question, or type @ to search an address…" : "Type @ to search for an address, or type a question…")} />;
+  const input = (addressOnly = false) => <ChatInput key={`${session}:${draft.revision}:${addressOnly}`} initialValue={draft.text} autoFocus={draft.revision > 0} spacious={home || addressOnly} addressOnly={addressOnly} disabled={busy || chat.busy} onStop={chat.busy ? chat.cancel : undefined} onCancel={addressOnly ? () => { request.current?.abort(); setBusy(false); setEditing(false); setPending(null); setError(""); } : undefined} onSend={(text, options) => send(text, addressOnly ? { ...options, addressSearch: true } : options)} placeholder={t(addressOnly ? "Enter a new resident address…" : result ? "Ask a question, or type @ to search an address…" : "Type @ to search for an address, or type a question…")} />;
   const lookupFeedback = <>
     {busy && <p role="status" className="text-sm text-muted-foreground">{t("Checking internet plans and nearby programs…")}</p>}
     {error && <Alert variant="destructive"><AlertTitle>{t("Address lookup")}</AlertTitle><AlertDescription><p>{t(error)}</p><Button variant="outline" size="sm" onClick={() => void lookup(lastQuery)}>{t("Retry")}</Button></AlertDescription></Alert>}
@@ -226,8 +226,8 @@ export default function ResourceFinder() {
           {home ? <section aria-labelledby="finder-title" className="bace-home-content">
             <div className="flex flex-col items-center gap-4 text-center">
               <span className="bace-location"><MapPin className="size-4" aria-hidden="true" />{t("Clark County, Nevada")}</span>
-              <h1 id="finder-title" className="bace-home-title text-balance">{t("What can we help your client find?")}</h1>
-              <p className="max-w-lg text-pretty text-base leading-relaxed text-muted-foreground">{t("Explore internet plans, device access, and digital skills training for your client.")}</p>
+              <h1 id="finder-title" className="bace-home-title text-balance">{t("What can we help your resident find?")}</h1>
+              <p className="max-w-lg text-pretty text-base leading-relaxed text-muted-foreground">{t("Explore internet plans, device access, and digital skills training for residents.")}</p>
             </div>
             <div ref={inputPanel} className="flex w-full flex-col gap-4">{input()}{lookupFeedback}</div>
             {hasSession && <Button variant="link" className="self-center" onClick={() => setShowHome(false)}>{t("Return to current session")}<ArrowUpRight data-icon="inline-end" aria-hidden="true" /></Button>}
@@ -254,7 +254,7 @@ export default function ResourceFinder() {
             </section>
             {result && <div key={address} className="flex flex-col gap-10">
               {categories.map((category) => <ResourceSection key={category} category={category} resources={resources.filter((resource) => resource.category === category)} selected={selected} onToggle={toggle} onShare={shareResource} onReport={setReport} />)}
-              {!result.found && !!result.nearbyAddresses?.length && <details className="text-sm"><summary className="cursor-pointer font-medium text-primary">{t("Other address matches")}</summary><div className="flex flex-col gap-3 pt-3"><p className="text-muted-foreground">{t("Choosing a match changes the search address. Only use an address that is correct for your client.")}</p>{result.nearbyAddresses.slice(0, 3).map((pick) => <Button key={JSON.stringify(pick)} variant="outline" className="h-auto min-h-9 justify-start whitespace-normal text-left" disabled={busy} onClick={() => void lookup(`${pick.addr}, ${pick.city}, ${pick.state} ${pick.zip}`, { exact: pick })}>{`${pick.addr}, ${pick.city}, ${pick.state} ${pick.zip}`}</Button>)}</div></details>}
+              {!result.found && !!result.nearbyAddresses?.length && <details className="text-sm"><summary className="cursor-pointer font-medium text-primary">{t("Other address matches")}</summary><div className="flex flex-col gap-3 pt-3"><p className="text-muted-foreground">{t("Choosing a match changes the search address. Only use an address that is correct for the resident.")}</p>{result.nearbyAddresses.slice(0, 3).map((pick) => <Button key={JSON.stringify(pick)} variant="outline" className="h-auto min-h-9 justify-start whitespace-normal text-left" disabled={busy} onClick={() => void lookup(`${pick.addr}, ${pick.city}, ${pick.state} ${pick.zip}`, { exact: pick })}>{`${pick.addr}, ${pick.city}, ${pick.state} ${pick.zip}`}</Button>)}</div></details>}
             </div>}
             <ResourceConversation key={session} chat={chat} />
           </div>}

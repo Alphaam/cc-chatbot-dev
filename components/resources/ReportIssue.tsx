@@ -133,7 +133,7 @@ export default function ReportIssue({
                     />
                     <FieldDescription id="issue-privacy">
                       {t(
-                        "Do not include client names, addresses, or other personal information.",
+                        "Do not include resident names, addresses, or other personal information.",
                       )}
                     </FieldDescription>
                   </Field>

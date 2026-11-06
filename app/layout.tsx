@@ -11,7 +11,7 @@ const publicSans = Public_Sans({
 export const metadata: Metadata = {
   title: "BACE Hub | Clark County",
   description:
-    "Search an address or ask a question about internet plans, device access, and digital skills training in Clark County, Nevada. Explore resources together and share a client shortlist in English or Spanish.",
+    "Search an address or ask a question about internet plans, device access, and digital skills training in Clark County, Nevada. Explore resources together and share a resident resource list in English or Spanish.",
 };
 
 export const viewport: Viewport = {

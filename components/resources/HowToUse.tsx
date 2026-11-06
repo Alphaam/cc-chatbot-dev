@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { useRef, useState } from "react";
+import { Dialog } from "@base-ui/react/dialog";
+import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/components/chat/LanguageProvider";
 import ResourceIntro from "./ResourceIntro";
@@ -10,12 +11,21 @@ import ResourceWalkthrough from "./ResourceWalkthrough";
 export default function HowToUse() {
   const { t } = useLanguage();
   const [tourStarted, setTourStarted] = useState(false);
-  if (!tourStarted) return <ResourceIntro onTour={() => setTourStarted(true)} />;
+  const titleRef = useRef<HTMLHeadingElement>(null);
   return (
-    <div className="bace-guide-tour flex min-h-0 flex-col gap-4 p-5 sm:p-6">
-      <Button variant="ghost" className="self-start" onClick={() => setTourStarted(false)}><ArrowLeft data-icon="inline-start" aria-hidden="true" />{t("Back to introduction")}</Button>
-      <p className="text-sm leading-relaxed text-muted-foreground">{t("Try it with example data. Your search stays unchanged.")}</p>
-      <ResourceWalkthrough />
-    </div>
+    <>
+      {tourStarted ? (
+        <div className="bace-guide-tour flex min-h-0 flex-col gap-5 p-5 sm:p-6">
+          <Dialog.Title ref={titleRef} tabIndex={-1} className="pr-12 text-xl font-semibold tracking-tight focus:outline-none">{t("How to use this tool")}</Dialog.Title>
+          <ResourceWalkthrough />
+        </div>
+      ) : (
+        <ResourceIntro
+          heading={<Dialog.Title className="text-sm font-semibold text-primary">{t("How to use this tool")}</Dialog.Title>}
+          onTour={() => { setTourStarted(true); requestAnimationFrame(() => titleRef.current?.focus({ preventScroll: true })); }}
+        />
+      )}
+      <Dialog.Close data-guide-close render={<Button size="icon" variant="ghost" className="bace-guide-close" />} aria-label={t("Close guide")}><X aria-hidden="true" /></Dialog.Close>
+    </>
   );
 }
