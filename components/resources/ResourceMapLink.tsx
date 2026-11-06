@@ -8,22 +8,24 @@ import { useResourceMapSession, type ResourceMapSession } from "./useResourceMap
 import { resourcesFromLookup } from "@/lib/resource-finder";
 import { mappedIdsFromResources } from "@/lib/resource-map";
 
-export default function ResourceMapLink({ snapshot, compact = false, disabled = false }: { snapshot: ResourceMapSession; compact?: boolean; disabled?: boolean }) {
+export function useOpenResourceMap(snapshot: ResourceMapSession, disabled = false) {
   const router = useRouter();
-  const { t } = useLanguage();
   const { mutate } = useResourceMapSession();
   const resources = snapshot.result ? resourcesFromLookup(snapshot.result) : [];
   const selectedCount = mappedIdsFromResources(resources.filter((resource) => snapshot.selected.includes(resource.id))).size;
   const count = selectedCount || mappedIdsFromResources(resources).size;
+  const open = () => { if (!disabled) void mutate(snapshot, { revalidate: false }).then(() => router.push("/map")); };
+  return { count, open };
+}
+
+export default function ResourceMapLink({ snapshot, disabled = false }: { snapshot: ResourceMapSession; disabled?: boolean }) {
+  const { t } = useLanguage();
+  const { count, open } = useOpenResourceMap(snapshot, disabled);
   return (
-    <Link href="/map" className={compact ? "bace-mobile-map-link lg:hidden" : "bace-rail-action"} aria-label={count ? t("Open resource map ({count} resources)", { count }) : t("Open resource map")} title={count ? t("Resource map ({count} resources)", { count }) : t("Resource map")} aria-disabled={disabled || undefined}
-      onNavigate={(event) => {
-        event.preventDefault();
-        if (disabled) return;
-        void mutate(snapshot, { revalidate: false }).then(() => router.push("/map"));
-      }}>
+    <Link href="/map" className="bace-rail-action" aria-label={count ? t("Open resource map ({count} resources)", { count }) : t("Open resource map")} title={count ? t("Resource map ({count} resources)", { count }) : t("Resource map")} aria-disabled={disabled || undefined}
+      onNavigate={(event) => { event.preventDefault(); open(); }}>
       <span className="relative flex size-6 items-center justify-center"><MapIcon className="size-5" aria-hidden="true" />{count > 0 && <span className="bace-selection-count" aria-hidden="true">{count}</span>}</span>
-      {!compact && <span>{t("Map")}</span>}
+      <span>{t("Map")}</span>
     </Link>
   );
 }
