@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowUpRight, Check, MapPin, Home, RotateCcw, Share2, SlidersHorizontal, UsersRound } from "lucide-react";
+import { ArrowUpRight, Check, MapPin, Home, RotateCcw, Share2, SlidersHorizontal, UsersRound, CircleHelp } from "lucide-react";
 import ResourceCategories from "./ResourceCategories";
 import ResourceTopics from "./ResourceTopics";
 import ResourceConversation from "./ResourceConversation";
@@ -10,7 +10,6 @@ import { SharePanel } from "./SharePanel";
 import ResidentNeeds from "./ResidentNeeds";
 import WorkspacePanel, { ActionRail, type PanelView } from "./WorkspacePanel";
 import HowToUse from "./HowToUse";
-import AboutTool from "./AboutTool";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -18,7 +17,7 @@ import ChatInput, { type SendOptions } from "@/components/chat/ChatInput";
 import SessionTimeout from "@/components/chat/SessionTimeout";
 import ResetConfirmation from "@/components/chat/ResetConfirmation";
 import { LanguageToggle, useLanguage } from "@/components/chat/LanguageProvider";
-import { CATEGORIES, CATEGORY_LABELS, isAddressQuery, recommendationsText, resourcesFromLookup, type LookupResponse, type Resource, type ResourceCategory } from "@/lib/resource-finder";
+import { CATEGORIES, CATEGORY_LABELS, isAddressQuery, defaultShortlist, recommendationsText, resourcesFromLookup, type LookupResponse, type Resource, type ResourceCategory } from "@/lib/resource-finder";
 import { EMPTY_NEEDS, hasNeeds, inferResourceFocus, sanitizeNeeds, splitResourceRequest, type ResidentNeeds as Needs, type ResourceFocus } from "@/lib/resident-needs";
 import ResourceSection from "./ResourceSection";
 import ReportIssue from "./ReportIssue";
@@ -27,7 +26,6 @@ export default function ResourceFinder() {
   const { t } = useLanguage();
   const [result, setResult] = useState<LookupResponse | null>(null);
   const [showHome, setShowHome] = useState(false);
-  const [tourOpen, setTourOpen] = useState(false);
   const [focus, setFocus] = useState<ResourceFocus>("all");
   const [needs, setNeeds] = useState<Needs>(EMPTY_NEEDS);
   const [needsDraft, setNeedsDraft] = useState<Needs>(EMPTY_NEEDS);
@@ -35,6 +33,7 @@ export default function ResourceFinder() {
   const clearChat = chat.clear;
   const [panel, setPanel] = useState<PanelView | null>(null);
   const panelOpener = useRef<HTMLElement | null>(null);
+  const headerRef = useRef<HTMLElement | null>(null);
   const [pending, setPending] = useState<LookupResponse | null>(null);
   const [address, setAddress] = useState("");
   const [editing, setEditing] = useState(false);
@@ -65,6 +64,15 @@ export default function ResourceFinder() {
   const hasResidentNeeds = hasNeeds(needs);
 
   useEffect(() => () => request.current?.abort(), []);
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header) return;
+    const measure = () => document.documentElement.style.setProperty("--bace-header-height", `${header.getBoundingClientRect().height}px`);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(header);
+    return () => { observer.disconnect(); document.documentElement.style.removeProperty("--bace-header-height"); };
+  }, []);
 
   const reset = useCallback(() => {
     clearChat();
@@ -111,7 +119,7 @@ export default function ResourceFinder() {
     generation.current += 1;
     setReport(null); setResult(data); setShowHome(false);
     setAddress(data.address || data.confirmAddress || query);
-    setFocus(lookupIntent.current.scope); setSelected(new Set());
+    setFocus(lookupIntent.current.scope); setSelected(defaultShortlist(resourcesFromLookup(data)));
     setEditing(false); setPending(null); setError(""); setStatus("");
     requestAnimationFrame(() => resultsHeading.current?.focus());
     if (lookupIntent.current.question) {
@@ -182,7 +190,7 @@ export default function ResourceFinder() {
     finally { setDownloading(false); downloadLock.current = false; }
   }
 
-  const input = (addressOnly = false) => <ChatInput key={`${session}:${draft.revision}:${addressOnly}`} initialValue={draft.text} autoFocus={draft.revision > 0} spacious={home || addressOnly} addressOnly={addressOnly} disabled={busy || chat.busy} onStop={chat.busy ? chat.cancel : undefined} onCancel={addressOnly ? () => { request.current?.abort(); setBusy(false); setEditing(false); setPending(null); setError(""); } : undefined} onSend={(text, options) => send(text, addressOnly ? { ...options, addressSearch: true } : options)} placeholder={t(addressOnly ? "Enter a new client address…" : result ? "Ask about these resources…" : "Address or question…")} />;
+  const input = (addressOnly = false) => <ChatInput key={`${session}:${draft.revision}:${addressOnly}`} initialValue={draft.text} autoFocus={draft.revision > 0} spacious={home || addressOnly} addressOnly={addressOnly} disabled={busy || chat.busy} onStop={chat.busy ? chat.cancel : undefined} onCancel={addressOnly ? () => { request.current?.abort(); setBusy(false); setEditing(false); setPending(null); setError(""); } : undefined} onSend={(text, options) => send(text, addressOnly ? { ...options, addressSearch: true } : options)} placeholder={t(addressOnly ? "Enter a new client address…" : result ? "Ask a question, or type @ to search an address…" : "Type @ to search for an address, or begin with a question…")} />;
   const lookupFeedback = <>
     {busy && <p role="status" className="text-sm text-muted-foreground">{t("Checking internet plans and nearby programs…")}</p>}
     {error && <Alert variant="destructive"><AlertTitle>{t("Address lookup")}</AlertTitle><AlertDescription><p>{t(error)}</p><Button variant="outline" size="sm" onClick={() => void lookup(lastQuery)}>{t("Retry")}</Button></AlertDescription></Alert>}
@@ -192,8 +200,7 @@ export default function ResourceFinder() {
   return (
     <div className={cn("resource-finder bace-app flex min-h-dvh flex-col bg-background font-sans text-foreground", !home && "finder-with-chat")} data-panel-open={panel !== null}>
       <SessionTimeout key={session} onExpire={reset} />
-      <div className="bace-main-shell">
-        <header className="bace-header">
+        <header ref={headerRef} className="bace-header">
           <button type="button" aria-label={t("BACE Hub home")} onClick={goHome} className="text-left">
             <span className="bace-wordmark">BACE <span className="font-normal">Hub</span></span>
           </button>
@@ -203,13 +210,13 @@ export default function ResourceFinder() {
               <Button variant="ghost" size="icon" className="rounded-full" aria-label={t("Start new chat")} title={t("Start new chat")} onClick={() => skipResetPrompt ? reset() : setResetOpen(true)}><RotateCcw aria-hidden="true" /></Button>
             </>}
             {result && <Button variant="ghost" size="icon" className="lg:hidden" aria-label={t("Share resources")} title={t("Share resources")} onClick={() => openPanel("share")}><Share2 aria-hidden="true" /></Button>}
-            <AboutTool onTour={() => setTourOpen(true)} />
+            <Button variant="ghost" size="icon" className="lg:hidden" aria-label={t("How to use this tool")} title={t("How to use this tool")} onClick={() => openPanel("help")}><CircleHelp aria-hidden="true" /></Button>
           </div>
           <div className="bace-header-help flex items-center gap-2">
-            <HowToUse open={tourOpen} onOpenChange={setTourOpen} />
             <LanguageToggle tone="inverse" />
           </div>
         </header>
+      <div className="bace-main-shell">
         <main className={cn("bace-main", home && "bace-home")}>
           {home ? <section aria-labelledby="finder-title" className="bace-home-content">
             <div className="flex flex-col items-center gap-4 text-center">
@@ -235,13 +242,14 @@ export default function ResourceFinder() {
                   <button type="button" onClick={() => openPanel("needs")} aria-haspopup="dialog" className="bace-context-action"><UsersRound className="size-4" aria-hidden="true" />{t(hasResidentNeeds ? "Resident needs · Edit" : "Add resident needs")}{hasResidentNeeds && <Check className="size-4 text-primary" aria-hidden="true" />}</button>
                 </div>
               </>}
+              {result && <p className="text-sm leading-relaxed text-muted-foreground">{t("The first option in each available category starts selected for sharing. Review or change the checkboxes before sending.")}</p>}
               {editing && <div className="flex flex-col gap-4">{input(true)}</div>}
               {lookupFeedback}
-              {result && !result.found && <p className="text-sm leading-relaxed text-muted-foreground">{t("No exact broadband record. Device and training programs are still shown; internet availability is unconfirmed.")}</p>}
+              {result && !result.found && <p className="text-sm leading-relaxed text-muted-foreground">{t("We couldn't confirm internet plans for this address. This doesn't mean internet is unavailable; check with a provider. Device and training resources can still be explored.")}</p>}
             </section>
             {result && <div key={address} className="flex flex-col gap-10">
               {categories.map((category) => <ResourceSection key={category} category={category} resources={resources.filter((resource) => resource.category === category)} selected={selected} onToggle={toggle} onShare={shareResource} onReport={setReport} />)}
-              {!result.found && <Alert><AlertTitle>{t("No exact broadband record")}</AlertTitle><AlertDescription><p>{t("National programs shown. Try another address for internet plans.")}</p>{result.nearbyAddresses?.slice(0, 3).map((pick) => <Button key={JSON.stringify(pick)} variant="outline" className="h-auto min-h-9 justify-start whitespace-normal text-left" disabled={busy} onClick={() => void lookup(`${pick.addr}, ${pick.city}, ${pick.state} ${pick.zip}`, { exact: pick })}>{`${pick.addr}, ${pick.city}, ${pick.state} ${pick.zip}`}</Button>)}</AlertDescription></Alert>}
+              {!result.found && !!result.nearbyAddresses?.length && <details className="text-sm"><summary className="cursor-pointer font-medium text-primary">{t("Other address matches")}</summary><div className="flex flex-col gap-3 pt-3"><p className="text-muted-foreground">{t("Choosing a match changes the search address. Only use an address that is correct for your client.")}</p>{result.nearbyAddresses.slice(0, 3).map((pick) => <Button key={JSON.stringify(pick)} variant="outline" className="h-auto min-h-9 justify-start whitespace-normal text-left" disabled={busy} onClick={() => void lookup(`${pick.addr}, ${pick.city}, ${pick.state} ${pick.zip}`, { exact: pick })}>{`${pick.addr}, ${pick.city}, ${pick.state} ${pick.zip}`}</Button>)}</div></details>}
             </div>}
             <ResourceConversation key={session} chat={chat} />
           </div>}
@@ -251,6 +259,7 @@ export default function ResourceFinder() {
       </div>
       <ActionRail hasResults={!!result} count={shortlist.length} active={panel} onOpen={openPanel} />
       <WorkspacePanel view={panel} hasResults={!!result} onViewChange={setPanel} onClose={() => setPanel(null)} opener={panelOpener}>
+        {panel === "help" && <HowToUse />}
         {panel === "browse" && <ResourceCategories resources={resources} focus={focus} onFocusChange={changeFocus} onJump={jump} onDone={() => { setShowHome(false); setPanel(null); }} />}
         {panel === "needs" && <ResidentNeeds draft={needsDraft} onChange={setNeedsDraft} onApply={() => { if (chat.busy) chat.cancel(); setNeeds(sanitizeNeeds(needsDraft)); setPanel(null); setStatus("Resident needs applied to future answers."); }} onClear={() => { if (chat.busy) chat.cancel(); setNeeds(EMPTY_NEEDS); setNeedsDraft(EMPTY_NEEDS); setStatus("Resident needs cleared."); }} />}
         {panel === "share" && <SharePanel resources={shortlist} address={address} focus={focus} downloading={downloading} disabled={editing || busy} status={status === "Recommendations PDF prepared." || status === "Download failed. Please try again." ? status : ""} onRemove={toggle} onDownload={(includeAddress) => void download(includeAddress)} />}

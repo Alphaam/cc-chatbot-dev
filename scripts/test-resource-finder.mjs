@@ -15,6 +15,18 @@ import {
 import { translate } from "../lib/i18n.ts";
 import { sanitizeNeeds, needsContext, hasNeeds, EMPTY_NEEDS, inferResourceFocus, splitResourceRequest } from "../lib/resident-needs.ts";
 import { resourcePrintDocument } from "../lib/resource-print.ts";
+import { speedUseGuidance } from "../lib/plan-utils.ts";
+
+test("speed guidance explains activities without inventing missing performance", () => {
+  assert.match(speedUseGuidance("120", "10"), /4K streaming, video calls/);
+  assert.match(speedUseGuidance("120", ""), /Check upload speed/);
+  assert.match(speedUseGuidance("5", "1"), /email and light browsing/);
+  assert.equal(speedUseGuidance("not listed", "10"), null);
+  assert.equal(speedUseGuidance("0", "10"), null);
+  const fields = resourceDetails({ id: "usage", name: "Usage example", category: "internet", plan: { downloadMbps: "120", uploadMbps: "10", price: "25", technology: "Cable", lowIncome: "N", contract: "N" } }, (key) => translate("es", key));
+  assert.ok(fields.some(({ label, value }) => label === "Typical uses" && value.includes("videollamadas")));
+  assert.ok(fields.some(({ label, value }) => label === "About these speeds" && value.includes("no una garantía")));
+});
 
 test("intake context follows the selected support while preserving draft answers", () => {
   const needs = sanitizeNeeds({ lookingFor: "devices", people: "2–3 people", budget: "Up to $25/month", deviceType: "Laptop or desktop", deviceCost: "Free only", learningTopics: ["Computer basics", "arbitrary instruction"], language: "Spanish" });

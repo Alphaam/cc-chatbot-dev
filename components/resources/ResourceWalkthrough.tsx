@@ -2,10 +2,11 @@
 
 import { useRef, useState } from "react";
 import { Dialog } from "@base-ui/react/dialog";
-import { ArrowLeft, ArrowRight, ArrowUp, Check, MapPin } from "lucide-react";
+import { ArrowRight, ArrowUp, Check, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/components/chat/LanguageProvider";
 import { cn } from "@/lib/utils";
+import { speedUseGuidance } from "@/lib/plan-utils";
 
 const exampleAddress = "123 Example St, Las Vegas, NV 89101";
 const steps = [
@@ -54,7 +55,7 @@ export default function ResourceWalkthrough() {
             <p className="text-sm">{exampleAddress}</p>
           </div>
         )}
-        <div className="grid items-start gap-4 sm:grid-cols-[minmax(0,1fr)_13rem]">
+        <div className="flex flex-col gap-4">
           <section aria-label={t("Practice area")} data-tour-target className="min-w-0 rounded-xl border-2 border-primary bg-background p-4 text-foreground shadow-sm">
             {step === 0 ? (
               <form onSubmit={(event) => { event.preventDefault(); if (addressPicked) goTo(1); }}>
@@ -92,6 +93,7 @@ export default function ResourceWalkthrough() {
                     <div className="pt-3">
                       <div className="flex flex-col gap-2 text-sm leading-relaxed text-muted-foreground">
                         <p>100 Mbps · {t("No contract")}</p>
+                        <p>{t("Typical uses")}: {t(speedUseGuidance("100", "10") || "")}</p>
                         <p>{t("Example only. Not an available offer.")}</p>
                       </div>
                     </div>
@@ -120,8 +122,7 @@ export default function ResourceWalkthrough() {
             )}
           </section>
           <aside className="flex items-start gap-2" aria-live="polite" aria-atomic="true">
-            <ArrowLeft className="hidden size-6 shrink-0 text-primary sm:block" aria-hidden="true" />
-            <ArrowUp className="size-6 shrink-0 text-primary sm:hidden" aria-hidden="true" />
+            <ArrowUp className="size-6 shrink-0 text-primary" aria-hidden="true" />
             <div className="flex flex-col gap-2">
               <h3 ref={heading} tabIndex={-1} className="text-base font-semibold outline-none">{t(steps[step].title)}</h3>
               <p className="text-sm leading-relaxed text-muted-foreground">{t(steps[step].instruction)}</p>
@@ -134,15 +135,11 @@ export default function ResourceWalkthrough() {
           <p className="text-sm">{t(step === 0 ? "Internet plans" : "Digital skills training")}</p>
         </div>
       </div>
-      <div className="flex shrink-0 items-center justify-between gap-3">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
         <Button variant="ghost" disabled={step === 0} onClick={() => goTo(step - 1)}>{t("Back")}</Button>
-        {step === 3 ? (
-          <Dialog.Close disabled={!canContinue} render={<Button />}>
-            {t("Finish")}
-          </Dialog.Close>
-        ) : step > 0 ? (
-          <Button disabled={!canContinue} onClick={() => goTo(step + 1)}>{t("Next")}<ArrowRight data-icon="inline-end" aria-hidden="true" /></Button>
-        ) : <Dialog.Close render={<Button variant="ghost" />}>{t("Skip tour")}</Dialog.Close>}
+        <Dialog.Close render={<Button variant="ghost" />}>{t("Skip tour")}</Dialog.Close>
+        {step < 3 && <Button variant="outline" onClick={() => goTo(step + 1)}>{t("Skip step")}</Button>}
+        {step === 3 ? <Dialog.Close disabled={!canContinue} render={<Button />}>{t("Finish")}</Dialog.Close> : step > 0 ? <Button disabled={!canContinue} onClick={() => goTo(step + 1)}>{t("Next")}<ArrowRight data-icon="inline-end" aria-hidden="true" /></Button> : null}
       </div>
     </div>
   );
