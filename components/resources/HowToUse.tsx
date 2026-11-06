@@ -6,14 +6,13 @@ import { CircleHelp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/components/chat/LanguageProvider";
 
-export default function HowToUse({ variant = "ghost", compact = false }: { variant?: "ghost" | "outline"; compact?: boolean }) {
+export default function HowToUse({ variant = "ghost", compact = false, open, onOpenChange }: { variant?: "ghost" | "outline"; compact?: boolean; open?: boolean; onOpenChange?: (open: boolean) => void }) {
   const { t } = useLanguage();
 
   return (
-    <Dialog.Root>
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Trigger render={<Button variant={variant} size={compact ? "icon" : "sm"} />} aria-label={t("How to use this tool")}>
-        <CircleHelp data-icon={compact ? undefined : "inline-start"} aria-hidden="true" />
-        {!compact && t("How to use this tool")}
+        {compact ? <CircleHelp aria-hidden="true" /> : t("How to use this tool")}
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Backdrop className="fixed inset-0 bg-background/60 backdrop-blur-md" />

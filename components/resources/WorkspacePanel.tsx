@@ -46,7 +46,7 @@ export default function WorkspacePanel({ view, hasResults, onViewChange, onClose
       <Dialog.Portal>
         {compact && <Dialog.Backdrop className="bace-panel-backdrop" />}
         <Dialog.Popup className="resource-finder bace-workspace-panel font-sans" initialFocus={closeRef} finalFocus={opener}>
-          <div className="flex items-center justify-between border-b border-border p-5">
+          <div className="bace-panel-heading flex items-center justify-between border-b border-border p-5">
             <Dialog.Title className="text-lg font-semibold tracking-tight">{t(view === "needs" ? "Resident needs" : view === "share" ? "Share resources" : "Browse resources")}</Dialog.Title>
             <Dialog.Close ref={closeRef} render={<Button size="icon" variant="ghost" />} aria-label={t("Close panel")}><PanelRightClose aria-hidden="true" className="hidden sm:block" /><X aria-hidden="true" className="sm:hidden" /></Dialog.Close>
           </div>

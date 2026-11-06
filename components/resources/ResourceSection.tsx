@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, ExternalLink } from "lucide-react";
+import { Copy, ExternalLink, Wifi, Laptop, GraduationCap } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -39,6 +39,7 @@ export default function ResourceSection({
   onReport: (resource: Resource) => void;
 }) {
   const { t } = useLanguage();
+  const CategoryIcon = category === "internet" ? Wifi : category === "devices" ? Laptop : GraduationCap;
   const [expanded, setExpanded] = useState(false);
   const [budget, setBudget] = useState("");
   const [noContract, setNoContract] = useState(false);
@@ -57,7 +58,7 @@ export default function ResourceSection({
     const second = sort === "price" ? toNumber(b.plan?.price ?? "") : b.service?.distanceMiles;
     return ((first ?? Infinity) - (second ?? Infinity)) || a.name.localeCompare(b.name);
   });
-  const shown = expanded ? ordered : ordered.slice(0, 3);
+  const shown = expanded ? ordered : ordered.slice(0, 4);
   return (
     <section
       id={category}
@@ -68,6 +69,7 @@ export default function ResourceSection({
       <div className="flex flex-col gap-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 id={`${category}-title`} tabIndex={-1} className="flex items-center gap-3 text-xl font-medium tracking-tight focus:outline-none">
+            <CategoryIcon className="size-5 shrink-0" aria-hidden="true" />
             {t(CATEGORY_LABELS[category])}
             <span className="text-sm font-normal tabular-nums text-muted-foreground">{resources.length}</span>
           </h2>
@@ -138,7 +140,7 @@ export default function ResourceSection({
             </EmptyHeader>
           </Empty>
         ) : (
-          <ul className="flex flex-col gap-3">
+          <ul className="bace-resource-grid grid gap-4 sm:grid-cols-2">
             {shown.map((resource) => (
               <ResourceRow
                 key={resource.id}
@@ -151,7 +153,7 @@ export default function ResourceSection({
             ))}
           </ul>
         )}
-        {filtered.length > 3 && (
+        {filtered.length > 4 && (
           <div>
             <Button
               variant="outline"
@@ -200,9 +202,9 @@ function ResourceRow({
     }
   }
   return (
-    <li>
-      <article aria-label={resource.name}>
-        <Card className="resource-card [--card-spacing:--spacing(5)]" data-selected={selected}>
+    <li className="min-w-0">
+      <article aria-label={resource.name} className="h-full">
+        <Card className="resource-card h-full [--card-spacing:--spacing(5)]" data-selected={selected}>
           <CardHeader>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="flex min-w-0 flex-1 flex-col gap-1">

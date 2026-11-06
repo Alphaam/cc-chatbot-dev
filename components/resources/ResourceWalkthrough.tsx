@@ -12,7 +12,7 @@ const steps = [
   { title: "Search an address", instruction: "Type 123, choose the example address, then select Find resources." },
   { title: "Open the details", instruction: "Select View details to learn more about this option." },
   { title: "Choose an option", instruction: "Check the box to include this resource." },
-  { title: "Share the shortlist", instruction: "Open Share in the side panel, then choose Prepare resource list to review your handoff." },
+  { title: "Share the shortlist", instruction: "Open Share in the side panel, then choose Share resource list to review your handoff." },
 ];
 
 export default function ResourceWalkthrough() {
@@ -105,7 +105,7 @@ export default function ResourceWalkthrough() {
                 )}
                 {step === 3 && (
                   <>
-                    <Button variant="outline" onClick={() => setShareOpen(true)} aria-expanded={shareOpen}>{t("Prepare resource list")}</Button>
+                    <Button variant="outline" onClick={() => setShareOpen(true)} aria-expanded={shareOpen}>{t("Share resource list")}</Button>
                     {shareOpen && (
                       <div className="flex flex-col gap-3">
                         <label htmlFor="practice-share" className="text-sm font-medium">{t("Example message")}</label>

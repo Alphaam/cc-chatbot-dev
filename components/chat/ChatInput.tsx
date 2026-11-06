@@ -211,6 +211,7 @@ export default function ChatInput({ onSend, disabled, onDraftChange, placeholder
         </div>
       )}
       <form onSubmit={e => { e.preventDefault(); submit(); }} className={cn('bace-composer flex gap-2', addressOnly ? 'flex-col items-stretch min-[480px]:flex-row min-[480px]:items-center' : 'items-center')}>
+        {!addressOnly && <button type="button" className="bace-address-shortcut" aria-label={t('Add an address')} title={t('Type @ to add an address')} disabled={disabled} onClick={() => { if (!valueRef.current.includes('@')) change(`${valueRef.current.trim()}${valueRef.current.trim() ? ' ' : ''}@`); inputRef.current?.focus(); }}>{'@'}</button>}
         <input ref={inputRef} autoFocus={autoFocus} value={value} onChange={e => change(e.target.value)}
           onKeyDown={e => {
             if (e.nativeEvent.isComposing || e.keyCode === 229) { if (e.key === 'Enter') e.preventDefault(); return; }

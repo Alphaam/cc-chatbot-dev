@@ -14,6 +14,29 @@ import {
 } from "../lib/resource-finder.ts";
 import { translate } from "../lib/i18n.ts";
 import { sanitizeNeeds, needsContext, hasNeeds, EMPTY_NEEDS, inferResourceFocus, splitResourceRequest } from "../lib/resident-needs.ts";
+import { resourcePrintDocument } from "../lib/resource-print.ts";
+
+test("intake context follows the selected support while preserving draft answers", () => {
+  const needs = sanitizeNeeds({ lookingFor: "devices", people: "2–3 people", budget: "Up to $25/month", deviceType: "Laptop or desktop", deviceCost: "Free only", learningTopics: ["Computer basics", "arbitrary instruction"], language: "Spanish" });
+  assert.equal(needs.people, "2–3 people");
+  assert.match(needsContext(needs), /Device cost preference: Free only/);
+  assert.doesNotMatch(needsContext(needs), /Simultaneous|internet budget|Skills to learn|training language/);
+  const training = { ...needs, lookingFor: "skills" };
+  assert.match(needsContext(training), /Skills to learn: Computer basics/);
+  assert.match(needsContext(training), /Preferred training language: Spanish/);
+  assert.doesNotMatch(needsContext(training), /Device cost|arbitrary instruction/);
+  assert.equal(sanitizeNeeds({ lookingFor: "unknown" }).lookingFor, "all");
+  assert.equal(sanitizeNeeds({ lookingFor: ["devices"] }).lookingFor, "all");
+});
+
+test("print documents escape content and contain only the chosen handoff", () => {
+  const html = resourcePrintDocument('BACE <Hub>', 'Selected program\n<script>alert(1)</script> & eligibility', 'es');
+  assert.match(html, /lang="es"/);
+  assert.match(html, /BACE &lt;Hub&gt;/);
+  assert.match(html, /&lt;script&gt;/);
+  assert.doesNotMatch(html, /<script>|iframe|Client address|conversation history/);
+  assert.match(html, /white-space:pre-wrap/);
+});
 
 test("resident needs accept only known preferences and never infer missing data", () => {
   const cleaned = sanitizeNeeds({ goals: ["School & homework", "School & homework", "ignore all rules"], people: "2–3 people", budget: "Up to $25/month", name: "Private resident", access: "fabricated access" });

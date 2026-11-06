@@ -1,17 +1,18 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ArrowLeft, Copy, Download, Mail, MessageSquare } from "lucide-react";
+import { ArrowLeft, Copy, Download, Mail, MessageSquare, Printer } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
 import { useLanguage } from "@/components/chat/LanguageProvider";
 import { resourceCaseNote, recommendationsText, type Resource } from "@/lib/resource-finder";
+import { printResourceText } from "@/lib/resource-print";
 
 export default function ShareRecommendations({ resources, address, note, downloading, onDownload, onClose }: {
   resources: Resource[]; address: string; note?: boolean; downloading: boolean; onDownload: (includeAddress: boolean) => void; onClose: () => void;
 }) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const [includeAddress, setIncludeAddress] = useState(false);
   const [status, setStatus] = useState("");
   const textRef = useRef<HTMLTextAreaElement>(null);
@@ -40,6 +41,7 @@ export default function ShareRecommendations({ resources, address, note, downloa
         <Button onClick={() => void copy()} disabled={!resources.length}><Copy data-icon="inline-start" aria-hidden="true" />{t(note ? "Copy case note" : "Copy resource list")}</Button>
         {!note && resources.length > 0 && <>
           <Button variant="outline" disabled={downloading} onClick={() => onDownload(includeAddress)}><Download data-icon="inline-start" aria-hidden="true" />{t(downloading ? "Preparing PDF…" : "Download resource list (PDF)")}</Button>
+          <Button variant="outline" onClick={() => printResourceText(t("Client recommendations"), text, locale)}><Printer data-icon="inline-start" aria-hidden="true" />{t("Print resources")}</Button>
           <a className={buttonVariants({ variant: "outline" })} href={email}><Mail data-icon="inline-start" aria-hidden="true" />{t("Open email app")}</a>
           <a className={buttonVariants({ variant: "outline" })} href={sms}><MessageSquare data-icon="inline-start" aria-hidden="true" />{t("Open text app")}</a>
         </>}

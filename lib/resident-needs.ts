@@ -7,7 +7,16 @@ export const PEOPLE_OPTIONS = ["1 person", "2–3 people", "4 or more people"] a
 export const BUDGET_OPTIONS = ["Free options", "Up to $25/month", "Up to $50/month", "Up to $75/month"] as const;
 export const COMFORT_OPTIONS = ["Starting from the basics", "Some experience", "Building specific skills"] as const;
 export const FORMAT_OPTIONS = ["In person", "Online", "Either format"] as const;
+export const DEVICE_OPTIONS = ["Laptop or desktop", "Tablet", "Borrowing or public computer access"] as const;
+export const DEVICE_COST_OPTIONS = ["Free only", "Free or low-cost", "Open to purchasing"] as const;
+export const LEARNING_OPTIONS = ["Computer basics", "Email & online accounts", "Job applications", "Online safety", "Video calls"] as const;
+export const LANGUAGE_OPTIONS = ["English", "Spanish", "Either language"] as const;
 export interface ResidentNeeds {
+  lookingFor: ResourceFocus;
+  deviceType: string;
+  deviceCost: string;
+  learningTopics: string[];
+  language: string;
   goals: string[];
   access: string;
   people: string;
@@ -15,28 +24,39 @@ export interface ResidentNeeds {
   comfort: string;
   format: string;
 }
-export const EMPTY_NEEDS: ResidentNeeds = { goals: [], access: "", people: "", budget: "", comfort: "", format: "" };
+export const EMPTY_NEEDS: ResidentNeeds = { lookingFor: "all", deviceType: "", deviceCost: "", learningTopics: [], language: "", goals: [], access: "", people: "", budget: "", comfort: "", format: "" };
 
 export function sanitizeNeeds(input: unknown): ResidentNeeds {
   const data = input && typeof input === "object" ? input as Record<string, unknown> : {};
   const pick = (value: unknown, options: readonly string[]) => typeof value === "string" && options.includes(value) ? value : "";
   return {
+    lookingFor: typeof data.lookingFor === "string" && ["internet", "devices", "skills"].includes(data.lookingFor) ? data.lookingFor as ResourceFocus : "all",
+    deviceType: pick(data.deviceType, DEVICE_OPTIONS), deviceCost: pick(data.deviceCost, DEVICE_COST_OPTIONS), language: pick(data.language, LANGUAGE_OPTIONS),
+    learningTopics: [...new Set(Array.isArray(data.learningTopics) ? data.learningTopics.filter((topic): topic is string => typeof topic === "string" && LEARNING_OPTIONS.includes(topic as typeof LEARNING_OPTIONS[number])) : [])],
     goals: [...new Set(Array.isArray(data.goals) ? data.goals.filter((goal): goal is string => typeof goal === "string" && GOALS.includes(goal as typeof GOALS[number])) : [])],
     access: pick(data.access, ACCESS_OPTIONS), people: pick(data.people, PEOPLE_OPTIONS),
     budget: pick(data.budget, BUDGET_OPTIONS), comfort: pick(data.comfort, COMFORT_OPTIONS), format: pick(data.format, FORMAT_OPTIONS),
   };
 }
 export function hasNeeds(needs: ResidentNeeds) {
-  return needs.goals.length > 0 || !!(needs.access || needs.people || needs.budget || needs.comfort || needs.format);
+  return needs.lookingFor !== "all" || needs.goals.length > 0 || needs.learningTopics.length > 0 || !!(needs.access || needs.people || needs.budget || needs.comfort || needs.format || needs.deviceType || needs.deviceCost || needs.language);
 }
 export function needsContext(needs: ResidentNeeds) {
+  const internet = needs.lookingFor === "all" || needs.lookingFor === "internet";
+  const devices = needs.lookingFor === "all" || needs.lookingFor === "devices";
+  const skills = needs.lookingFor === "all" || needs.lookingFor === "skills";
   return [
+    needs.lookingFor !== "all" && `Resident is seeking: ${needs.lookingFor}. This preference does not override the current Browse scope.`,
     needs.goals.length && `Goals: ${needs.goals.join(", ")}`,
     needs.access && `Current access: ${needs.access}`,
-    needs.people && `Simultaneous internet users: ${needs.people}`,
-    needs.budget && `Preferred internet budget: ${needs.budget}`,
-    needs.comfort && `Computer experience: ${needs.comfort}`,
-    needs.format && `Learning format: ${needs.format}`,
+    internet && needs.people && `Simultaneous internet users: ${needs.people}`,
+    internet && needs.budget && `Preferred internet budget: ${needs.budget}`,
+    devices && needs.deviceType && `Device or access needed: ${needs.deviceType}`,
+    devices && needs.deviceCost && `Device cost preference: ${needs.deviceCost}`,
+    skills && needs.learningTopics.length && `Skills to learn: ${needs.learningTopics.join(", ")}`,
+    skills && needs.comfort && `Computer experience: ${needs.comfort}`,
+    skills && needs.format && `Learning format: ${needs.format}`,
+    skills && needs.language && `Preferred training language: ${needs.language}`,
   ].filter(Boolean).join("\n");
 }
 export function inferResourceFocus(text: string): ResourceFocus {
