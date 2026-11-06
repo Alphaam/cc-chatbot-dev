@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect } from "react";
+import { Fragment, useEffect, type ReactNode } from "react";
 import { useLanguage } from "@/components/chat/LanguageProvider";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -16,18 +16,30 @@ function ReplyText({ text }: { text: string }) {
     : <Fragment key={index}>{part}</Fragment>);
 }
 
-export default function ResourceConversation({ chat }: {
+export default function ResourceConversation({ chat, anchorId, anchorContent, footer, showFooter = false }: {
   chat: ReturnType<typeof useResourceChat>;
+  anchorId?: string | null;
+  anchorContent?: ReactNode;
+  footer?: ReactNode;
+  showFooter?: boolean;
 }) {
   const { t } = useLanguage();
   const latest = chat.messages.at(-1);
   const latestLength = latest?.content.length ?? 0;
+  const anchorFound = !!anchorId && chat.messages.some((message) => message.id === anchorId);
+  const hasAnchorContent = !!anchorContent;
+
   useEffect(() => {
     const root = document.documentElement;
     if (root.scrollHeight - (window.scrollY + window.innerHeight) < 240) window.scrollTo({ top: root.scrollHeight, behavior: "instant" });
-  }, [latest?.id, latestLength, chat.failed]);
-  if (!chat.messages.length && !chat.failed) return null;
-  const lastQuestionId = [...chat.messages].reverse().find((message) => message.role === "user")?.id;
+  }, [latest?.id, latestLength, chat.failed, showFooter]);
+
+  useEffect(() => {
+    if (!anchorId || !hasAnchorContent) return;
+    document.getElementById(`message-${anchorId}`)?.scrollIntoView({ block: "start", behavior: "instant" });
+  }, [anchorId, hasAnchorContent]);
+
+  if (!chat.messages.length && !chat.failed && !anchorContent && !showFooter) return null;
 
   return (
     <section aria-label={t("Conversation")} className="finder-page-conversation">
@@ -35,25 +47,30 @@ export default function ResourceConversation({ chat }: {
         <MessageScroller>
           <MessageScrollerViewport aria-label={t("Conversation")}>
             <MessageScrollerContent>
+              {!anchorFound && anchorContent && <div className="finder-chat-results">{anchorContent}</div>}
               {chat.messages.map((message) => (
-                <MessageScrollerItem key={message.id} messageId={message.id} id={message.id === lastQuestionId ? "latest-resource-question" : undefined}>
-                  <Message align={message.role === "user" ? "end" : "start"}>
-                    <MessageContent>
-                      <MessageHeader>{message.role === "user" ? t("You") : "BACE Hub"}{message.role === "assistant" && message.scope && <span className="font-normal text-muted-foreground"> · {t(message.scope === "all" ? "All resources" : CATEGORY_LABELS[message.scope])}</span>}</MessageHeader>
-                      <Bubble variant={message.role === "user" ? "secondary" : "ghost"}>
-                        <BubbleContent>
-                          <p lang={message.locale} className="whitespace-pre-wrap break-words"><ReplyText text={message.content || t(message.incomplete ? "Reply stopped." : "Thinking…")} /></p>
-                          {message.incomplete && message.content && <p className="text-sm text-muted-foreground">{t("Reply stopped.")}</p>}
-                        </BubbleContent>
-                      </Bubble>
-                    </MessageContent>
-                  </Message>
-                </MessageScrollerItem>
+                <Fragment key={message.id}>
+                  <MessageScrollerItem messageId={message.id} id={`message-${message.id}`}>
+                    <Message align={message.role === "user" ? "end" : "start"}>
+                      <MessageContent>
+                        <MessageHeader>{message.role === "user" ? t("You") : "BACE Hub"}{message.role === "assistant" && message.scope && <span className="font-normal text-muted-foreground"> · {t(message.scope === "all" ? "All resources" : CATEGORY_LABELS[message.scope])}</span>}</MessageHeader>
+                        <Bubble variant={message.role === "user" ? "secondary" : "ghost"}>
+                          <BubbleContent>
+                            <p lang={message.locale} className="whitespace-pre-wrap break-words"><ReplyText text={message.content || t(message.incomplete ? "Reply stopped." : "Thinking…")} /></p>
+                            {message.incomplete && message.content && <p className="text-sm text-muted-foreground">{t("Reply stopped.")}</p>}
+                          </BubbleContent>
+                        </Bubble>
+                      </MessageContent>
+                    </Message>
+                  </MessageScrollerItem>
+                  {message.id === anchorId && anchorContent && <div className="finder-chat-results">{anchorContent}</div>}
+                </Fragment>
               ))}
               {chat.failed && <Alert><AlertDescription>
                 <p>{t("The assistant is unavailable right now. You can still search an address.")}</p>
                 <Button variant="outline" size="sm" onClick={chat.retry}>{t("Retry")}</Button>
               </AlertDescription></Alert>}
+              {showFooter && <div className="flex flex-col gap-4">{footer}</div>}
             </MessageScrollerContent>
           </MessageScrollerViewport>
         </MessageScroller>

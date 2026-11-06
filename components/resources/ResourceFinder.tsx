@@ -58,6 +58,8 @@ export default function ResourceFinder() {
   const downloadLock = useRef(false);
   const lookupIntent = useRef({ question: "", scope: "all" as ResourceFocus, original: "" });
   const lastQuestion = useRef(savedSession?.lastQuestion ?? "");
+  const [resultAnchor, setResultAnchor] = useState<string | null>(savedSession?.resultAnchor ?? null);
+  const pendingAnchor = useRef<string | null>(null);
   const resources = result ? resourcesFromLookup(result) : [];
   const shortlist = resources.filter((resource) => selected.has(resource.id));
   const hasSession = !!result || chat.messages.length > 0;
@@ -65,7 +67,7 @@ export default function ResourceFinder() {
   const scopeLabel = focus === "all" ? "All resources" : CATEGORY_LABELS[focus];
   const categories = (focus === "all" ? CATEGORIES : CATEGORIES.filter((category) => category === focus)).slice().sort((a, b) => Number(!resources.some((resource) => resource.category === a)) - Number(!resources.some((resource) => resource.category === b)));
   const hasResidentNeeds = hasNeeds(needs);
-  const mapSnapshot = { result, address, focus, needs, needsDraft, selected: [...selected], messages: chat.messages, showHome, lastQuestion: lastQuestion.current };
+  const mapSnapshot = { result, address, focus, needs, needsDraft, selected: [...selected], messages: chat.messages, showHome, lastQuestion: lastQuestion.current, resultAnchor };
 
   useEffect(() => () => request.current?.abort(), []);
   useEffect(() => {
@@ -90,6 +92,7 @@ export default function ResourceFinder() {
     setDraft({ text: "", revision: 0 });
     lookupIntent.current = { question: "", scope: "all", original: "" };
     lastQuestion.current = "";
+    pendingAnchor.current = null; setResultAnchor(null);
     setSession((value) => value + 1);
   }, [clearChat, saveMapSession]);
 
@@ -126,9 +129,10 @@ export default function ResourceFinder() {
     setAddress(data.address || data.confirmAddress || query);
     setFocus(lookupIntent.current.scope); setSelected(defaultShortlist(resourcesFromLookup(data)));
     setEditing(false); setPending(null); setError(""); setStatus("");
-    requestAnimationFrame(() => resultsHeading.current?.focus());
+    setResultAnchor(pendingAnchor.current);
+    requestAnimationFrame(() => resultsHeading.current?.focus({ preventScroll: true }));
     if (lookupIntent.current.question) {
-      void chat.send(lookupIntent.current.original || lookupIntent.current.question, { result: data, focus: lookupIntent.current.scope });
+      void chat.send(lookupIntent.current.original || lookupIntent.current.question, { result: data, focus: lookupIntent.current.scope, replyOnly: !!pendingAnchor.current });
     }
     lastQuestion.current = "";
   }
@@ -141,7 +145,9 @@ export default function ResourceFinder() {
       const parsed = splitResourceRequest(text);
       const question = parsed.question || lastQuestion.current;
       lookupIntent.current = { question, scope: question ? inferResourceFocus(question) : "all", original: parsed.question ? text : question ? `${question}\n${parsed.address}` : "" };
+      pendingAnchor.current = chat.addUserMessage(text.trim());
       void lookup(parsed.address, options);
+      requestAnimationFrame(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" }));
     } else {
       setPending(null); setError("");
       if (/find|help|near|available|resident|client|busc|ayud|cerca/i.test(text)) lastQuestion.current = text;
@@ -202,6 +208,23 @@ export default function ResourceFinder() {
     {pending && <Alert><AlertTitle>{t("Confirm this address")}</AlertTitle><AlertDescription><p>{pending.address || pending.confirmAddress}</p><div className="flex flex-wrap gap-2"><Button size="sm" onClick={() => accept(pending, lastQuery)}>{t("Use this address")}</Button><Button size="sm" variant="outline" onClick={() => { setPending(null); setDraft((value) => ({ text: lastQuery, revision: value.revision + 1 })); }}>{t("Edit address")}</Button></div></AlertDescription></Alert>}
   </>;
 
+  const resultsBlock = result ? <section className="flex flex-col gap-8" aria-labelledby="finder-title">
+    <div className="flex flex-col gap-4">
+      <h1 ref={resultsHeading} id="finder-title" tabIndex={-1} className="text-balance text-2xl font-medium tracking-tight focus:outline-none">{t("Your resource overview")}</h1>
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm"><MapPin className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" /><span className="min-w-0 break-words">{address}</span><Button variant="link" size="sm" onClick={() => { setEditing(!editing); setPending(null); setError(""); setDraft((value) => ({ text: "", revision: value.revision + 1 })); }}>{t(editing ? "Cancel" : "Change address")}</Button></div>
+      <div className="bace-context-bar">
+        <button type="button" onClick={() => openPanel("browse")} aria-haspopup="dialog" className="bace-context-action"><SlidersHorizontal className="size-4" aria-hidden="true" /><span>{t("Showing:")} <strong className="font-medium">{t(scopeLabel)}</strong></span><ArrowUpRight className="size-4" aria-hidden="true" /><span className="sr-only">{t("Change resource view")}</span></button>
+        <button type="button" onClick={() => openPanel("needs")} aria-haspopup="dialog" className="bace-context-action"><UsersRound className="size-4" aria-hidden="true" />{t(hasResidentNeeds ? "Resident needs · Edit" : "Add resident needs")}{hasResidentNeeds && <Check className="size-4 text-primary" aria-hidden="true" />}</button>
+      </div>
+      <p className="text-sm leading-relaxed text-muted-foreground">{t("The first option in each available category starts selected for sharing. Review or change the checkboxes before sending.")}</p>
+      {!result.found && <p className="text-sm leading-relaxed text-muted-foreground">{t("We couldn't confirm internet plans for this address. This doesn't mean internet is unavailable; check with a provider. Device and training resources can still be explored.")}</p>}
+    </div>
+    <div key={address} className="flex flex-col gap-10">
+      {categories.map((category) => <ResourceSection key={category} category={category} resources={resources.filter((resource) => resource.category === category)} selected={selected} onToggle={toggle} onShare={shareResource} onReport={setReport} />)}
+      {!result.found && !!result.nearbyAddresses?.length && <details className="text-sm"><summary className="cursor-pointer font-medium text-primary">{t("Other address matches")}</summary><div className="flex flex-col gap-3 pt-3"><p className="text-muted-foreground">{t("Choosing a match changes the search address. Only use an address that is correct for the resident.")}</p>{result.nearbyAddresses.slice(0, 3).map((pick) => { const label = `${pick.addr}, ${pick.city}, ${pick.state} ${pick.zip}`; return <Button key={JSON.stringify(pick)} variant="outline" className="h-auto min-h-9 justify-start whitespace-normal text-left" disabled={busy || chat.busy} onClick={() => { pendingAnchor.current = chat.addUserMessage(label); void lookup(label, { exact: pick }); }}>{label}</Button>; })}</div></details>}
+    </div>
+  </section> : null;
+
   return (
     <div className={cn("resource-finder bace-app flex min-h-dvh flex-col bg-background font-sans text-foreground", !home && "finder-with-chat")} data-panel-open={panel !== null && panel !== "help"}>
       <SessionTimeout key={session} onExpire={reset} />
@@ -235,28 +258,11 @@ export default function ResourceFinder() {
             <Button variant="ghost" className="self-center" onClick={() => openPanel("needs")}><UsersRound data-icon="inline-start" aria-hidden="true" />{t(hasResidentNeeds ? "Resident needs · Edit" : "Add resident needs")}<span className="text-muted-foreground">{t("Optional")}</span></Button>
             {hasResidentNeeds && <p className="text-center text-sm text-muted-foreground">{t("Resident needs applied to future answers.")}</p>}
           </section> : <div className="flex flex-1 flex-col gap-8">
-            <section className="flex flex-col gap-4" aria-labelledby="finder-title">
-              <div className="flex flex-col gap-2">
-                <p className="text-sm text-muted-foreground">{t("A clearer path to connection")}</p>
-                <h1 ref={resultsHeading} id="finder-title" tabIndex={-1} className="text-balance text-3xl font-medium tracking-tight focus:outline-none">{t(result ? "Your resource overview" : "Let’s find a good fit.")}</h1>
-              </div>
-              {result && <>
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm"><MapPin className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" /><span className="min-w-0 break-words">{address}</span><Button variant="link" size="sm" onClick={() => { setEditing(!editing); setPending(null); setError(""); setDraft((value) => ({ text: "", revision: value.revision + 1 })); }}>{t(editing ? "Cancel" : "Change address")}</Button></div>
-                <div className="bace-context-bar">
-                  <button type="button" onClick={() => openPanel("browse")} aria-haspopup="dialog" className="bace-context-action"><SlidersHorizontal className="size-4" aria-hidden="true" /><span>{t("Showing:")} <strong className="font-medium">{t(scopeLabel)}</strong></span><ArrowUpRight className="size-4" aria-hidden="true" /><span className="sr-only">{t("Change resource view")}</span></button>
-                  <button type="button" onClick={() => openPanel("needs")} aria-haspopup="dialog" className="bace-context-action"><UsersRound className="size-4" aria-hidden="true" />{t(hasResidentNeeds ? "Resident needs · Edit" : "Add resident needs")}{hasResidentNeeds && <Check className="size-4 text-primary" aria-hidden="true" />}</button>
-                </div>
-              </>}
-              {result && <p className="text-sm leading-relaxed text-muted-foreground">{t("The first option in each available category starts selected for sharing. Review or change the checkboxes before sending.")}</p>}
-              {editing && <div className="flex flex-col gap-4">{input(true)}</div>}
-              {lookupFeedback}
-              {result && !result.found && <p className="text-sm leading-relaxed text-muted-foreground">{t("We couldn't confirm internet plans for this address. This doesn't mean internet is unavailable; check with a provider. Device and training resources can still be explored.")}</p>}
-            </section>
-            {result && <div key={address} className="flex flex-col gap-10">
-              {categories.map((category) => <ResourceSection key={category} category={category} resources={resources.filter((resource) => resource.category === category)} selected={selected} onToggle={toggle} onShare={shareResource} onReport={setReport} />)}
-              {!result.found && !!result.nearbyAddresses?.length && <details className="text-sm"><summary className="cursor-pointer font-medium text-primary">{t("Other address matches")}</summary><div className="flex flex-col gap-3 pt-3"><p className="text-muted-foreground">{t("Choosing a match changes the search address. Only use an address that is correct for the resident.")}</p>{result.nearbyAddresses.slice(0, 3).map((pick) => <Button key={JSON.stringify(pick)} variant="outline" className="h-auto min-h-9 justify-start whitespace-normal text-left" disabled={busy} onClick={() => void lookup(`${pick.addr}, ${pick.city}, ${pick.state} ${pick.zip}`, { exact: pick })}>{`${pick.addr}, ${pick.city}, ${pick.state} ${pick.zip}`}</Button>)}</div></details>}
-            </div>}
-            <ResourceConversation key={session} chat={chat} />
+            {!result && <section className="flex flex-col gap-2" aria-labelledby="finder-title">
+              <p className="text-sm text-muted-foreground">{t("A clearer path to connection")}</p>
+              <h1 id="finder-title" className="text-balance text-3xl font-medium tracking-tight">{t("Let’s find a good fit.")}</h1>
+            </section>}
+            <ResourceConversation key={session} chat={chat} anchorId={resultAnchor} anchorContent={resultsBlock} footer={<>{editing && <div className="flex flex-col gap-4">{input(true)}</div>}{lookupFeedback}</>} showFooter={editing || busy || !!error || !!pending} />
           </div>}
         </main>
         {(home || editing) && <div className={cn("bace-feedback", !home && "pb-5")}><Button variant="link" size="sm" onClick={() => setReport("general")}>{t("Give feedback/report issues")}</Button></div>}

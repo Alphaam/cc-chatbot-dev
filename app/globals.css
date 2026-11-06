@@ -632,6 +632,8 @@
   .bace-map-page .bace-header { padding-inline: 1.25rem; }
 }
 .finder-page-conversation { margin-top: auto; padding-block: 1.5rem; border-top: 1px dashed var(--border); }
+.finder-page-conversation:first-child { border-top: 0; padding-top: 0; }
+.finder-chat-results { padding-block: .5rem 1rem; }
 .finder-with-chat .bace-main-shell { min-height: calc(100dvh - var(--bace-header-height, 5rem) - var(--bace-dock-space) - env(safe-area-inset-bottom)); }
 .finder-with-chat .bace-main { display: flex; flex-direction: column; padding-bottom: 0; }
 .finder-page-conversation [data-slot="message-header"] { font-size: .875rem; }
