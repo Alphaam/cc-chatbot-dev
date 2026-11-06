@@ -146,7 +146,7 @@ export default function ResourceFinder() {
       setPending(null); setError("");
       if (/find|help|near|available|resident|client|busc|ayud|cerca/i.test(text)) lastQuestion.current = text;
       void chat.send(text);
-      requestAnimationFrame(() => document.getElementById("latest-resource-question")?.scrollIntoView({ block: "start" }));
+      requestAnimationFrame(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" }));
     }
   }
 
@@ -195,7 +195,7 @@ export default function ResourceFinder() {
     finally { setDownloading(false); downloadLock.current = false; }
   }
 
-  const input = (addressOnly = false) => <ChatInput key={`${session}:${draft.revision}:${addressOnly}`} initialValue={draft.text} autoFocus={draft.revision > 0} spacious={home || addressOnly} addressOnly={addressOnly} disabled={busy || chat.busy} onStop={chat.busy ? chat.cancel : undefined} onCancel={addressOnly ? () => { request.current?.abort(); setBusy(false); setEditing(false); setPending(null); setError(""); } : undefined} onSend={(text, options) => send(text, addressOnly ? { ...options, addressSearch: true } : options)} placeholder={t(addressOnly ? "Enter a new resident address…" : result ? "Ask a question, or type @ to search an address…" : "Type @ to search for an address, type a question, or click one of the options below to start")} />;
+  const input = (addressOnly = false) => <ChatInput key={`${session}:${draft.revision}:${addressOnly}`} initialValue={draft.text} autoFocus={draft.revision > 0} spacious={home || addressOnly} addressOnly={addressOnly} disabled={busy || chat.busy} onStop={chat.busy ? chat.cancel : undefined} onCancel={addressOnly ? () => { request.current?.abort(); setBusy(false); setEditing(false); setPending(null); setError(""); } : undefined} onSend={(text, options) => send(text, addressOnly ? { ...options, addressSearch: true } : options)} placeholder={t(addressOnly ? "Enter a new resident address…" : result ? "Ask a question, or type @ to search an address…" : "Type @ to search for an address, or type a question…")} />;
   const lookupFeedback = <>
     {busy && <p role="status" className="text-sm text-muted-foreground">{t("Checking internet plans and nearby programs…")}</p>}
     {error && <Alert variant="destructive"><AlertTitle>{t("Address lookup")}</AlertTitle><AlertDescription><p>{t(error)}</p><Button variant="outline" size="sm" onClick={() => void lookup(lastQuery)}>{t("Retry")}</Button></AlertDescription></Alert>}
@@ -234,7 +234,7 @@ export default function ResourceFinder() {
             <ResourceTopics onChoose={(text) => setDraft((value) => ({ text, revision: value.revision + 1 }))} />
             <Button variant="ghost" className="self-center" onClick={() => openPanel("needs")}><UsersRound data-icon="inline-start" aria-hidden="true" />{t(hasResidentNeeds ? "Resident needs · Edit" : "Add resident needs")}<span className="text-muted-foreground">{t("Optional")}</span></Button>
             {hasResidentNeeds && <p className="text-center text-sm text-muted-foreground">{t("Resident needs applied to future answers.")}</p>}
-          </section> : <div className="flex flex-col gap-8">
+          </section> : <div className="flex flex-1 flex-col gap-8">
             <section className="flex flex-col gap-4" aria-labelledby="finder-title">
               <div className="flex flex-col gap-2">
                 <p className="text-sm text-muted-foreground">{t("A clearer path to connection")}</p>
@@ -259,8 +259,8 @@ export default function ResourceFinder() {
             <ResourceConversation key={session} chat={chat} />
           </div>}
         </main>
-        <div className={cn("bace-feedback", !home && "pb-5")}><Button variant="link" size="sm" onClick={() => setReport("general")}>{t("Give feedback/report issues")}</Button></div>
-        {!home && !editing && <div className="finder-chat-dock"><div className="finder-chat-composer"><p className="bace-composer-scope">{t("Answering about:")} {t(scopeLabel)}</p>{input()}<p className="bace-composer-note">{t("Check eligibility and availability with the provider.")}</p></div></div>}
+        {(home || editing) && <div className={cn("bace-feedback", !home && "pb-5")}><Button variant="link" size="sm" onClick={() => setReport("general")}>{t("Give feedback/report issues")}</Button></div>}
+        {!home && !editing && <div className="finder-chat-dock"><div className="finder-chat-composer"><p className="bace-composer-scope">{t("Answering about:")} {t(scopeLabel)}</p>{input()}<div className="bace-composer-note bace-feedback flex-wrap items-center gap-x-1 pb-0"><span>{t("Check eligibility and availability with the provider.")}</span><Button variant="link" size="sm" className="h-auto px-1 py-0" onClick={() => setReport("general")}>{t("Give feedback/report issues")}</Button></div></div></div>}
       </div>
       <ActionRail hasResults={!!result} count={shortlist.length} active={panel} onOpen={openPanel} mapAction={<ResourceMapLink snapshot={mapSnapshot} disabled={busy || chat.busy} />} />
       <WorkspacePanel view={panel} hasResults={!!result} onViewChange={setPanel} onClose={() => setPanel(null)} opener={panelOpener} mapAction={<ResourceMapLink snapshot={mapSnapshot} compact disabled={busy || chat.busy} />}>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment } from "react";
+import { Fragment, useEffect } from "react";
 import { useLanguage } from "@/components/chat/LanguageProvider";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -20,6 +20,12 @@ export default function ResourceConversation({ chat }: {
   chat: ReturnType<typeof useResourceChat>;
 }) {
   const { t } = useLanguage();
+  const latest = chat.messages.at(-1);
+  const latestLength = latest?.content.length ?? 0;
+  useEffect(() => {
+    const root = document.documentElement;
+    if (root.scrollHeight - (window.scrollY + window.innerHeight) < 240) window.scrollTo({ top: root.scrollHeight, behavior: "instant" });
+  }, [latest?.id, latestLength, chat.failed]);
   if (!chat.messages.length && !chat.failed) return null;
   const lastQuestionId = [...chat.messages].reverse().find((message) => message.role === "user")?.id;
 
