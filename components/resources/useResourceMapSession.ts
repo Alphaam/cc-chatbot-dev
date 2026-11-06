@@ -15,6 +15,7 @@ export interface ResourceMapSession {
   messages: ResourceMessage[];
   showHome: boolean;
   lastQuestion?: string;
+  resultAnchor?: string | null;
 }
 
 export function useResourceMapSession() {
