@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowUpRight, Check, MapPin, Home, RotateCcw, SlidersHorizontal, UsersRound } from "lucide-react";
+import { ArrowUpRight, Check, MapPin, RotateCcw, SlidersHorizontal, UsersRound } from "lucide-react";
 import ResourceCategories from "./ResourceCategories";
 import ResourceTopics from "./ResourceTopics";
 import ResourceConversation from "./ResourceConversation";
@@ -235,8 +235,7 @@ export default function ResourceFinder() {
           </button>
           <div className="bace-header-utilities flex items-center gap-1 sm:gap-2">
             {hasSession && <>
-              {!home && <Button variant="ghost" size="icon" aria-label={t("Home")} title={t("Home")} onClick={goHome}><Home aria-hidden="true" /></Button>}
-              <Button variant="ghost" size="icon" className="rounded-full" aria-label={t("Start new chat")} title={t("Start new chat")} onClick={() => skipResetPrompt ? reset() : setResetOpen(true)}><RotateCcw aria-hidden="true" /></Button>
+                <Button variant="ghost" size="icon" className="rounded-full" aria-label={t("Start new chat")} title={t("Start new chat")} onClick={() => skipResetPrompt ? reset() : setResetOpen(true)}><RotateCcw aria-hidden="true" /></Button>
             </>}
             <WorkspaceMenu hasResults={!!result} shareCount={shortlist.length} snapshot={mapSnapshot} mapDisabled={busy || chat.busy} onOpen={openPanel} />
           </div>
