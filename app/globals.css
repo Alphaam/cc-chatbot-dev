@@ -594,8 +594,9 @@
   .finder-chat-composer { padding: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .bace-composer, .bace-suggestion { transition: none; } }
-.bace-mobile-map-link { display: flex; min-height: 2.5rem; width: 2rem; align-items: center; justify-content: center; border-radius: .5rem; }
-.bace-mobile-map-link[aria-disabled="true"], .bace-rail-action[aria-disabled="true"] { opacity: .5; }
+.bace-rail-action[aria-disabled="true"] { opacity: .5; }
+.bace-header [data-slot="dropdown-menu-trigger"][aria-expanded="true"], .bace-header [data-slot="dropdown-menu-trigger"][data-popup-open] { background: color-mix(in srgb, var(--primary-foreground) 18%, transparent); color: var(--primary-foreground); }
+.bace-menu-count { margin-left: auto; min-width: 1.25rem; border-radius: 999px; background: var(--primary); padding: 0 .375rem; color: var(--primary-foreground); font-size: .75rem; font-weight: 600; line-height: 1.25rem; text-align: center; }
 .bace-map-page { display: flex; height: 100dvh; flex-direction: column; }
 .bace-map-main { display: flex; min-height: 0; flex: 1; flex-direction: column; gap: 1rem; padding: 1.5rem 2rem; }
 .bace-map-filters { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }

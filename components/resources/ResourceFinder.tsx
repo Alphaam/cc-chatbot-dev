@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowUpRight, Check, MapPin, Home, RotateCcw, Share2, SlidersHorizontal, UsersRound, CircleHelp } from "lucide-react";
+import { ArrowUpRight, Check, MapPin, Home, RotateCcw, SlidersHorizontal, UsersRound } from "lucide-react";
 import ResourceCategories from "./ResourceCategories";
 import ResourceTopics from "./ResourceTopics";
 import ResourceConversation from "./ResourceConversation";
@@ -11,6 +11,7 @@ import ResidentNeeds from "./ResidentNeeds";
 import WorkspacePanel, { ActionRail, type PanelView } from "./WorkspacePanel";
 import HowToUse from "./HowToUse";
 import ResourceMapLink from "./ResourceMapLink";
+import WorkspaceMenu from "./WorkspaceMenu";
 import { useResourceMapSession } from "./useResourceMapSession";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -102,8 +103,8 @@ export default function ResourceFinder() {
     window.scrollTo({ top: 0, behavior: "instant" });
   }
 
-  function openPanel(view: PanelView) {
-    panelOpener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  function openPanel(view: PanelView, opener?: HTMLElement | null) {
+    panelOpener.current = opener ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
     setPanel(view);
   }
 
@@ -237,8 +238,7 @@ export default function ResourceFinder() {
               {!home && <Button variant="ghost" size="icon" aria-label={t("Home")} title={t("Home")} onClick={goHome}><Home aria-hidden="true" /></Button>}
               <Button variant="ghost" size="icon" className="rounded-full" aria-label={t("Start new chat")} title={t("Start new chat")} onClick={() => skipResetPrompt ? reset() : setResetOpen(true)}><RotateCcw aria-hidden="true" /></Button>
             </>}
-            {result && <Button variant="ghost" size="icon" className="lg:hidden" aria-label={t("Share resources")} title={t("Share resources")} onClick={() => openPanel("share")}><Share2 aria-hidden="true" /></Button>}
-            <Button variant="ghost" size="icon" className="lg:hidden" aria-label={t("Guide")} title={t("Guide")} onClick={() => openPanel("help")}><CircleHelp aria-hidden="true" /></Button>
+            <WorkspaceMenu hasResults={!!result} shareCount={shortlist.length} snapshot={mapSnapshot} mapDisabled={busy || chat.busy} onOpen={openPanel} />
           </div>
           <div className="bace-header-help flex items-center gap-2">
             <LanguageToggle tone="inverse" />
@@ -269,7 +269,7 @@ export default function ResourceFinder() {
         {!home && !editing && <div className="finder-chat-dock"><div className="finder-chat-composer"><p className="bace-composer-scope">{t("Answering about:")} {t(scopeLabel)}</p>{input()}<div className="bace-composer-note bace-feedback flex-wrap items-center gap-x-1 pb-0"><span>{t("Check eligibility and availability with the provider.")}</span><Button variant="link" size="sm" className="h-auto px-1 py-0" onClick={() => setReport("general")}>{t("Give feedback/report issues")}</Button></div></div></div>}
       </div>
       <ActionRail hasResults={!!result} count={shortlist.length} active={panel} onOpen={openPanel} mapAction={<ResourceMapLink snapshot={mapSnapshot} disabled={busy || chat.busy} />} />
-      <WorkspacePanel view={panel} hasResults={!!result} onViewChange={setPanel} onClose={() => setPanel(null)} opener={panelOpener} mapAction={<ResourceMapLink snapshot={mapSnapshot} compact disabled={busy || chat.busy} />}>
+      <WorkspacePanel view={panel} hasResults={!!result} onViewChange={setPanel} onClose={() => setPanel(null)} opener={panelOpener}>
         {panel === "help" && <HowToUse />}
         {panel === "browse" && <ResourceCategories resources={resources} focus={focus} onFocusChange={changeFocus} onJump={jump} onDone={() => { setShowHome(false); setPanel(null); }} />}
         {panel === "needs" && <ResidentNeeds draft={needsDraft} onChange={setNeedsDraft} onApply={() => { if (chat.busy) chat.cancel(); setNeeds(sanitizeNeeds(needsDraft)); setPanel(null); setStatus("Resident needs applied to future answers."); }} onClear={() => { if (chat.busy) chat.cancel(); setNeeds(EMPTY_NEEDS); setNeedsDraft(EMPTY_NEEDS); setStatus("Resident needs cleared."); }} />}
