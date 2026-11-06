@@ -601,6 +601,14 @@
 .bace-map-filters { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }
 .bace-map-search { min-width: 14rem; flex: 1; }
 .bace-map-toggle { flex-wrap: wrap; }
+.bace-map-switch { display: inline-flex; min-height: 2.75rem; align-items: center; gap: .625rem; border-radius: .75rem; padding-inline: .5rem; font-size: .875rem; line-height: 1.5; color: var(--foreground); }
+.bace-map-switch:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.bace-map-switch:disabled { cursor: not-allowed; opacity: .5; }
+.bace-map-switch-track { position: relative; display: inline-flex; width: 2.5rem; height: 1.5rem; flex-shrink: 0; border-radius: 999px; background: var(--input); transition: background 150ms; }
+.bace-map-switch-thumb { position: absolute; top: .1875rem; left: .1875rem; width: 1.125rem; height: 1.125rem; border-radius: 999px; background: var(--card); box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 20%, transparent); transition: transform 150ms; }
+.bace-map-switch[aria-checked="true"] .bace-map-switch-track { background: var(--primary); }
+.bace-map-switch[aria-checked="true"] .bace-map-switch-thumb { transform: translateX(1rem); }
+@media (prefers-reduced-motion: reduce) { .bace-map-switch-track, .bace-map-switch-thumb { transition: none; } }
 .bace-map-toggle [data-slot="toggle-group-item"] { min-height: 2.75rem; }
 .bace-map-toggle [data-pressed] { background: var(--primary); color: var(--primary-foreground); border-color: var(--primary); transition: none; }
 .bace-map-layout { display: grid; min-height: 0; flex: 1; grid-template-columns: minmax(0, 1fr) 22rem; gap: 1.5rem; }

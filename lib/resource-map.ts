@@ -29,6 +29,10 @@ export function toMapEntries(services: DirectoryService[]): MapEntry[] {
 export function mapIdsFromResources(resources: Resource[]) {
   return new Set(resources.flatMap((resource) => resource.service && resource.category !== "internet" ? [mapServiceId(resource.service)] : []));
 }
+export function mappedIdsFromResources(resources: Resource[]) {
+  const services = resources.flatMap((resource) => resource.service && resource.category !== "internet" ? [resource.service as DirectoryService] : []);
+  return new Set(toMapEntries(services).filter((entry) => entry.hasLocation).map((entry) => entry.id));
+}
 export function filterMapEntries(entries: MapEntry[], category: MapCategory | "all", query: string, scope?: Set<string>) {
   const term = query.trim().toLocaleLowerCase();
   return entries.filter((entry) => (!scope || scope.has(entry.id)) && (category === "all" || entry.categories.includes(category)) && (!term || [entry.name, entry.address, entry.description, entry.languages].filter(Boolean).join(" ").toLocaleLowerCase().includes(term)));

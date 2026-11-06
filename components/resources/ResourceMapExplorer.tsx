@@ -12,7 +12,7 @@ import { filterMapEntries, mapIdsFromResources, type MapEntry, type MapCategory 
 import { useResourceMapSession } from "./useResourceMapSession";
 import ResourceMapCanvas from "./ResourceMapCanvas";
 
-type MapScope = "auto" | "all" | "search" | "selected";
+type MapScope = "auto" | "all" | "search";
 const categoryLabels = { devices: "Device access", skills: "Digital skills training" };
 
 export default function ResourceMapExplorer({ entries }: { entries: MapEntry[] }) {
@@ -20,6 +20,7 @@ export default function ResourceMapExplorer({ entries }: { entries: MapEntry[] }
   const { data: session } = useResourceMapSession();
   const [category, setCategory] = useState<MapCategory | "all">("all");
   const [scope, setScope] = useState<MapScope>("auto");
+  const [onlySelectedChoice, setOnlySelectedChoice] = useState<boolean | null>(null);
   const [query, setQuery] = useState("");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [fitVersion, setFitVersion] = useState(0);
@@ -31,8 +32,10 @@ export default function ResourceMapExplorer({ entries }: { entries: MapEntry[] }
   const currentResources = useMemo(() => session?.result ? resourcesFromLookup(session.result) : [], [session]);
   const searchIds = useMemo(() => mapIdsFromResources(currentResources), [currentResources]);
   const selectedIds = useMemo(() => mapIdsFromResources(currentResources.filter((resource) => session?.selected.includes(resource.id))), [currentResources, session]);
-  const effectiveScope = scope === "auto" ? session?.result ? selectedIds.size ? "selected" : "search" : "all" : scope;
-  const filtered = useMemo(() => filterMapEntries(entries, category, query, effectiveScope === "all" ? undefined : effectiveScope === "search" ? searchIds : selectedIds), [entries, category, query, effectiveScope, searchIds, selectedIds]);
+  const selectedPinCount = entries.filter((entry) => entry.hasLocation && selectedIds.has(entry.id)).length;
+  const effectiveScope = scope === "auto" ? session?.result ? "search" : "all" : scope;
+  const onlySelected = selectedIds.size > 0 && (onlySelectedChoice ?? selectedPinCount > 0);
+  const filtered = useMemo(() => filterMapEntries(entries, category, query, onlySelected ? selectedIds : effectiveScope === "search" ? searchIds : undefined), [entries, category, query, onlySelected, effectiveScope, searchIds, selectedIds]);
   const mapped = useMemo(() => filtered.filter((entry) => entry.hasLocation), [filtered]);
   const unmapped = useMemo(() => filtered.filter((entry) => !entry.hasLocation), [filtered]);
   const active = filtered.find((entry) => entry.id === activeId);
@@ -79,8 +82,12 @@ export default function ResourceMapExplorer({ entries }: { entries: MapEntry[] }
           <ToggleGroupItem value="all">{t("All types")}</ToggleGroupItem><ToggleGroupItem value="devices">{t("Device access")}</ToggleGroupItem><ToggleGroupItem value="skills">{t("Digital skills training")}</ToggleGroupItem>
         </ToggleGroup>
         <ToggleGroup value={[effectiveScope]} onValueChange={(values) => setScope((values[0] as MapScope | undefined) ?? "all")} variant="outline" size="sm" aria-label={t("Map resource scope")} className="bace-map-toggle">
-          <ToggleGroupItem value="all">{t("Entire directory")}</ToggleGroupItem><ToggleGroupItem value="search" disabled={!session?.result}>{t("Current search")}</ToggleGroupItem><ToggleGroupItem value="selected" disabled={!session?.result}>{t("Selected resources")} ({selectedIds.size})</ToggleGroupItem>
+          <ToggleGroupItem value="all">{t("Entire directory")}</ToggleGroupItem><ToggleGroupItem value="search" disabled={!session?.result}>{t("Current search")}</ToggleGroupItem>
         </ToggleGroup>
+        <button type="button" role="switch" aria-checked={onlySelected} disabled={!selectedIds.size} onClick={() => setOnlySelectedChoice(!onlySelected)} className="bace-map-switch">
+          <span className="bace-map-switch-track" aria-hidden="true"><span className="bace-map-switch-thumb" /></span>
+          <span>{t("Show only selected resources")} ({selectedPinCount})</span>
+        </button>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2 text-sm leading-relaxed">
         <p role="status">{t("{mapped} mapped · {unmapped} online or without coordinates", { mapped: mapped.length, unmapped: unmapped.length })}</p>
@@ -93,7 +100,7 @@ export default function ResourceMapExplorer({ entries }: { entries: MapEntry[] }
           <p className="text-sm leading-relaxed text-muted-foreground">{t("Markers show directory locations, not guaranteed coverage. No resident address is placed on the map.")}</p>
         </section>
         <aside className="bace-map-results" aria-label={t("Map resource list")}>
-          {!filtered.length && <div className="flex flex-col gap-3 rounded-xl border border-dashed border-border p-5"><Layers className="size-6 text-primary" aria-hidden="true" /><h2 className="text-base font-semibold">{t("No resources in this view")}</h2><p className="text-sm leading-relaxed text-muted-foreground">{t("Change the resource type, clear the search, or switch to the entire directory.")}</p><Button variant="outline" onClick={() => { setScope("all"); setCategory("all"); setQuery(""); }}>{t("Show entire directory")}</Button></div>}
+          {!filtered.length && <div className="flex flex-col gap-3 rounded-xl border border-dashed border-border p-5"><Layers className="size-6 text-primary" aria-hidden="true" /><h2 className="text-base font-semibold">{t("No resources in this view")}</h2><p className="text-sm leading-relaxed text-muted-foreground">{t("Change the resource type, clear the search, or switch to the entire directory.")}</p><Button variant="outline" onClick={() => { setScope("all"); setOnlySelectedChoice(false); setCategory("all"); setQuery(""); }}>{t("Show entire directory")}</Button></div>}
           {mapped.length > 0 && <section className="flex flex-col gap-3"><h2 className="text-sm font-semibold">{t("Map locations")} ({mapped.length})</h2><ul className="flex flex-col gap-3">{mapped.map(renderEntry)}</ul></section>}
           {unmapped.length > 0 && <details open={!mapped.length} className="bace-map-online"><summary className="cursor-pointer text-sm font-semibold">{t("Online or no mapped location")} ({unmapped.length})</summary><p className="py-3 text-sm leading-relaxed text-muted-foreground">{t("These resources have no usable map coordinates. We do not invent a location or service area.")}</p><ul className="flex flex-col gap-3">{unmapped.map(renderEntry)}</ul></details>}
           {active && !active.hasLocation && <span className="sr-only" role="status">{t("This resource has no mapped location.")}</span>}
