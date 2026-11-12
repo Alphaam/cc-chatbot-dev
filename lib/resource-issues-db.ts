@@ -27,3 +27,22 @@ const pool =
 if (process.env.NODE_ENV !== "production")
   globalForReports.resourceIssuePool = pool;
 export const issuesDb = drizzle(pool);
+
+// Lets a fresh database (for example, the upstream HR&A deployment) accept reports without a manual migration.
+let tableReady: Promise<void> | null = null;
+export function ensureIssuesTable() {
+  tableReady ??= pool
+    .query(`CREATE TABLE IF NOT EXISTS resource_issue_reports (
+      id uuid PRIMARY KEY,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      resource_key varchar(2000) NOT NULL,
+      resource_name varchar(500) NOT NULL,
+      category varchar(20) NOT NULL,
+      reason varchar(40) NOT NULL,
+      details varchar(2000) NOT NULL DEFAULT '',
+      status varchar(20) NOT NULL DEFAULT 'new'
+    )`)
+    .then(() => undefined)
+    .catch((error) => { tableReady = null; throw error; });
+  return tableReady;
+}

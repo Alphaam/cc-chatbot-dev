@@ -86,8 +86,7 @@ export async function POST(req: Request) {
   if (logOnly) return new Response(null, { status: 204 });
 
   const result = streamText({
-    // Use the project's own Anthropic account when it is linked; the shared Gateway tier blocks this model.
-    model: process.env.ANTHROPIC_API_KEY ? anthropic('claude-sonnet-4-6') : 'anthropic/claude-sonnet-4.6',
+    model: anthropic('claude-sonnet-4-6'),
     onError: ({ error }) => console.error('[chat] model request failed:', error instanceof Error ? error.message : error),
     abortSignal: req.signal,
     system: SYSTEM_PROMPT + (clientContext ? `\n\nCurrent resource reference data:\n${clientContext}` : '') + `\n\n${scopeInstruction}\n\n${tailoringInstruction}` + `\n\nRespond in ${requestedLocale === 'es' ? 'Spanish' : 'English'}, regardless of the language used in earlier messages or source data. Keep provider and organization names, street addresses, phone numbers, URLs, prices, and speed values unchanged. Use plain, accessible language. Do not use em dashes.`,
