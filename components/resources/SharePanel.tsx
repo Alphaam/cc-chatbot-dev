@@ -23,7 +23,7 @@ export function SharePanel({ resources, address, focus, downloading, disabled, s
       {!resources.length ? <Empty className="border border-dashed border-border py-10"><EmptyHeader>
         <ListChecks className="mx-auto size-6 text-muted-foreground" aria-hidden="true" />
         <EmptyTitle>{t("The resident's list is empty")}</EmptyTitle>
-        <EmptyDescription>{t("Select Add to share list on any resource to build the list.")}</EmptyDescription>
+        <EmptyDescription>{t("Select Add to list on any resource to build the list.")}</EmptyDescription>
       </EmptyHeader></Empty> : <div className="flex flex-col gap-4">
         {CATEGORIES.map((category) => {
           const items = resources.filter((resource) => resource.category === category);

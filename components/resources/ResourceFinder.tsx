@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowUpRight, Check, MapPin, SlidersHorizontal, Table2, UsersRound, Wifi } from "lucide-react";
+import { ArrowUpRight, Check, MapPin, UsersRound, Wifi } from "lucide-react";
 import ResourceCategories from "./ResourceCategories";
 import ResourceHome from "./ResourceHome";
-import ResourceConversation from "./ResourceConversation";
+import ResourceConversation, { AssistantLabel } from "./ResourceConversation";
 import { useResourceChat } from "./useResourceChat";
 import { SharePanel } from "./SharePanel";
 import ShareActions from "./ShareActions";
@@ -319,28 +319,22 @@ export default function ResourceFinder() {
   const needsSummary = <button type="button" onClick={() => openPanel("needs")} aria-haspopup="dialog" className="bace-context-action self-start"><UsersRound className="size-4" aria-hidden="true" />{t(hasResidentNeeds ? "Resident needs · Edit" : "Add resident needs")}{hasResidentNeeds && <Check className="size-4 text-primary" aria-hidden="true" />}</button>;
   const listPanel = <SharePanel resources={shortlist} address={address} focus={focus} downloading={downloading} disabled={editing || busy} status={status === "Recommendations PDF prepared." || status === "Download failed. Please try again." ? status : ""} onRemove={toggle} onDownload={(includeAddress) => void download(includeAddress)} onPrint={() => setPrinting(true)} onOpenTable={result && !tableView ? openTable : undefined} />;
 
-  const resultsBlock = result ? <section className="flex flex-col gap-8" aria-labelledby="finder-title">
-    <div className="flex flex-col gap-4">
-      <p className="bace-assistant-label">BACE Hub</p>
-      <h1 ref={resultsHeading} id="finder-title" tabIndex={-1} className="text-balance text-2xl font-semibold tracking-tight focus:outline-none">{t("Here's what's available near this address")}</h1>
-      <p className="text-pretty text-base leading-relaxed text-muted-foreground">{t("Internet plans, devices, and digital skills training are below. Add anything useful to the resident's list, then print or share it.")}</p>
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm"><MapPin className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" /><span className="min-w-0 break-words">{address}</span><Button variant="link" size="sm" onClick={() => { setEditing(!editing); setPending(null); setError(""); setDraft((value) => ({ text: "", revision: value.revision + 1 })); }}>{t(editing ? "Cancel" : "Change address")}</Button></div>
-      <div className="bace-context-bar">
-        <button type="button" onClick={() => openPanel("browse")} aria-haspopup="dialog" className="bace-context-action"><SlidersHorizontal className="size-4" aria-hidden="true" /><span>{t("Showing:")} <strong className="font-medium">{t(scopeLabel)}</strong></span><ArrowUpRight className="size-4" aria-hidden="true" /><span className="sr-only">{t("Change resource view")}</span></button>
-        {needsSummary}
-      </div>
-      {!result.found && <p className="text-sm leading-relaxed text-muted-foreground">{t("We couldn't confirm internet plans for this address. This doesn't mean internet is unavailable; check with a provider. Device and training resources can still be explored.")}</p>}
+  const resultsBlock = result ? <section className="bace-reply" aria-labelledby="finder-title">
+    <AssistantLabel />
+    <div className="bace-reply-intro">
+      <h1 ref={resultsHeading} id="finder-title" tabIndex={-1} className="bace-reply-title focus:outline-none">{t("Here's what I found near {address}.", { address: address.split(",")[0] })}</h1>
+      <p>{t("Internet plans, devices, and digital skills help are below. The first option in each is already in the resident's list; add or remove anything.")}</p>
+      {!result.found && <p className="text-muted-foreground">{t("We couldn't confirm internet plans for this address. This doesn't mean internet is unavailable; check with a provider. Device and training resources can still be explored.")}</p>}
+      <div className="flex flex-wrap items-center gap-x-1 text-sm text-muted-foreground"><MapPin className="size-4 shrink-0" aria-hidden="true" /><span className="min-w-0 break-words">{address}</span><span aria-hidden="true">·</span><button type="button" className="bace-inline-action" onClick={() => { setEditing(!editing); setPending(null); setError(""); setDraft((value) => ({ text: "", revision: value.revision + 1 })); }}>{t(editing ? "Cancel" : "Change address")}</button><span aria-hidden="true">·</span><button type="button" className="bace-inline-action" onClick={() => openPanel("browse")} aria-haspopup="dialog">{t("Showing:")} {t(scopeLabel)}</button></div>
     </div>
-    <div key={address} className="flex flex-col gap-10">
+    <div key={address} className="flex flex-col gap-8">
       {categories.filter((category) => !hiddenCategories.has(category)).map((category) => <ResourceSection key={category} category={category} resources={resources.filter((resource) => resource.category === category && !dismissed.has(resource.id))} selected={effectiveSelected} onToggle={toggle} onShare={shareResource} onReport={setReport} />)}
       {!result.found && !!result.nearbyAddresses?.length && <details className="text-sm"><summary className="cursor-pointer font-medium text-primary">{t("Other address matches")}</summary><div className="flex flex-col gap-3 pt-3"><p className="text-muted-foreground">{t("Choosing a match changes the search address. Only use an address that is correct for the resident.")}</p>{result.nearbyAddresses.slice(0, 3).map((pick) => { const label = `${pick.addr}, ${pick.city}, ${pick.state} ${pick.zip}`; return <Button key={JSON.stringify(pick)} variant="outline" className="h-auto min-h-9 justify-start whitespace-normal text-left" disabled={busy || chat.busy} onClick={() => { pendingAnchor.current = chat.addUserMessage(label); void lookup(label, { exact: pick }); }}>{label}</Button>; })}</div></details>}
     </div>
     <div className="bace-response-share">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm font-medium">{t("Resident's list")} <span className="bace-count-pill">{shortlist.length}</span></p>
-        <Button variant="link" size="sm" className="px-0" onClick={openTable}><Table2 data-icon="inline-start" aria-hidden="true" />{t("Open full results")}</Button>
-      </div>
+      <p className="text-sm text-muted-foreground">{t("Share the {count} resources in the resident's list", { count: shortlist.length })}</p>
       <ShareActions resources={shortlist} onPrint={() => setPrinting(true)} disabled={busy} />
+      <button type="button" className="bace-inline-action self-start" onClick={openTable}>{t("Open full results")} →</button>
     </div>
   </section> : null;
 
@@ -354,7 +348,7 @@ export default function ResourceFinder() {
             <Wifi className="size-5" aria-hidden="true" /><span>BACE Hub</span>
           </button>
           <nav aria-label={t("Workspace tools")} className="bace-header-nav">
-            {result && <button type="button" className="bace-header-link bace-header-wide" aria-haspopup="dialog" onClick={() => openPanel("share")}>{t("Resident's list")}{shortlist.length > 0 && <span className="bace-header-count">{shortlist.length}</span>}</button>}
+            {result && tableView && <button type="button" className="bace-header-link bace-header-wide" aria-haspopup="dialog" onClick={() => openPanel("share")}>{t("Resident's list")}{shortlist.length > 0 && <span className="bace-header-count">{shortlist.length}</span>}</button>}
             {hasSession && <button type="button" className="bace-header-link bace-header-wide" onClick={() => skipResetPrompt ? reset() : setResetOpen(true)}>{t("New resident")}</button>}
             <ResourceMapLink snapshot={mapSnapshot} disabled={busy || chat.busy} variant="header" />
             <button type="button" className="bace-header-link" aria-haspopup="dialog" onClick={() => openPanel("help")}>{t("Guide")}</button>
@@ -382,10 +376,7 @@ export default function ResourceFinder() {
               <ResourceConversation key={`table-${session}`} chat={chat} />
             </div>}
           </div> : <div className="flex flex-1 flex-col gap-8">
-            {!result && <section className="flex flex-col gap-2" aria-labelledby="finder-title">
-              <p className="text-sm text-muted-foreground">{t("A clearer path to connection")}</p>
-              <h1 id="finder-title" className="text-balance text-3xl font-medium tracking-tight">{t("Let’s find a good fit.")}</h1>
-            </section>}
+            {!result && <h1 id="finder-title" className="sr-only">{t("Conversation")}</h1>}
             <ResourceConversation key={session} chat={chat} anchorId={resultAnchor} anchorContent={resultsBlock} footer={<>{editing && <div className="flex flex-col gap-4">{input(true)}</div>}{lookupFeedback}</>} showFooter={editing || busy || !!error || !!pending} />
           </div>}
         </main>
@@ -397,10 +388,10 @@ export default function ResourceFinder() {
           <a href="tel:211" className="bace-footer-meta">{t("Social services 211")}</a>
         </footer>}
         {!home && editing && !tableView && <div className="bace-feedback pb-5"><Button variant="link" size="sm" onClick={() => setReport("general")}>{t("Report a problem")}</Button></div>}
-        {!home && !editing && <div className="finder-chat-dock"><div className="finder-chat-composer"><p className="bace-composer-scope">{t("Answering about:")} {t(scopeLabel)}</p>{input()}<div className="bace-composer-note bace-feedback flex-wrap items-center gap-x-1 pb-0"><span>{t("Check eligibility and availability with the provider.")}</span><Button variant="link" size="sm" className="h-auto px-1 py-0" onClick={() => setReport("general")}>{t("Report a problem")}</Button></div></div></div>}
+        {!home && !editing && <div className="finder-chat-dock"><div className="finder-chat-composer">{input()}<p className="bace-composer-note">{t("Check eligibility and availability with the provider.")} <button type="button" className="bace-inline-action" onClick={() => setReport("general")}>{t("Report a problem")}</button></p></div></div>}
       </div>
       {showAside && <aside className="bace-list-aside" aria-labelledby="list-aside-title">
-        <h2 id="list-aside-title" className="flex items-center justify-between text-lg font-semibold tracking-tight text-primary">{t("Resident's list")}<span className="bace-count-pill">{shortlist.length}</span></h2>
+        <h2 id="list-aside-title" className="flex items-center gap-2 text-base font-semibold text-foreground">{t("Resident's list")}<span className="bace-count-pill">{shortlist.length}</span></h2>
         {listPanel}
       </aside>}
       <WorkspacePanel view={panel} hasResults={!!result} onViewChange={setPanel} onClose={() => { setPanel(null); setTourRequested(false); }} opener={panelOpener}>

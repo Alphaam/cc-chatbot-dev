@@ -286,7 +286,7 @@ export function ResourceRow({
           <CardFooter className="flex-wrap justify-between gap-3">
             <label className="flex min-h-10 cursor-pointer items-center gap-2 text-sm font-medium">
               <input type="checkbox" checked={selected} onChange={onToggle} className="size-4 shrink-0 accent-primary" />
-              {t(selected ? "Added to share list" : "Add to share list")}
+              {t(selected ? "In resident's list" : "Add to list")}
               <span className="sr-only">: {resource.name}</span>
             </label>
             {resource.url && (

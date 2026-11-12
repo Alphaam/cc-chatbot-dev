@@ -33,7 +33,7 @@ export const redesignSpanish: Record<string, string> = {
   "Case note copied.": "Nota del caso copiada.",
   "Only resources in this list are printed or shared.": "Solo se imprimen o comparten los recursos de esta lista.",
   "The resident's list is empty": "La lista del residente está vacía",
-  "Select Add to share list on any resource to build the list.": "Seleccione Añadir a la lista para compartir en cualquier recurso para crear la lista.",
+  "Select Add to list on any resource to build the list.": "Seleccione Añadir a la lista para compartir en cualquier recurso para crear la lista.",
   "Preview and more options": "Vista previa y más opciones",
   "Sort": "Ordenar",
   "Cheapest first": "Más económicos primero",
@@ -96,4 +96,9 @@ export const redesignSpanish: Record<string, string> = {
   "Emergency 911": "Emergencias 911",
   "Crisis 988": "Crisis 988",
   "Social services 211": "Servicios sociales 211",
+  "In resident's list": "En la lista del residente",
+  "Add to list": "Añadir a la lista",
+  "Here's what I found near {address}.": "Esto es lo que encontré cerca de {address}.",
+  "Internet plans, devices, and digital skills help are below. The first option in each is already in the resident's list; add or remove anything.": "Abajo hay planes de internet, dispositivos y ayuda con habilidades digitales. La primera opción de cada uno ya está en la lista del residente; añada o quite lo que necesite.",
+  "Share the {count} resources in the resident's list": "Compartir los {count} recursos de la lista del residente",
 };

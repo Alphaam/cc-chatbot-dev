@@ -5,10 +5,14 @@ import { useLanguage } from "@/components/chat/LanguageProvider";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
-import { Message, MessageContent, MessageHeader } from "@/components/ui/message";
+import { Wifi } from "lucide-react";
+import { Message, MessageContent } from "@/components/ui/message";
 import { MessageScrollerProvider, MessageScroller, MessageScrollerContent, MessageScrollerItem, MessageScrollerViewport } from "@/components/ui/message-scroller";
 import type { useResourceChat } from "./useResourceChat";
-import { CATEGORY_LABELS } from "@/lib/resource-finder";
+
+export function AssistantLabel() {
+  return <span className="bace-assistant-head"><span className="bace-avatar" aria-hidden="true"><Wifi className="size-3.5" /></span>BACE Hub</span>;
+}
 
 function ReplyText({ text }: { text: string }) {
   return text.split(/(\*\*[^*]+\*\*)/g).map((part, index) => part.startsWith("**")
@@ -53,8 +57,8 @@ export default function ResourceConversation({ chat, anchorId, anchorContent, fo
                   <MessageScrollerItem messageId={message.id} id={`message-${message.id}`}>
                     <Message align={message.role === "user" ? "end" : "start"}>
                       <MessageContent>
-                        <MessageHeader>{message.role === "user" ? t("You") : "BACE Hub"}{message.role === "assistant" && message.scope && <span className="font-normal text-muted-foreground"> · {t(message.scope === "all" ? "All resources" : CATEGORY_LABELS[message.scope])}</span>}</MessageHeader>
-                        <Bubble variant={message.role === "user" ? "secondary" : "ghost"}>
+                        {message.role === "user" ? <span className="sr-only">{t("You")}</span> : <AssistantLabel />}
+                        <Bubble variant={message.role === "user" ? "default" : "ghost"}>
                           <BubbleContent>
                             <p lang={message.locale} className="whitespace-pre-wrap break-words"><ReplyText text={message.content || t(message.incomplete ? "Reply stopped." : "Thinking…")} /></p>
                             {message.incomplete && message.content && <p className="text-sm text-muted-foreground">{t("Reply stopped.")}</p>}

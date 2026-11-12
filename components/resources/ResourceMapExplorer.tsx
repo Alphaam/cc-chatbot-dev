@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
-import { ArrowLeft, Check, ExternalLink, Layers, LocateFixed, MapPin, Search } from "lucide-react";
+import { ArrowLeft, Check, ExternalLink, Layers, LocateFixed, MapPin, Search, Wifi } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { LanguageToggle, useLanguage } from "@/components/chat/LanguageProvider";
+import { LanguageLink, useLanguage } from "@/components/chat/LanguageProvider";
 import { resourcesFromLookup, safeWebsite } from "@/lib/resource-finder";
 import { filterMapEntries, mapIdsFromResources, type MapEntry, type MapCategory } from "@/lib/resource-map";
 import { useResourceMapSession } from "./useResourceMapSession";
@@ -68,8 +68,8 @@ export default function ResourceMapExplorer({ entries }: { entries: MapEntry[] }
 
   return <div className="resource-finder bace-map-page bg-background font-sans text-foreground">
     <header className="bace-header">
-      <Link href="/" aria-label={t("BACE Hub home")}><span className="bace-wordmark">BACE <span className="font-normal">Hub</span></span></Link>
-      <div className="flex items-center gap-3"><Link href="/" className="flex min-h-11 items-center gap-2 text-sm"><ArrowLeft className="size-4" aria-hidden="true" />{t(session?.result ? "Back to results" : "Back to search")}</Link><LanguageToggle tone="inverse" /></div>
+      <Link href="/" aria-label={t("BACE Hub home")} className="bace-brand"><Wifi className="size-5" aria-hidden="true" /><span>BACE Hub</span></Link>
+      <nav aria-label={t("Workspace tools")} className="bace-header-nav"><Link href="/" className="bace-header-link"><ArrowLeft className="size-4" aria-hidden="true" />{t(session?.result ? "Back to results" : "Back to search")}</Link><LanguageLink className="bace-header-link" /></nav>
     </header>
     <main className="bace-map-main">
       <div className="flex flex-wrap items-start justify-between gap-4">
