@@ -20,18 +20,18 @@ function ReplyText({ text }: { text: string }) {
     : <Fragment key={index}>{part}</Fragment>);
 }
 
-export default function ResourceConversation({ chat, anchorId, anchorContent, footer, showFooter = false }: {
+export default function ResourceConversation({ chat, anchorId, anchors = {}, leading, footer, showFooter = false }: {
   chat: ReturnType<typeof useResourceChat>;
   anchorId?: string | null;
-  anchorContent?: ReactNode;
+  anchors?: Record<string, ReactNode>;
+  leading?: ReactNode;
   footer?: ReactNode;
   showFooter?: boolean;
 }) {
   const { t } = useLanguage();
   const latest = chat.messages.at(-1);
   const latestLength = latest?.content.length ?? 0;
-  const anchorFound = !!anchorId && chat.messages.some((message) => message.id === anchorId);
-  const hasAnchorContent = !!anchorContent;
+  const hasAnchorContent = !!anchorId && !!anchors[anchorId];
 
   useEffect(() => {
     const root = document.documentElement;
@@ -43,7 +43,7 @@ export default function ResourceConversation({ chat, anchorId, anchorContent, fo
     document.getElementById(`message-${anchorId}`)?.scrollIntoView({ block: "start", behavior: "instant" });
   }, [anchorId, hasAnchorContent]);
 
-  if (!chat.messages.length && !chat.failed && !anchorContent && !showFooter) return null;
+  if (!chat.messages.length && !chat.failed && !leading && !showFooter) return null;
 
   return (
     <section aria-label={t("Conversation")} className="finder-page-conversation">
@@ -51,7 +51,7 @@ export default function ResourceConversation({ chat, anchorId, anchorContent, fo
         <MessageScroller>
           <MessageScrollerViewport aria-label={t("Conversation")}>
             <MessageScrollerContent>
-              {!anchorFound && anchorContent && <div className="finder-chat-results">{anchorContent}</div>}
+              {leading}
               {chat.messages.map((message) => (
                 <Fragment key={message.id}>
                   <MessageScrollerItem messageId={message.id} id={`message-${message.id}`}>
@@ -67,7 +67,7 @@ export default function ResourceConversation({ chat, anchorId, anchorContent, fo
                       </MessageContent>
                     </Message>
                   </MessageScrollerItem>
-                  {message.id === anchorId && anchorContent && <div className="finder-chat-results">{anchorContent}</div>}
+                  {anchors[message.id] && <div className="finder-chat-results">{anchors[message.id]}</div>}
                 </Fragment>
               ))}
               {chat.failed && <Alert><AlertDescription>

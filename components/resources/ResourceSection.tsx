@@ -54,6 +54,7 @@ export function SortSelect({ category, value, onChange }: { category: ResourceCa
 }
 
 export default function ResourceSection({
+  idPrefix = "",
   category,
   resources,
   selected,
@@ -61,6 +62,7 @@ export default function ResourceSection({
   onShare,
   onReport,
 }: {
+  idPrefix?: string;
   category: ResourceCategory;
   resources: Resource[];
   selected: Set<string>;
@@ -86,14 +88,14 @@ export default function ResourceSection({
   const shown = expanded ? ordered : ordered.slice(0, 4);
   return (
     <section
-      id={category}
-      aria-labelledby={`${category}-title`}
+      id={`${idPrefix}${category}`}
+      aria-labelledby={`${idPrefix}${category}-title`}
       className="finder-resource-section scroll-mt-6"
       data-category={category}
     >
       <div className="flex flex-col gap-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 id={`${category}-title`} tabIndex={-1} className="flex items-center gap-2 text-base font-semibold focus:outline-none">
+          <h2 id={`${idPrefix}${category}-title`} tabIndex={-1} className="flex items-center gap-2 text-base font-semibold focus:outline-none">
             <CategoryIcon className="size-4 shrink-0" aria-hidden="true" />
             {t(CATEGORY_LABELS[category])}
             <span className="text-sm font-normal tabular-nums text-muted-foreground">{resources.length}</span>
@@ -108,11 +110,11 @@ export default function ResourceSection({
             <div className="pt-4">
               <FieldGroup>
                 <Field>
-                  <FieldLabel htmlFor="plan-budget">
+                  <FieldLabel htmlFor={`${idPrefix}plan-budget`}>
                     {t("Maximum monthly price")}
                   </FieldLabel>
                   <select
-                    id="plan-budget"
+                    id={`${idPrefix}plan-budget`}
                     value={budget}
                     onChange={(event) => {
                       setBudget(event.target.value);

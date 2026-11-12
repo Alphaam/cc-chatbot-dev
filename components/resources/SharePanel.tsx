@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { ListChecks, X, Table2, SlidersHorizontal } from "lucide-react";
+import { ListChecks, MapPin, X, Table2, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { useLanguage } from "@/components/chat/LanguageProvider";
-import { CATEGORIES, CATEGORY_LABELS, type Resource } from "@/lib/resource-finder";
+import { CATEGORIES, CATEGORY_LABELS, addressClusters, type Resource } from "@/lib/resource-finder";
 import type { ResourceFocus } from "@/lib/resident-needs";
 import ShareRecommendations from "./ShareRecommendations";
 import ShareActions from "./ShareActions";
@@ -24,12 +24,14 @@ export function SharePanel({ resources, address, focus, downloading, disabled, s
         <ListChecks className="mx-auto size-6 text-muted-foreground" aria-hidden="true" />
         <EmptyTitle>{t("The resident's list is empty")}</EmptyTitle>
         <EmptyDescription>{t("Select Add to list on any resource to build the list.")}</EmptyDescription>
-      </EmptyHeader></Empty> : <div className="flex flex-col gap-4">
+      </EmptyHeader></Empty> : <div className="flex flex-col gap-5">
+        {addressClusters(resources).map((cluster, index, clusters) => <div key={cluster.id} className="flex flex-col gap-3">
+        {clusters.length > 1 && <p className="bace-list-address"><MapPin className="size-4 shrink-0" aria-hidden="true" /><span className="min-w-0 truncate">{cluster.address.split(",")[0] || t("Address {number}", { number: index + 1 })}</span></p>}
         {CATEGORIES.map((category) => {
-          const items = resources.filter((resource) => resource.category === category);
+          const items = cluster.resources.filter((resource) => resource.category === category);
           if (!items.length) return null;
-          return <section key={category} data-category={category} className="bace-list-group" aria-labelledby={`list-${category}`}>
-            <h3 id={`list-${category}`} className="bace-list-group-title">{t(CATEGORY_LABELS[category])}<span className="tabular-nums">{items.length}</span></h3>
+          return <section key={category} data-category={category} className="bace-list-group" aria-labelledby={`list-${cluster.id}-${category}`}>
+            <h3 id={`list-${cluster.id}-${category}`} className="bace-list-group-title">{t(CATEGORY_LABELS[category])}<span className="tabular-nums">{items.length}</span></h3>
             <ul className="flex flex-col">{items.map((resource) => <li key={resource.id} className="bace-list-item">
               <div className="flex min-w-0 flex-col">
                 <p className="text-sm font-medium leading-relaxed">{resource.name}</p>
@@ -39,6 +41,7 @@ export function SharePanel({ resources, address, focus, downloading, disabled, s
             </li>)}</ul>
           </section>;
         })}
+        </div>)}
       </div>}
       <ShareActions resources={resources} onPrint={onPrint} disabled={disabled} />
       <div className="flex flex-wrap gap-2">

@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, MapPin, PanelLeftClose, RotateCcw, Share2, UsersRound, Wifi } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { MapPin, PanelLeftClose, RotateCcw, Share2, Wifi } from "lucide-react";
 import ResourceCategories from "./ResourceCategories";
 import ResourceHome from "./ResourceHome";
 import ResourceConversation, { AssistantLabel } from "./ResourceConversation";
-import { useResourceChat } from "./useResourceChat";
+import { useResourceChat, type ResourceMessage } from "./useResourceChat";
 import { SharePanel } from "./SharePanel";
 import ShareActions from "./ShareActions";
 import ResidentNeeds from "./ResidentNeeds";
@@ -15,7 +15,7 @@ import WorkspacePanel, { type PanelView } from "./WorkspacePanel";
 import HowToUse from "./HowToUse";
 import ResourceMapLink from "./ResourceMapLink";
 import WorkspaceMenu from "./WorkspaceMenu";
-import { useResourceMapSession } from "./useResourceMapSession";
+import { useResourceMapSession, type ResourceSearch } from "./useResourceMapSession";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -23,13 +23,14 @@ import ChatInput, { type SendOptions } from "@/components/chat/ChatInput";
 import SessionTimeout from "@/components/chat/SessionTimeout";
 import ResetConfirmation from "@/components/chat/ResetConfirmation";
 import { LanguageLink, useLanguage } from "@/components/chat/LanguageProvider";
-import { CATEGORIES, CATEGORY_LABELS, isAddressQuery, defaultShortlist, recommendationsText, resourcesFromLookup, type LookupResponse, type Resource, type ResourceCategory } from "@/lib/resource-finder";
+import { CATEGORIES, CATEGORY_LABELS, addressClusters, areaOf, isAddressQuery, defaultShortlist, recommendationsText, resourcesFromLookup, type LookupResponse, type Resource, type ResourceCategory } from "@/lib/resource-finder";
 import { EMPTY_NEEDS, hasNeeds, inferResourceFocus, sanitizeNeeds, splitResourceRequest, type ResidentNeeds as Needs, type ResourceFocus } from "@/lib/resident-needs";
 import { printHtml, qrPayload, residentListDocument, shortenAnswer, type PrintedExchange } from "@/lib/resource-print";
 import ResourceSection from "./ResourceSection";
 import ReportIssue from "./ReportIssue";
 
 type View = "chat" | "table";
+interface SearchGroup { search: ResourceSearch; resources: Resource[] }
 
 function mentionedIn(text: string, resources: Resource[]) {
   const lower = text.toLowerCase();
@@ -39,11 +40,24 @@ function mentionedIn(text: string, resources: Resource[]) {
   });
 }
 
+const sourceId = (id: string) => id.slice(id.indexOf("::") + 2);
+
+function groupFor(index: number, messages: ResourceMessage[], groups: SearchGroup[]) {
+  let match: SearchGroup | undefined;
+  for (const group of groups) {
+    const anchorIndex = group.search.anchor ? messages.findIndex((message) => message.id === group.search.anchor) : -1;
+    if (anchorIndex < index) match = group;
+  }
+  return match ?? groups.at(-1);
+}
+
 export default function ResourceFinder() {
   const { t, locale } = useLanguage();
   const { data: savedSession, mutate: saveMapSession } = useResourceMapSession();
-  const [result, setResult] = useState<LookupResponse | null>(savedSession?.result ?? null);
-  const [showHome, setShowHome] = useState(savedSession?.showHome ?? false);
+  const [searches, setSearches] = useState<ResourceSearch[]>(() => savedSession?.searches ?? (savedSession?.result ? [{ id: "s0", address: savedSession.address, result: savedSession.result, anchor: savedSession.resultAnchor ?? null }] : []));
+  const latest = searches.at(-1);
+  const result = latest?.result ?? null;
+  const address = latest?.address ?? "";
   const [view, setView] = useState<View>(savedSession?.view ?? "chat");
   const [tableOrigin, setTableOrigin] = useState<"chat" | "needs">(savedSession?.tableOrigin ?? "chat");
   const [listOpen, setListOpen] = useState(true);
@@ -57,15 +71,14 @@ export default function ResourceFinder() {
   const panelOpener = useRef<HTMLElement | null>(null);
   const headerRef = useRef<HTMLElement | null>(null);
   const [pending, setPending] = useState<LookupResponse | null>(null);
-  const [address, setAddress] = useState(savedSession?.address ?? "");
   const [needsAddress, setNeedsAddress] = useState(savedSession?.address ?? "");
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [lastQuery, setLastQuery] = useState("");
-  const [selected, setSelected] = useState<Set<string>>(new Set(savedSession?.selected ?? []));
+  const [selected, setSelected] = useState<Set<string>>(new Set(savedSession?.allSelected ?? []));
   const [optOut, setOptOut] = useState<Set<string>>(new Set(savedSession?.optOut ?? []));
-  const [hiddenCategories, setHiddenCategories] = useState<Set<ResourceCategory>>(new Set((savedSession?.hiddenCategories ?? []) as ResourceCategory[]));
+  const [hiddenKeys, setHiddenKeys] = useState<Set<string>>(new Set(savedSession?.hiddenCategories ?? []));
   const [dismissed, setDismissed] = useState<Set<string>>(new Set(savedSession?.dismissed ?? []));
   const [report, setReport] = useState<Resource | "general" | null>(null);
   const [printing, setPrinting] = useState(false);
@@ -81,20 +94,34 @@ export default function ResourceFinder() {
   const downloadLock = useRef(false);
   const lookupIntent = useRef({ question: "", scope: "all" as ResourceFocus, original: "", toTable: false });
   const [lastQuestion, setLastQuestion] = useState(savedSession?.lastQuestion ?? "");
-  const [resultAnchor, setResultAnchor] = useState<string | null>(savedSession?.resultAnchor ?? null);
+  const [resultAnchor, setResultAnchor] = useState<string | null>(latest?.anchor ?? null);
   const pendingAnchor = useRef<string | null>(null);
-  const resources = useMemo(() => result ? resourcesFromLookup(result) : [], [result]);
-  const autoSelected = useMemo(() => new Set(chat.messages.filter((message) => message.role === "assistant" && message.content && !message.incomplete).flatMap((message) => mentionedIn(message.content, resources).map((resource) => resource.id))), [chat.messages, resources]);
+
+  const groups = useMemo<SearchGroup[]>(() => searches.map((search) => ({
+    search,
+    resources: resourcesFromLookup(search.result).map((resource) => ({ ...resource, id: `${search.id}::${resource.id}`, searchId: search.id, searchAddress: search.address })),
+  })), [searches]);
+  const resources = useMemo(() => groups.flatMap((group) => group.resources), [groups]);
+  const latestResources = groups.at(-1)?.resources ?? [];
+  const autoSelected = useMemo(() => new Set(chat.messages.flatMap((message, index) => {
+    if (message.role !== "assistant" || !message.content || message.incomplete) return [];
+    const group = groupFor(index, chat.messages, groups);
+    return group ? mentionedIn(message.content, group.resources).map((resource) => resource.id) : [];
+  })), [chat.messages, groups]);
   const effectiveSelected = useMemo(() => new Set([...selected, ...[...autoSelected].filter((id) => !optOut.has(id))]), [selected, autoSelected, optOut]);
-  const shortlist = resources.filter((resource) => effectiveSelected.has(resource.id) && !hiddenCategories.has(resource.category) && !dismissed.has(resource.id));
+  const shortlist = resources.filter((resource) => effectiveSelected.has(resource.id) && !hiddenKeys.has(`${resource.searchId}:${resource.category}`) && !dismissed.has(resource.id));
   const hasSession = !!result || chat.messages.length > 0;
   const home = !hasSession;
   const tableView = !home && view === "table" && !!result;
+  const editableTable = tableOrigin === "needs";
   const scopeLabel = focus === "all" ? "All resources" : CATEGORY_LABELS[focus];
-  const categories = (focus === "all" ? CATEGORIES : CATEGORIES.filter((category) => category === focus)).slice().sort((a, b) => Number(!resources.some((resource) => resource.category === a)) - Number(!resources.some((resource) => resource.category === b)));
   const hasResidentNeeds = hasNeeds(needs);
   const hasConversation = chat.messages.some((message) => message.role === "assistant" && message.content);
-  const mapSnapshot = { result, address, focus, needs, needsDraft, selected: [...effectiveSelected], messages: chat.messages, showHome, lastQuestion, resultAnchor, optOut: [...optOut], hiddenCategories: [...hiddenCategories], dismissed: [...dismissed], view, tableOrigin };
+  const mapSnapshot = {
+    result, address, focus, needs, needsDraft, messages: chat.messages, showHome: false, lastQuestion, resultAnchor,
+    selected: latestResources.filter((resource) => effectiveSelected.has(resource.id)).map((resource) => sourceId(resource.id)),
+    allSelected: [...effectiveSelected], searches, optOut: [...optOut], hiddenCategories: [...hiddenKeys], dismissed: [...dismissed], view, tableOrigin,
+  };
 
   useEffect(() => () => request.current?.abort(), []);
   useEffect(() => {
@@ -112,9 +139,9 @@ export default function ResourceFinder() {
     void saveMapSession(null, { revalidate: false });
     generation.current += 1;
     request.current?.abort();
-    setResult(null); setPending(null); setAddress(""); setNeedsAddress(""); setFocus("all"); setShowHome(false); setView("chat");
+    setSearches([]); setPending(null); setNeedsAddress(""); setFocus("all"); setView("chat"); setTableOrigin("chat");
     setNeeds(EMPTY_NEEDS); setNeedsDraft(EMPTY_NEEDS); setPanel(null);
-    setSelected(new Set()); setOptOut(new Set()); setHiddenCategories(new Set()); setDismissed(new Set());
+    setSelected(new Set()); setOptOut(new Set()); setHiddenKeys(new Set()); setDismissed(new Set());
     setReport(null); setPrinting(false); setEditing(false); setBusy(false);
     setError(""); setLastQuery(""); setStatus(""); setResetOpen(false);
     setDraft({ text: "", revision: 0 });
@@ -134,10 +161,10 @@ export default function ResourceFinder() {
     window.scrollTo({ top: 0, behavior: "instant" });
   }
 
-  function openPanel(view: PanelView, opener?: HTMLElement | null) {
+  function openPanel(next: PanelView, opener?: HTMLElement | null) {
     panelOpener.current = opener ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
-    if (view !== "help") setTourRequested(false);
-    setPanel(view);
+    if (next !== "help") setTourRequested(false);
+    setPanel(next);
   }
 
   function changeFocus(next: ResourceFocus) {
@@ -147,10 +174,9 @@ export default function ResourceFinder() {
   }
 
   function jump(category: ResourceCategory) {
-    setShowHome(false);
     setPanel(null);
     window.setTimeout(() => {
-      const heading = document.getElementById(`${category}-title`) ?? document.getElementById(`table-${category}`);
+      const heading = document.getElementById(`${category}-title`) ?? document.querySelector<HTMLElement>(`[data-latest-category="${category}"]`);
       heading?.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
       heading?.focus({ preventScroll: true });
     }, 100);
@@ -159,14 +185,17 @@ export default function ResourceFinder() {
   function accept(data: LookupResponse, query: string) {
     generation.current += 1;
     const toTable = lookupIntent.current.toTable;
-    setReport(null); setResult(data); setShowHome(false); setView(toTable ? "table" : "chat");
-    if (toTable) setTableOrigin("needs");
     const confirmed = data.address || data.confirmAddress || query;
-    setAddress(confirmed); setNeedsAddress(confirmed);
-    setFocus(lookupIntent.current.scope); setSelected(defaultShortlist(resourcesFromLookup(data)));
-    setOptOut(new Set()); setHiddenCategories(new Set()); setDismissed(new Set());
+    const id = `s${searches.length + 1}`;
+    const anchor = toTable ? null : pendingAnchor.current;
+    setSearches((current) => [...current, { id, address: confirmed, result: data, anchor }]);
+    setSelected((current) => new Set([...current, ...[...defaultShortlist(resourcesFromLookup(data))].map((resourceId) => `${id}::${resourceId}`)]));
+    setReport(null); setView(toTable ? "table" : "chat");
+    if (toTable) setTableOrigin("needs");
+    setNeedsAddress(confirmed);
+    setFocus(lookupIntent.current.scope);
     setEditing(false); setPending(null); setError(""); setStatus("");
-    setResultAnchor(toTable ? null : pendingAnchor.current);
+    setResultAnchor(anchor);
     requestAnimationFrame(() => {
       if (toTable) { window.scrollTo({ top: 0, behavior: "instant" }); document.getElementById("table-title")?.focus({ preventScroll: true }); }
       else resultsHeading.current?.focus({ preventScroll: true });
@@ -179,12 +208,11 @@ export default function ResourceFinder() {
 
   function send(text: string, options?: SendOptions) {
     if (busy || chat.busy) return;
-    setShowHome(false);
     setDraft((value) => ({ text: "", revision: value.revision + 1 }));
     if (options?.addressSearch || options?.addressConfirmed || options?.exact || isAddressQuery(text)) {
       const parsed = splitResourceRequest(text);
       const question = parsed.question || lastQuestion;
-      lookupIntent.current = { question, scope: question ? inferResourceFocus(question) : "all", original: parsed.question ? text : question ? `${question}\n${parsed.address}` : "", toTable: false };
+      lookupIntent.current = { question, scope: question ? inferResourceFocus(question) : "all", original: parsed.question ? text : question ? `${question}\n${parsed.address}` : "", toTable: tableView };
       pendingAnchor.current = chat.addUserMessage(text.trim());
       void lookup(parsed.address, options);
       requestAnimationFrame(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" }));
@@ -212,7 +240,7 @@ export default function ResourceFinder() {
     setNeeds(sanitizeNeeds(needsDraft));
     setPanel(null);
     const target = needsAddress.trim();
-    if (result && target === address) { setShowHome(false); setView("table"); setTableOrigin("needs"); requestAnimationFrame(() => { window.scrollTo({ top: 0, behavior: "instant" }); document.getElementById("table-title")?.focus({ preventScroll: true }); }); return; }
+    if (result && target === address) { setView("table"); setTableOrigin("needs"); requestAnimationFrame(() => { window.scrollTo({ top: 0, behavior: "instant" }); document.getElementById("table-title")?.focus({ preventScroll: true }); }); return; }
     lookupIntent.current = { question: "", scope: "all", original: "", toTable: true };
     pendingAnchor.current = null;
     void lookup(target);
@@ -255,17 +283,17 @@ export default function ResourceFinder() {
   }
 
   function openTable() {
-    setPanel(null); setShowHome(false); setView("table"); setTableOrigin("chat");
+    setPanel(null); setView("table"); setTableOrigin("chat"); setEditing(false);
     requestAnimationFrame(() => { window.scrollTo({ top: 0, behavior: "instant" }); document.getElementById("table-title")?.focus({ preventScroll: true }); });
   }
 
-  function removeCategory(category: ResourceCategory) {
-    setHiddenCategories((current) => new Set([...current, category]));
+  function removeCategory(groupId: string, category: ResourceCategory) {
+    setHiddenKeys((current) => new Set([...current, `${groupId}:${category}`]));
     setStatus(t("{category} removed from the list.", { category: t(CATEGORY_LABELS[category]) }));
   }
 
   function restoreRemoved() {
-    setHiddenCategories(new Set()); setDismissed(new Set());
+    setHiddenKeys(new Set()); setDismissed(new Set());
     setStatus("Removed resources restored.");
   }
 
@@ -285,12 +313,7 @@ export default function ResourceFinder() {
     finally { setDownloading(false); downloadLock.current = false; }
   }
 
-  function printArea() {
-    const parts = address.split(",").map((part) => part.trim()).filter(Boolean);
-    return parts.length > 1 ? parts.slice(1).join(", ") : t("Clark County");
-  }
-
-  async function printList({ includeConversation, preparedBy }: { includeConversation: boolean; preparedBy: string }) {
+  async function printList({ includeConversation, preparedBy, includeAddresses }: { includeConversation: boolean; preparedBy: string; includeAddresses: boolean }) {
     if (!shortlist.length) return;
     let qrSvg: string | undefined;
     try {
@@ -302,11 +325,14 @@ export default function ResourceFinder() {
       chat.messages.forEach((message, index) => {
         const reply = chat.messages[index + 1];
         if (message.role !== "user" || reply?.role !== "assistant" || !reply.content) return;
-        conversation.push({ question: message.content, answer: shortenAnswer(reply.content), mentioned: mentionedIn(reply.content, resources).map((resource) => resource.name) });
+        const group = groupFor(index + 1, chat.messages, groups);
+        conversation.push({ question: message.content, answer: shortenAnswer(reply.content), mentioned: mentionedIn(reply.content, group?.resources ?? []).map((resource) => resource.name) });
       });
     }
+    const clusters = addressClusters(shortlist);
+    const area = clusters.length === 1 && clusters[0].address ? areaOf(clusters[0].address) : t("Clark County");
     const date = new Intl.DateTimeFormat(locale === "es" ? "es-US" : "en-US", { dateStyle: "long" }).format(new Date());
-    printHtml(t("Resident recommendations"), residentListDocument({ resources: shortlist, t, locale, area: printArea(), date, preparedBy, qrSvg, conversation }));
+    printHtml(t("Resident recommendations"), residentListDocument({ resources: shortlist, t, locale, area, date, preparedBy, qrSvg, conversation, includeAddresses }));
     setPrinting(false);
   }
 
@@ -317,33 +343,57 @@ export default function ResourceFinder() {
     printHtml(t("Countywide resource sheet"), residentListDocument({ resources: directory, t, locale, area: t("Clark County"), date }));
   }
 
-  const input = (addressOnly = false) => <ChatInput key={`${session}:${draft.revision}:${addressOnly}`} initialValue={draft.text} autoFocus={draft.revision > 0} spacious={home || addressOnly} addressOnly={addressOnly} disabled={busy || chat.busy} onStop={chat.busy ? chat.cancel : undefined} onCancel={addressOnly ? () => { request.current?.abort(); setBusy(false); setEditing(false); setPending(null); setError(""); } : undefined} onSend={(text, options) => sendFromInput(text, options, addressOnly)} placeholder={t(addressOnly ? "Enter a new resident address…" : result ? "Ask a follow-up, or enter a new address…" : "Enter an address or ask a question")} />;
+  function startAddressChange() {
+    setEditing(!editing); setPending(null); setError("");
+    setDraft((value) => ({ text: "", revision: value.revision + 1 }));
+  }
+
+  const input = (addressOnly = false) => <ChatInput key={`${session}:${draft.revision}:${addressOnly}`} initialValue={draft.text} autoFocus={draft.revision > 0} spacious={home || addressOnly} addressOnly={addressOnly} disabled={busy || chat.busy} onStop={chat.busy ? chat.cancel : undefined} onCancel={addressOnly ? () => { request.current?.abort(); setBusy(false); setEditing(false); setPending(null); setError(""); } : undefined} onSend={(text, options) => sendFromInput(text, options, addressOnly)} placeholder={t(addressOnly ? "Enter a new resident address…" : result ? "Ask a follow-up, or enter a new address…" : "@ to search address or ask a question")} />;
   const lookupFeedback = <>
     {busy && <p role="status" className="text-sm text-muted-foreground">{t("Checking internet plans and nearby programs…")}</p>}
     {error && <Alert variant="destructive"><AlertTitle>{t("Address lookup")}</AlertTitle><AlertDescription><p>{t(error)}</p><Button variant="outline" size="sm" onClick={() => void lookup(lastQuery)}>{t("Retry")}</Button></AlertDescription></Alert>}
-    {pending && <Alert><AlertTitle>{t("Confirm this address")}</AlertTitle><AlertDescription><p>{pending.address || pending.confirmAddress}</p><div className="flex flex-wrap gap-2"><Button size="sm" onClick={() => accept(pending, lastQuery)}>{t("Use this address")}</Button><Button size="sm" variant="outline" onClick={() => { setPending(null); if (lookupIntent.current.toTable) openPanel("needs"); else setDraft((value) => ({ text: lastQuery, revision: value.revision + 1 })); }}>{t("Edit address")}</Button></div></AlertDescription></Alert>}
+    {pending && <Alert><AlertTitle>{t("Confirm this address")}</AlertTitle><AlertDescription><p>{pending.address || pending.confirmAddress}</p><div className="flex flex-wrap gap-2"><Button size="sm" onClick={() => accept(pending, lastQuery)}>{t("Use this address")}</Button><Button size="sm" variant="outline" onClick={() => { setPending(null); if (lookupIntent.current.toTable && !tableView) openPanel("needs"); else setDraft((value) => ({ text: lastQuery, revision: value.revision + 1 })); }}>{t("Edit address")}</Button></div></AlertDescription></Alert>}
   </>;
-  const needsSummary = <button type="button" onClick={() => openPanel("needs")} aria-haspopup="dialog" className="bace-context-action self-start"><UsersRound className="size-4" aria-hidden="true" />{t(hasResidentNeeds ? "Resident needs · Edit" : "Add resident needs")}{hasResidentNeeds && <Check className="size-4 text-primary" aria-hidden="true" />}</button>;
   const listPanel = <SharePanel resources={shortlist} address={address} focus={focus} downloading={downloading} disabled={editing || busy} status={status === "Recommendations PDF prepared." || status === "Download failed. Please try again." ? status : ""} onRemove={toggle} onDownload={(includeAddress) => void download(includeAddress)} onPrint={() => setPrinting(true)} onOpenTable={result && !tableView ? openTable : undefined} />;
 
-  const resultsBlock = result ? <section className="bace-reply" aria-labelledby="finder-title">
-    <AssistantLabel />
-    <div className="bace-reply-intro">
-      <h1 ref={resultsHeading} id="finder-title" tabIndex={-1} className="bace-reply-title focus:outline-none">{t("Here's what I found near {address}.", { address: address.split(",")[0] })}</h1>
-      <p>{t("Internet plans, devices, and digital skills help are below. The first option in each is already in the resident's list; add or remove anything.")}</p>
-      {!result.found && <p className="text-muted-foreground">{t("We couldn't confirm internet plans for this address. This doesn't mean internet is unavailable; check with a provider. Device and training resources can still be explored.")}</p>}
-      <div className="flex flex-wrap items-center gap-x-1 text-sm text-muted-foreground"><MapPin className="size-4 shrink-0" aria-hidden="true" /><span className="min-w-0 break-words">{address}</span><span aria-hidden="true">·</span><button type="button" className="bace-inline-action" onClick={() => { setEditing(!editing); setPending(null); setError(""); setDraft((value) => ({ text: "", revision: value.revision + 1 })); }}>{t(editing ? "Cancel" : "Change address")}</button><span aria-hidden="true">·</span><button type="button" className="bace-inline-action" onClick={() => openPanel("browse")} aria-haspopup="dialog">{t("Showing:")} {t(scopeLabel)}</button></div>
-    </div>
-    <div key={address} className="flex flex-col gap-8">
-      {categories.filter((category) => !hiddenCategories.has(category)).map((category) => <ResourceSection key={category} category={category} resources={resources.filter((resource) => resource.category === category && !dismissed.has(resource.id))} selected={effectiveSelected} onToggle={toggle} onShare={shareResource} onReport={setReport} />)}
-      {!result.found && !!result.nearbyAddresses?.length && <details className="text-sm"><summary className="cursor-pointer font-medium text-primary">{t("Other address matches")}</summary><div className="flex flex-col gap-3 pt-3"><p className="text-muted-foreground">{t("Choosing a match changes the search address. Only use an address that is correct for the resident.")}</p>{result.nearbyAddresses.slice(0, 3).map((pick) => { const label = `${pick.addr}, ${pick.city}, ${pick.state} ${pick.zip}`; return <Button key={JSON.stringify(pick)} variant="outline" className="h-auto min-h-9 justify-start whitespace-normal text-left" disabled={busy || chat.busy} onClick={() => { pendingAnchor.current = chat.addUserMessage(label); void lookup(label, { exact: pick }); }}>{label}</Button>; })}</div></details>}
-    </div>
-    <div className="bace-response-share">
-      <p className="text-sm text-muted-foreground">{t("Share the {count} resources in the resident's list", { count: shortlist.length })}</p>
-      <ShareActions resources={shortlist} onPrint={() => setPrinting(true)} disabled={busy} />
-      <button type="button" className="bace-inline-action self-start" onClick={openTable}>{t("Open full results")} →</button>
-    </div>
-  </section> : null;
+  function resultsBlock(group: SearchGroup, isLatest: boolean) {
+    const { search } = group;
+    const data = search.result;
+    const prefix = isLatest ? "" : `${search.id}-`;
+    const groupResources = group.resources;
+    const categories = (focus === "all" || !isLatest ? CATEGORIES : CATEGORIES.filter((category) => category === focus)).slice().sort((a, b) => Number(!groupResources.some((resource) => resource.category === a)) - Number(!groupResources.some((resource) => resource.category === b)));
+    const Title = isLatest ? "h1" : "h2";
+    return <section className="bace-reply" aria-labelledby={isLatest ? "finder-title" : `reply-${search.id}`}>
+      <AssistantLabel />
+      <div className="bace-reply-intro">
+        <Title ref={isLatest ? resultsHeading : undefined} id={isLatest ? "finder-title" : `reply-${search.id}`} tabIndex={-1} className="bace-reply-title focus:outline-none">{t("Here's what I found near {address}.", { address: search.address.split(",")[0] })}</Title>
+        <p>{t(searches.length > 1 ? "These are added to the same resident's list as your earlier searches. Add or remove anything." : "Internet plans, devices, and digital skills help are below. The first option in each is already in the resident's list; add or remove anything.")}</p>
+        {!data.found && <p className="text-muted-foreground">{t("We couldn't confirm internet plans for this address. This doesn't mean internet is unavailable; check with a provider. Device and training resources can still be explored.")}</p>}
+        <div className="flex flex-wrap items-center gap-x-1 text-sm text-muted-foreground">
+          <MapPin className="size-4 shrink-0" aria-hidden="true" /><span className="min-w-0 break-words">{search.address}</span>
+          {isLatest && <><span aria-hidden="true">·</span><button type="button" className="bace-inline-action" onClick={startAddressChange}>{t(editing ? "Cancel" : "Change address")}</button><span aria-hidden="true">·</span><button type="button" className="bace-inline-action" onClick={() => openPanel("browse")} aria-haspopup="dialog">{t("Showing:")} {t(scopeLabel)}</button></>}
+        </div>
+      </div>
+      <div className="flex flex-col gap-8">
+        {categories.filter((category) => !hiddenKeys.has(`${search.id}:${category}`)).map((category) => <ResourceSection key={category} idPrefix={prefix} category={category} resources={groupResources.filter((resource) => resource.category === category && !dismissed.has(resource.id))} selected={effectiveSelected} onToggle={toggle} onShare={shareResource} onReport={setReport} />)}
+        {isLatest && !data.found && !!data.nearbyAddresses?.length && <details className="text-sm"><summary className="cursor-pointer font-medium text-primary">{t("Other address matches")}</summary><div className="flex flex-col gap-3 pt-3"><p className="text-muted-foreground">{t("Choosing a match changes the search address. Only use an address that is correct for the resident.")}</p>{data.nearbyAddresses.slice(0, 3).map((pick) => { const label = `${pick.addr}, ${pick.city}, ${pick.state} ${pick.zip}`; return <Button key={JSON.stringify(pick)} variant="outline" className="h-auto min-h-9 justify-start whitespace-normal text-left" disabled={busy || chat.busy} onClick={() => { pendingAnchor.current = chat.addUserMessage(label); lookupIntent.current = { question: "", scope: "all", original: "", toTable: false }; void lookup(label, { exact: pick }); }}>{label}</Button>; })}</div></details>}
+      </div>
+      {isLatest && <div className="bace-response-share">
+        <p className="text-sm text-muted-foreground">{t(searches.length > 1 ? "Share the {count} resources in the resident's list, grouped by address" : "Share the {count} resources in the resident's list", { count: shortlist.length })}</p>
+        <ShareActions resources={shortlist} onPrint={() => setPrinting(true)} disabled={busy} />
+        <button type="button" className="bace-inline-action self-start" onClick={openTable}>{t("Open full results")} →</button>
+      </div>}
+    </section>;
+  }
+
+  const anchors: Record<string, ReactNode> = {};
+  const unanchored: ReactNode[] = [];
+  const messageIds = new Set(chat.messages.map((message) => message.id));
+  groups.forEach((group, index) => {
+    const block = resultsBlock(group, index === groups.length - 1);
+    if (group.search.anchor && messageIds.has(group.search.anchor)) anchors[group.search.anchor] = block;
+    else unanchored.push(<div key={group.search.id} className="finder-chat-results">{block}</div>);
+  });
 
   const showAside = !!result && !home && !tableView;
 
@@ -373,17 +423,19 @@ export default function ResourceFinder() {
             onTour={() => { openPanel("help"); setTourRequested(true); }}
             onStarter={(prompt) => send(prompt)}
           /> : tableView ? <div className="flex flex-1 flex-col gap-8">
-            {(editing || busy || error || pending) && <div className="flex flex-col gap-4">{editing && input(true)}{lookupFeedback}</div>}
-            <ResultsTable resources={resources} address={address} selected={effectiveSelected} shortlist={shortlist} hiddenCategories={hiddenCategories} dismissed={dismissed} hasConversation={chat.messages.length > 0} needsSummary={needsSummary}
+            {editableTable && (editing || busy || error || pending) && <div className="flex flex-col gap-4">{editing && input(true)}{lookupFeedback}</div>}
+            <ResultsTable groups={groups.map((group) => ({ id: group.search.id, address: group.search.address, resources: group.resources }))} selected={effectiveSelected} shortlist={shortlist} hiddenKeys={hiddenKeys} dismissed={dismissed} editable={editableTable} needsApplied={hasResidentNeeds}
               onToggle={toggle} onShare={shareResource} onReport={setReport} onDismiss={(id) => setDismissed((current) => new Set([...current, id]))} onRemoveCategory={removeCategory} onRestore={restoreRemoved} onPrint={() => setPrinting(true)}
-              onBack={tableOrigin === "chat" ? () => setView("chat") : undefined} onChangeAddress={() => { setEditing(!editing); setPending(null); setError(""); }} />
-            {tableOrigin === "needs" && chat.messages.length > 0 && <div className="flex flex-col gap-3 border-t border-dashed border-border pt-6">
+              onBack={editableTable ? undefined : () => setView("chat")}
+              onChangeAddress={editableTable ? startAddressChange : undefined}
+              onEditNeeds={editableTable ? () => { setNeedsDraft(needs); openPanel("needs"); } : undefined} />
+            {editableTable && chat.messages.length > 0 && <div className="flex flex-col gap-3 border-t border-dashed border-border pt-6">
               <h2 className="text-base font-semibold">{t("Questions about these results")}</h2>
               <ResourceConversation key={`table-${session}`} chat={chat} />
             </div>}
           </div> : <div className="flex flex-1 flex-col gap-8">
             {!result && <h1 id="finder-title" className="sr-only">{t("Conversation")}</h1>}
-            <ResourceConversation key={session} chat={chat} anchorId={resultAnchor} anchorContent={resultsBlock} footer={<>{editing && <div className="flex flex-col gap-4">{input(true)}</div>}{lookupFeedback}</>} showFooter={editing || busy || !!error || !!pending} />
+            <ResourceConversation key={session} chat={chat} anchorId={resultAnchor} anchors={anchors} leading={unanchored.length ? unanchored : undefined} footer={<>{editing && <div className="flex flex-col gap-4">{input(true)}</div>}{lookupFeedback}</>} showFooter={editing || busy || !!error || !!pending} />
           </div>}
         </main>
         {home && <footer className="bace-home-footer">
@@ -394,7 +446,7 @@ export default function ResourceFinder() {
           <a href="tel:211" className="bace-footer-meta">{t("Social services 211")}</a>
         </footer>}
         {!home && editing && !tableView && <div className="bace-feedback pb-5"><Button variant="link" size="sm" onClick={() => setReport("general")}>{t("Report a problem")}</Button></div>}
-        {!home && !editing && !(tableView && tableOrigin === "chat") && <div className="finder-chat-dock"><div className="finder-chat-composer">{input()}<p className="bace-composer-note">{t("Check eligibility and availability with the provider.")} <button type="button" className="bace-inline-action" onClick={() => setReport("general")}>{t("Report a problem")}</button></p></div></div>}
+        {!home && !editing && !(tableView && !editableTable) && <div className="finder-chat-dock"><div className="finder-chat-composer">{input()}<p className="bace-composer-note">{t("Check eligibility and availability with the provider.")} <button type="button" className="bace-inline-action" onClick={() => setReport("general")}>{t("Report a problem")}</button></p></div></div>}
       </div>
       {showAside && listOpen && <aside id="resident-list-panel" className="bace-list-aside" aria-labelledby="list-aside-title">
         <div className="flex items-center justify-between gap-2">
@@ -409,7 +461,7 @@ export default function ResourceFinder() {
       </button>}
       <WorkspacePanel view={panel} hasResults={!!result} onViewChange={setPanel} onClose={() => { setPanel(null); setTourRequested(false); }} opener={panelOpener}>
         {panel === "help" && <HowToUse key={tourRequested ? "tour" : "intro"} startTour={tourRequested} />}
-        {panel === "browse" && <ResourceCategories resources={resources} focus={focus} onFocusChange={changeFocus} onJump={jump} onDone={() => { setShowHome(false); setPanel(null); }} />}
+        {panel === "browse" && <ResourceCategories resources={latestResources} focus={focus} onFocusChange={changeFocus} onJump={jump} onDone={() => setPanel(null)} />}
         {panel === "needs" && <ResidentNeeds draft={needsDraft} onChange={setNeedsDraft} address={needsAddress} onAddressChange={setNeedsAddress} onShowResources={showNeedsResults} busy={busy}
           onApply={() => { if (chat.busy) chat.cancel(); setNeeds(sanitizeNeeds(needsDraft)); setPanel(null); setStatus("Resident needs applied to future answers."); }}
           onClear={() => { if (chat.busy) chat.cancel(); setNeeds(EMPTY_NEEDS); setNeedsDraft(EMPTY_NEEDS); setStatus("Resident needs cleared."); }} />}
@@ -417,7 +469,7 @@ export default function ResourceFinder() {
       </WorkspacePanel>
       <span role="status" className="sr-only">{t(status)}</span>
       <ResetConfirmation addressFirst open={resetOpen} dontShowAgain={skipResetPrompt} onDontShowAgainChange={setSkipResetPrompt} onCancel={() => setResetOpen(false)} onConfirm={reset} onClosed={() => {}} />
-      {printing && <PrintDialog count={shortlist.length} hasConversation={hasConversation} onClose={() => setPrinting(false)} onPrint={printList} />}
+      {printing && <PrintDialog count={shortlist.length} hasConversation={hasConversation} addressCount={addressClusters(shortlist).filter((cluster) => cluster.address).length} onClose={() => setPrinting(false)} onPrint={printList} />}
       {report && <ReportIssue resource={report === "general" ? undefined : report} onClose={() => setReport(null)} />}
     </div>
   );

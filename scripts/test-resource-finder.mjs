@@ -284,3 +284,20 @@ test('printed resident list escapes content, lists help lines, and adds the conv
   assert.ok(withChat.includes('Questions and answers') && withChat.includes('AI assistant'));
   assert.ok(shortenAnswer('a '.repeat(400)).endsWith('…'));
 });
+
+test('lists across addresses stay grouped and only show full addresses when chosen', async () => {
+  const { recommendationsText: text, addressClusters: clusters } = await import('../lib/resource-finder.ts');
+  const t = (key, values = {}) => key.replace(/\{(\w+)\}/g, (_, name) => String(values[name] ?? ''));
+  const make = (id, searchId, searchAddress) => ({ id: `${searchId}::${id}`, category: 'devices', name: id, searchId, searchAddress, service: { name: id, type: 'Device Access Resources', phone: '(702) 555-0100', address: '1 Main St, Las Vegas, NV 89101', distanceMiles: 1 } });
+  const list = [make('Alpha', 's1', '1 First St, Las Vegas, NV 89101'), make('Beta', 's2', '2 Second Ave, Henderson, NV 89002')];
+  assert.equal(clusters(list).length, 2);
+  const shared = text(list, t);
+  assert.ok(shared.includes('Near Las Vegas, NV 89101') && shared.includes('Near Henderson, NV 89002'));
+  assert.ok(!shared.includes('1 First St') && !shared.includes('2 Second Ave'));
+  const withAddress = text(list, t, 'x');
+  assert.ok(withAddress.includes('1 First St, Las Vegas, NV 89101') && withAddress.includes('2 Second Ave, Henderson, NV 89002'));
+  const printed = residentListDocument({ resources: list, t, locale: 'en', area: 'Clark County', date: 'Nov 12, 2026' });
+  assert.ok(printed.includes('cluster-title') && printed.includes('Near Henderson, NV 89002') && !printed.includes('2 Second Ave'));
+  const printedFull = residentListDocument({ resources: list, t, locale: 'en', area: 'Clark County', date: 'Nov 12, 2026', includeAddresses: true });
+  assert.ok(printedFull.includes('2 Second Ave, Henderson, NV 89002'));
+});

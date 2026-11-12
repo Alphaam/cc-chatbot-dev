@@ -5,7 +5,16 @@ import type { LookupResponse } from "@/lib/resource-finder";
 import type { ResidentNeeds, ResourceFocus } from "@/lib/resident-needs";
 import type { ResourceMessage } from "./useResourceChat";
 
+export interface ResourceSearch {
+  id: string;
+  address: string;
+  result: LookupResponse;
+  anchor: string | null;
+}
+
 export interface ResourceMapSession {
+  searches?: ResourceSearch[];
+  allSelected?: string[];
   result: LookupResponse | null;
   address: string;
   focus: ResourceFocus;

@@ -847,3 +847,13 @@ select:not([multiple]):not([size]) {
 /* Keep fieldset headings inside their box instead of on the border */
 .bace-needs-section > [data-slot="field-legend"] { float: left; width: 100%; margin: 0 0 .75rem; padding: 0; }
 .bace-needs-section > [data-slot="field-legend"] + * { clear: both; }
+
+/* Multi-address and needs editing */
+.bace-needs-icon { position: relative; display: inline-flex; width: 2.75rem; height: 2.75rem; flex-shrink: 0; align-items: center; justify-content: center; border: 1px solid #c3d4ee; border-radius: 999px; background: #e8f0fb; color: var(--primary); transition: background 150ms, border-color 150ms; }
+.bace-needs-icon:hover { border-color: var(--primary); background: #dde8f8; }
+.resource-finder .bace-needs-icon svg { color: var(--primary); }
+.bace-needs-icon-dot { position: absolute; top: .375rem; right: .375rem; width: .5rem; height: .5rem; border: 2px solid #e8f0fb; border-radius: 999px; background: var(--internet); }
+.bace-table-group { display: flex; flex-direction: column; gap: 1rem; }
+.bace-table-group + .bace-table-group { border-top: 1px dashed var(--border); padding-top: 1.5rem; }
+.bace-list-address { display: flex; align-items: center; gap: .375rem; color: var(--foreground); font-size: .8125rem; font-weight: 600; line-height: 1.5; }
+.resource-finder .bace-list-address svg { color: var(--muted-foreground); }

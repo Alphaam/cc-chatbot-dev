@@ -29,6 +29,24 @@ export interface Resource {
   url?: string;
   plan?: Plan;
   service?: ServiceWithDistance;
+  searchId?: string;
+  searchAddress?: string;
+}
+
+export function areaOf(address: string) {
+  const parts = address.split(",").map((part) => part.trim()).filter(Boolean);
+  return parts.length > 1 ? parts.slice(1).join(", ") : address;
+}
+
+export function addressClusters(resources: Resource[]) {
+  const clusters: Array<{ id: string; address: string; resources: Resource[] }> = [];
+  for (const resource of resources) {
+    const id = resource.searchId ?? "";
+    let cluster = clusters.find((item) => item.id === id);
+    if (!cluster) { cluster = { id, address: resource.searchAddress ?? "", resources: [] }; clusters.push(cluster); }
+    cluster.resources.push(resource);
+  }
+  return clusters;
 }
 export interface LookupResponse {
   planGroups: PlanGroups | null;
@@ -183,19 +201,18 @@ export function recommendationsText(
   t: Translate,
   address?: string,
 ) {
+  const byCategory = (items: Resource[]) => CATEGORIES.flatMap((category) => {
+    const matches = items.filter((resource) => resource.category === category);
+    return matches.length
+      ? [`${t(CATEGORY_LABELS[category])}\n\n${matches.map((resource) => resourceText(resource, t)).join("\n\n")}`]
+      : [];
+  });
+  const clusters = addressClusters(resources);
   return [
     t("Clark County digital resources"),
-    ...(address ? [`${t("Current address")}: ${address}`] : []),
-    ...CATEGORIES.flatMap((category) => {
-      const matches = resources.filter(
-        (resource) => resource.category === category,
-      );
-      return matches.length
-        ? [
-            `${t(CATEGORY_LABELS[category])}\n\n${matches.map((resource) => resourceText(resource, t)).join("\n\n")}`,
-          ]
-        : [];
-    }),
+    ...(clusters.length > 1
+      ? clusters.map((cluster) => `${address ? cluster.address : t("Near {place}", { place: areaOf(cluster.address) })}\n\n${byCategory(cluster.resources).join("\n\n")}`)
+      : [...(address ? [`${t("Current address")}: ${clusters[0]?.address || address}`] : []), ...byCategory(resources)]),
     t(
       "Directory matches only. Contact each provider to confirm availability, cost, and eligibility. Service receipt is not confirmed.",
     ),
@@ -207,7 +224,7 @@ export function resourceCaseNote(resources: Resource[], t: Translate, address?: 
     `${t("Search query")}: ${t("Internet, device access, and digital skills resources")}`,
     ...(address ? [`${t("Current address")}: ${address}`] : []),
     `${t("Selected resources")}:`,
-    ...resources.map((resource) => `- ${resource.name} · ${t(CATEGORY_LABELS[resource.category])}${resource.url ? ` | ${resource.url}` : ""}`),
+    ...resources.map((resource) => `- ${resource.name} · ${t(CATEGORY_LABELS[resource.category])}${addressClusters(resources).length > 1 && resource.searchAddress ? ` · ${t("Near {place}", { place: address ? resource.searchAddress : areaOf(resource.searchAddress) })}` : ""}${resource.url ? ` | ${resource.url}` : ""}`),
     `${t("Status")}: ${t("Directory match only. Referral completion and service receipt are unconfirmed.")}`,
   ].join("\n");
 }

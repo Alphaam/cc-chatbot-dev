@@ -23,7 +23,7 @@ export default function ResourceHome({ input, feedback, onNeeds, onTour, onStart
       </div>
       <div className="bace-home-search">
         {input}
-        <p className="bace-home-helper">{t("Type an address to see nearby resources, or ask the assistant a question.")}</p>
+        <p className="bace-home-helper">{t("Type an address to see nearby resources, ask the assistant a question or")}</p>
         {feedback}
         <button type="button" className="bace-needs-entry" onClick={onNeeds} aria-haspopup="dialog">
           <ClipboardCheck className="size-4 shrink-0" aria-hidden="true" />
