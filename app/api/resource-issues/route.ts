@@ -1,4 +1,4 @@
-import { issuesDb, resourceIssueReports } from "@/lib/resource-issues-db";
+import { ensureIssuesTable, issuesDb, resourceIssueReports } from "@/lib/resource-issues-db";
 import { ISSUE_REASONS } from "@/lib/resource-finder";
 
 export async function POST(request: Request) {
@@ -55,11 +55,12 @@ export async function POST(request: Request) {
       !bounded(
         input.details,
         2000,
-        input.category === "general" || input.reason === "other" ? 1 : 0,
+        input.category === "general" ? 1 : 0,
       )
     ) {
       return Response.json({ error: "Invalid report fields" }, { status: 400 });
     }
+    await ensureIssuesTable();
     await issuesDb
       .insert(resourceIssueReports)
       .values({

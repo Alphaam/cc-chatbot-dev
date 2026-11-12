@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { desc } from "drizzle-orm";
 import { Button } from "@/components/ui/button";
-import { issuesDb, resourceIssueReports } from "@/lib/resource-issues-db";
+import { ensureIssuesTable, issuesDb, resourceIssueReports } from "@/lib/resource-issues-db";
 import { ISSUE_REASONS } from "@/lib/resource-finder";
 import { requireReportReviewer, updateReportStatus } from "./actions";
 
@@ -16,6 +16,7 @@ export default async function IssueReviewPage({
     0,
     Math.min(10000, Number.parseInt(query.page || "0", 10) || 0),
   );
+  await ensureIssuesTable();
   const reports = await issuesDb
     .select()
     .from(resourceIssueReports)
