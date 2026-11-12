@@ -18,9 +18,15 @@ export function useOpenResourceMap(snapshot: ResourceMapSession, disabled = fals
   return { count, open };
 }
 
-export default function ResourceMapLink({ snapshot, disabled = false }: { snapshot: ResourceMapSession; disabled?: boolean }) {
+export default function ResourceMapLink({ snapshot, disabled = false, variant = "rail" }: { snapshot: ResourceMapSession; disabled?: boolean; variant?: "rail" | "header" }) {
   const { t } = useLanguage();
   const { count, open } = useOpenResourceMap(snapshot, disabled);
+  if (variant === "header") return (
+    <Link href="/map" className="bace-header-link" aria-label={count ? t("Open resource map ({count} resources)", { count }) : t("Open resource map")} aria-disabled={disabled || undefined}
+      onNavigate={(event) => { event.preventDefault(); open(); }}>
+      {t("Map")}
+    </Link>
+  );
   return (
     <Link href="/map" className="bace-rail-action" aria-label={count ? t("Open resource map ({count} resources)", { count }) : t("Open resource map")} title={count ? t("Resource map ({count} resources)", { count }) : t("Resource map")} aria-disabled={disabled || undefined}
       onNavigate={(event) => { event.preventDefault(); open(); }}>

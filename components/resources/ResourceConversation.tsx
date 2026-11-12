@@ -5,10 +5,14 @@ import { useLanguage } from "@/components/chat/LanguageProvider";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
-import { Message, MessageContent, MessageHeader } from "@/components/ui/message";
+import { Wifi } from "lucide-react";
+import { Message, MessageContent } from "@/components/ui/message";
 import { MessageScrollerProvider, MessageScroller, MessageScrollerContent, MessageScrollerItem, MessageScrollerViewport } from "@/components/ui/message-scroller";
 import type { useResourceChat } from "./useResourceChat";
-import { CATEGORY_LABELS } from "@/lib/resource-finder";
+
+export function AssistantLabel() {
+  return <span className="bace-assistant-head"><span className="bace-avatar" aria-hidden="true"><Wifi className="size-3.5" /></span>BACE Hub</span>;
+}
 
 function ReplyText({ text }: { text: string }) {
   return text.split(/(\*\*[^*]+\*\*)/g).map((part, index) => part.startsWith("**")
@@ -16,18 +20,18 @@ function ReplyText({ text }: { text: string }) {
     : <Fragment key={index}>{part}</Fragment>);
 }
 
-export default function ResourceConversation({ chat, anchorId, anchorContent, footer, showFooter = false }: {
+export default function ResourceConversation({ chat, anchorId, anchors = {}, leading, footer, showFooter = false }: {
   chat: ReturnType<typeof useResourceChat>;
   anchorId?: string | null;
-  anchorContent?: ReactNode;
+  anchors?: Record<string, ReactNode>;
+  leading?: ReactNode;
   footer?: ReactNode;
   showFooter?: boolean;
 }) {
   const { t } = useLanguage();
   const latest = chat.messages.at(-1);
   const latestLength = latest?.content.length ?? 0;
-  const anchorFound = !!anchorId && chat.messages.some((message) => message.id === anchorId);
-  const hasAnchorContent = !!anchorContent;
+  const hasAnchorContent = !!anchorId && !!anchors[anchorId];
 
   useEffect(() => {
     const root = document.documentElement;
@@ -39,7 +43,7 @@ export default function ResourceConversation({ chat, anchorId, anchorContent, fo
     document.getElementById(`message-${anchorId}`)?.scrollIntoView({ block: "start", behavior: "instant" });
   }, [anchorId, hasAnchorContent]);
 
-  if (!chat.messages.length && !chat.failed && !anchorContent && !showFooter) return null;
+  if (!chat.messages.length && !chat.failed && !leading && !showFooter) return null;
 
   return (
     <section aria-label={t("Conversation")} className="finder-page-conversation">
@@ -47,14 +51,14 @@ export default function ResourceConversation({ chat, anchorId, anchorContent, fo
         <MessageScroller>
           <MessageScrollerViewport aria-label={t("Conversation")}>
             <MessageScrollerContent>
-              {!anchorFound && anchorContent && <div className="finder-chat-results">{anchorContent}</div>}
+              {leading}
               {chat.messages.map((message) => (
                 <Fragment key={message.id}>
                   <MessageScrollerItem messageId={message.id} id={`message-${message.id}`}>
                     <Message align={message.role === "user" ? "end" : "start"}>
                       <MessageContent>
-                        <MessageHeader>{message.role === "user" ? t("You") : "BACE Hub"}{message.role === "assistant" && message.scope && <span className="font-normal text-muted-foreground"> · {t(message.scope === "all" ? "All resources" : CATEGORY_LABELS[message.scope])}</span>}</MessageHeader>
-                        <Bubble variant={message.role === "user" ? "secondary" : "ghost"}>
+                        {message.role === "user" ? <span className="sr-only">{t("You")}</span> : <AssistantLabel />}
+                        <Bubble variant={message.role === "user" ? "default" : "ghost"}>
                           <BubbleContent>
                             <p lang={message.locale} className="whitespace-pre-wrap break-words"><ReplyText text={message.content || t(message.incomplete ? "Reply stopped." : "Thinking…")} /></p>
                             {message.incomplete && message.content && <p className="text-sm text-muted-foreground">{t("Reply stopped.")}</p>}
@@ -63,7 +67,7 @@ export default function ResourceConversation({ chat, anchorId, anchorContent, fo
                       </MessageContent>
                     </Message>
                   </MessageScrollerItem>
-                  {message.id === anchorId && anchorContent && <div className="finder-chat-results">{anchorContent}</div>}
+                  {anchors[message.id] && <div className="finder-chat-results">{anchors[message.id]}</div>}
                 </Fragment>
               ))}
               {chat.failed && <Alert><AlertDescription>

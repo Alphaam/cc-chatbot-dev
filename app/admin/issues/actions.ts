@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { getAdminToken } from "@/lib/admin-auth";
-import { issuesDb, resourceIssueReports } from "@/lib/resource-issues-db";
+import { ensureIssuesTable, issuesDb, resourceIssueReports } from "@/lib/resource-issues-db";
 
 export async function requireReportReviewer() {
   const secret = process.env.ADMIN_SECRET;
@@ -27,6 +27,7 @@ export async function updateReportStatus(form: FormData) {
     !["new", "reviewing", "resolved"].includes(status)
   )
     throw new Error("Invalid report status");
+  await ensureIssuesTable();
   await issuesDb
     .update(resourceIssueReports)
     .set({ status })
