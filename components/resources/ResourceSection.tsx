@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, ExternalLink, Wifi, Laptop, GraduationCap } from "lucide-react";
+import { Copy, ExternalLink, Wifi, Laptop, GraduationCap, X } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -21,7 +21,37 @@ import {
   type Resource,
   type ResourceCategory,
 } from "@/lib/resource-finder";
-import { toNumber } from "@/lib/plan-utils";
+import { speedUseGuidance, toNumber } from "@/lib/plan-utils";
+
+export type ResourceSort = "price" | "speed" | "distance" | "name";
+export const SORT_OPTIONS: Record<ResourceCategory, Array<{ value: ResourceSort; label: string }>> = {
+  internet: [{ value: "price", label: "Cheapest first" }, { value: "speed", label: "Fastest first" }, { value: "name", label: "Name: A to Z" }],
+  devices: [{ value: "distance", label: "Nearest first" }, { value: "name", label: "Name: A to Z" }],
+  skills: [{ value: "distance", label: "Nearest first" }, { value: "name", label: "Name: A to Z" }],
+};
+export const defaultSort = (category: ResourceCategory): ResourceSort => SORT_OPTIONS[category][0].value;
+
+export function sortResources(resources: Resource[], sort: ResourceSort) {
+  return resources.slice().sort((a, b) => {
+    if (sort === "name") return a.name.localeCompare(b.name);
+    if (sort === "speed") return ((toNumber(b.plan?.downloadMbps ?? "") ?? -1) - (toNumber(a.plan?.downloadMbps ?? "") ?? -1)) || a.name.localeCompare(b.name);
+    const first = sort === "price" ? toNumber(a.plan?.price ?? "") : a.service?.distanceMiles;
+    const second = sort === "price" ? toNumber(b.plan?.price ?? "") : b.service?.distanceMiles;
+    return ((first ?? Infinity) - (second ?? Infinity)) || a.name.localeCompare(b.name);
+  });
+}
+
+export function SortSelect({ category, value, onChange }: { category: ResourceCategory; value: ResourceSort; onChange: (sort: ResourceSort) => void }) {
+  const { t } = useLanguage();
+  return (
+    <label className="bace-sort">
+      <span className="text-sm text-muted-foreground">{t("Sort")}</span>
+      <select aria-label={`${t("Sort resources")}: ${t(CATEGORY_LABELS[category])}`} value={value} onChange={(event) => onChange(event.target.value as ResourceSort)}>
+        {SORT_OPTIONS[category].map((option) => <option key={option.value} value={option.value}>{t(option.label)}</option>)}
+      </select>
+    </label>
+  );
+}
 
 export default function ResourceSection({
   category,
@@ -43,7 +73,7 @@ export default function ResourceSection({
   const [expanded, setExpanded] = useState(false);
   const [budget, setBudget] = useState("");
   const [noContract, setNoContract] = useState(false);
-  const [sort, setSort] = useState("default");
+  const [sort, setSort] = useState<ResourceSort>(defaultSort(category));
   const filtered = resources.filter(
     ({ plan }) =>
       !plan ||
@@ -52,12 +82,7 @@ export default function ResourceSection({
           toNumber(plan.price)! <= Number(budget))) &&
         (!noContract || plan.contract === "N")),
   );
-  const ordered = sort === "default" ? filtered : filtered.slice().sort((a, b) => {
-    if (sort === "name") return a.name.localeCompare(b.name);
-    const first = sort === "price" ? toNumber(a.plan?.price ?? "") : a.service?.distanceMiles;
-    const second = sort === "price" ? toNumber(b.plan?.price ?? "") : b.service?.distanceMiles;
-    return ((first ?? Infinity) - (second ?? Infinity)) || a.name.localeCompare(b.name);
-  });
+  const ordered = sortResources(filtered, sort);
   const shown = expanded ? ordered : ordered.slice(0, 4);
   return (
     <section
@@ -73,14 +98,7 @@ export default function ResourceSection({
             {t(CATEGORY_LABELS[category])}
             <span className="text-sm font-normal tabular-nums text-muted-foreground">{resources.length}</span>
           </h2>
-          {resources.length > 1 && <label className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span className="sr-only">{t("Sort resources")}: {t(CATEGORY_LABELS[category])}</span>
-            <select aria-label={`${t("Sort resources")}: ${t(CATEGORY_LABELS[category])}`} value={sort} onChange={(event) => setSort(event.target.value)} className="min-h-10 max-w-44 rounded-lg border-0 bg-background px-2 text-sm text-muted-foreground">
-              <option value="default">{t("Default order")}</option>
-              <option value={category === "internet" ? "price" : "distance"}>{t(category === "internet" ? "Price: low to high" : "Distance: nearest first")}</option>
-              <option value="name">{t("Name: A to Z")}</option>
-            </select>
-          </label>}
+          {resources.length > 1 && <SortSelect category={category} value={sort} onChange={setSort} />}
         </div>
         {category === "internet" && resources.length > 0 && (
           <details className="rounded-lg border border-border bg-card px-4 py-3 text-card-foreground">
@@ -176,23 +194,26 @@ export default function ResourceSection({
   );
 }
 
-function ResourceRow({
+export function ResourceRow({
   resource,
   selected,
   onToggle,
   onShare,
   onReport,
+  onDismiss,
 }: {
   resource: Resource;
   selected: boolean;
   onToggle: () => void;
   onShare: () => void;
   onReport: () => void;
+  onDismiss?: () => void;
 }) {
   const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
   const plan = resource.plan;
   const service = resource.service;
+  const useLine = plan ? speedUseGuidance(plan.downloadMbps, plan.uploadMbps) : null;
   async function copy() {
     try {
       await navigator.clipboard.writeText(resourceText(resource, t));
@@ -222,10 +243,12 @@ function ResourceRow({
                   <p className="text-sm text-muted-foreground">{plan.downloadMbps} Mbps {t("download")}</p>
                 </div>
               )}
+              {onDismiss && <Button size="icon-sm" variant="ghost" className="bace-card-dismiss -mt-1 -mr-2 shrink-0" onClick={onDismiss} aria-label={t("Remove {name} from results", { name: resource.name })} title={t("Remove from results")}><X aria-hidden="true" /></Button>}
             </div>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col gap-4">
+              {plan && useLine && <p className="bace-plan-use text-sm leading-relaxed">{t(useLine)}</p>}
               {service?.description && (
                 <div className="flex flex-col gap-1 text-sm leading-relaxed">
                   <p className="font-semibold text-muted-foreground">{t("About this program")}</p>
@@ -254,7 +277,6 @@ function ResourceRow({
                         <Copy data-icon="inline-start" aria-hidden="true" />{t(copied ? "Copied" : "Copy details")}
                       </Button>
                       <Button size="sm" variant="outline" onClick={onShare}>{t("Review share list")}</Button>
-                      <Button size="sm" variant="ghost" onClick={onReport}>{t("Report an issue")}</Button>
                     </div>
                   </div>
                 </div>
@@ -273,6 +295,7 @@ function ResourceRow({
                 <ExternalLink data-icon="inline-end" aria-hidden="true" />
               </a>
             )}
+            <button type="button" className="bace-card-report" onClick={onReport}>{t("Report a problem")}<span className="sr-only">: {resource.name}</span></button>
           </CardFooter>
           {copied && <span role="status" className="sr-only">{t("Details copied.")}</span>}
         </Card>

@@ -16,6 +16,10 @@ export interface ResourceMapSession {
   showHome: boolean;
   lastQuestion?: string;
   resultAnchor?: string | null;
+  optOut?: string[];
+  hiddenCategories?: string[];
+  dismissed?: string[];
+  view?: "chat" | "table";
 }
 
 export function useResourceMapSession() {

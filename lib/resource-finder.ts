@@ -220,9 +220,9 @@ export function categoryCounts(resources: Resource[]) {
 }
 
 export const ISSUE_REASONS = {
-  "incorrect-details": "Incorrect contact or program details",
-  unavailable: "Resource is no longer available",
-  "broken-link": "Website link does not work",
+  "incorrect-details": "Wrong phone or address",
+  "broken-link": "Broken link",
+  unavailable: "Closed or full",
   eligibility: "Eligibility or price is incorrect",
   other: "Something else",
 } as const;

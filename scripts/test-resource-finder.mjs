@@ -14,7 +14,7 @@ import {
 } from "../lib/resource-finder.ts";
 import { translate } from "../lib/i18n.ts";
 import { sanitizeNeeds, needsContext, hasNeeds, EMPTY_NEEDS, inferResourceFocus, splitResourceRequest } from "../lib/resident-needs.ts";
-import { resourcePrintDocument } from "../lib/resource-print.ts";
+import { resourcePrintDocument, residentListDocument, shortenAnswer } from "../lib/resource-print.ts";
 import { speedUseGuidance } from "../lib/plan-utils.ts";
 
 test("speed guidance explains activities without inventing missing performance", () => {
@@ -270,4 +270,17 @@ test("website links reject unsafe schemes", () => {
   assert.equal(safeWebsite("data:text/html,test"), undefined);
   assert.equal(safeWebsite("invalid URL"), undefined);
   assert.equal(safeWebsite("https://example.org"), "https://example.org/");
+});
+
+test('printed resident list escapes content, lists help lines, and adds the conversation page only when chosen', () => {
+  const t = (key, values = {}) => key.replace(/\{(\w+)\}/g, (_, name) => String(values[name] ?? ''));
+  const resources = [{ id: 'd', category: 'devices', name: '<Laptop> Bank', service: { name: '<Laptop> Bank', type: 'Device Access Resources', phone: '(702) 555-0100', address: '1 Main St, Las Vegas, NV 89101', distanceMiles: 1.2 } }];
+  const listOnly = residentListDocument({ resources, t, locale: 'en', area: 'Las Vegas, NV 89101', date: 'Nov 11, 2026', preparedBy: 'Maria' });
+  assert.ok(listOnly.includes('&lt;Laptop&gt; Bank') && !listOnly.includes('<Laptop>'));
+  assert.ok(listOnly.includes('(702) 555-0100') && listOnly.includes('911') && listOnly.includes('988') && listOnly.includes('211'));
+  assert.ok(listOnly.includes('Prepared by Maria'));
+  assert.ok(!listOnly.includes('Questions and answers'));
+  const withChat = residentListDocument({ resources, t, locale: 'en', area: 'Las Vegas', date: 'Nov 11, 2026', conversation: [{ question: 'Any laptops?', answer: shortenAnswer('**Yes.** ' + 'x'.repeat(500)), mentioned: ['<Laptop> Bank'] }] });
+  assert.ok(withChat.includes('Questions and answers') && withChat.includes('AI assistant'));
+  assert.ok(shortenAnswer('a '.repeat(400)).endsWith('…'));
 });

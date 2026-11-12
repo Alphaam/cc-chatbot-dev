@@ -13,6 +13,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { useLanguage } from "@/components/chat/LanguageProvider";
 import { ISSUE_REASONS, type Resource } from "@/lib/resource-finder";
 
+const REPORT_CHOICES = {
+  "incorrect-details": ISSUE_REASONS["incorrect-details"],
+  "broken-link": ISSUE_REASONS["broken-link"],
+  unavailable: ISSUE_REASONS.unavailable,
+  other: ISSUE_REASONS.other,
+};
+
 export default function ReportIssue({
   resource,
   onClose,
@@ -66,16 +73,14 @@ export default function ReportIssue({
     >
       <Dialog.Portal>
         <Dialog.Backdrop className="fixed inset-0 bg-foreground/40" />
-        <Dialog.Popup className="fixed top-1/2 left-1/2 max-h-[90dvh] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl border border-border bg-background p-5 text-foreground shadow-lg">
+        <Dialog.Popup className="resource-finder font-sans fixed top-1/2 left-1/2 max-h-[90dvh] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl border border-border bg-background p-5 text-foreground shadow-lg">
           <div className="flex flex-col gap-5">
             <div className="flex flex-col gap-2">
               <Dialog.Title className="text-xl font-semibold">
                 {t(
                   submitted
                     ? "Report received"
-                    : resource
-                      ? "Report an issue"
-                      : "Give feedback",
+                    : "Report a problem",
                 )}
               </Dialog.Title>
               <Dialog.Description className="text-sm leading-relaxed text-muted-foreground">
@@ -92,34 +97,22 @@ export default function ReportIssue({
             ) : (
               <form onSubmit={submit}>
                 <FieldGroup>
-                  <Field data-disabled={busy}>
-                    <FieldLabel htmlFor="issue-reason">
-                      {t("What needs attention?")}
-                    </FieldLabel>
-                    <select
-                      id="issue-reason"
-                      disabled={busy}
-                      value={reason}
-                      onChange={(event) => setReason(event.target.value)}
-                      className="min-h-11 rounded-lg border border-input bg-background px-3 text-sm text-foreground"
-                    >
-                      {Object.entries(
-                        resource
-                          ? ISSUE_REASONS
-                          : {
-                              bug: "A bug in the tool",
-                              other: "Other feedback",
-                            },
-                      ).map(([value, label]) => (
-                        <option key={value} value={value}>
-                          {t(label)}
-                        </option>
-                      ))}
-                    </select>
-                  </Field>
+                  <fieldset className="flex flex-col gap-2" disabled={busy}>
+                    <legend className="pb-2 text-sm font-medium">{t("What's wrong?")}</legend>
+                    {Object.entries(
+                      resource
+                        ? REPORT_CHOICES
+                        : { bug: "A bug in the tool", other: "Other feedback" },
+                    ).map(([value, label]) => (
+                      <label key={value} className="bace-print-option" data-checked={reason === value}>
+                        <input type="radio" name="issue-reason" value={value} checked={reason === value} onChange={() => setReason(value)} className="size-4 accent-primary" />
+                        <span className="text-sm font-medium">{t(label)}</span>
+                      </label>
+                    ))}
+                  </fieldset>
                   <Field data-disabled={busy}>
                     <FieldLabel htmlFor="issue-details">
-                      {t("Additional details")}
+                      {t(resource ? "Details (optional)" : "Additional details")}
                     </FieldLabel>
                     <Textarea
                       id="issue-details"
@@ -127,7 +120,7 @@ export default function ReportIssue({
                       value={details}
                       onChange={(event) => setDetails(event.target.value)}
                       maxLength={2000}
-                      required={!resource || reason === "other"}
+                      required={!resource}
                       rows={4}
                       aria-describedby="issue-privacy"
                     />
@@ -142,6 +135,9 @@ export default function ReportIssue({
                       {t(error)}
                     </p>
                   )}
+                  <p className="rounded-xl bg-accent px-4 py-3 text-sm leading-relaxed">
+                    {t("The hub team reviews reports within 2 business days.")}
+                  </p>
                   <div className="flex justify-end gap-2">
                     <Dialog.Close
                       disabled={busy}
@@ -150,7 +146,7 @@ export default function ReportIssue({
                       {t("Cancel")}
                     </Dialog.Close>
                     <Button type="submit" disabled={busy}>
-                      {t(busy ? "Submitting…" : "Submit report")}
+                      {t(busy ? "Sending…" : "Send to the hub team")}
                     </Button>
                   </div>
                 </FieldGroup>

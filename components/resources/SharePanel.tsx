@@ -1,49 +1,51 @@
 "use client";
 
 import { useState } from "react";
-import { Share2, X, ArrowUpRight, FileText, Download, Printer } from "lucide-react";
+import { ListChecks, X, Table2, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { useLanguage } from "@/components/chat/LanguageProvider";
-import { CATEGORY_LABELS, recommendationsText, type Resource } from "@/lib/resource-finder";
-import { printResourceText } from "@/lib/resource-print";
+import { CATEGORIES, CATEGORY_LABELS, type Resource } from "@/lib/resource-finder";
 import type { ResourceFocus } from "@/lib/resident-needs";
 import ShareRecommendations from "./ShareRecommendations";
+import ShareActions from "./ShareActions";
 
-export function SharePanel({ resources, address, focus, downloading, disabled, status, onRemove, onDownload }: {
+export function SharePanel({ resources, address, focus, downloading, disabled, status, onRemove, onDownload, onPrint, onOpenTable }: {
   resources: Resource[]; address: string; focus: ResourceFocus; downloading: boolean; disabled: boolean; status: string;
-  onRemove: (id: string) => void; onDownload: (includeAddress: boolean) => void;
+  onRemove: (id: string) => void; onDownload: (includeAddress: boolean) => void; onPrint: () => void; onOpenTable?: () => void;
 }) {
-  const { t, locale } = useLanguage();
-  const [preview, setPreview] = useState<"list" | "note" | null>(null);
-  if (preview && resources.length) return <ShareRecommendations resources={resources} address={address} note={preview === "note"} downloading={downloading} onDownload={onDownload} onClose={() => setPreview(null)} />;
+  const { t } = useLanguage();
+  const [preview, setPreview] = useState(false);
+  if (preview && resources.length) return <ShareRecommendations resources={resources} address={address} downloading={downloading} onDownload={onDownload} onClose={() => setPreview(false)} />;
   return (
     <div className="flex flex-col gap-5">
-      <p className="text-sm leading-relaxed text-muted-foreground">{t("Your handoff, your choice. Only resources you select are included.")}</p>
+      <p className="text-sm leading-relaxed text-muted-foreground">{t("Only resources in this list are printed or shared.")}</p>
       {!resources.length ? <Empty className="border border-dashed border-border py-10"><EmptyHeader>
-        <Share2 className="mx-auto size-6 text-muted-foreground" aria-hidden="true" />
-        <EmptyTitle>{t("Your share list starts here")}</EmptyTitle>
-        <EmptyDescription>{t("Select Add to share list on any resource. Come back here to review and send it.")}</EmptyDescription>
-      </EmptyHeader></Empty> : <>
-        <h3 className="text-sm font-semibold">{t("Selected resources")} ({resources.length})</h3>
-        <ul className="flex flex-col gap-3">{resources.map((resource) => <li key={resource.id} className="flex items-start justify-between rounded-xl border border-border p-3">
-          <div className="flex min-w-0 flex-col gap-1">
-            <p className="text-sm font-medium leading-relaxed">{resource.name}</p>
-            <p className="text-sm text-muted-foreground">{t(CATEGORY_LABELS[resource.category])}</p>
-            {focus !== "all" && focus !== resource.category && <p className="text-sm text-muted-foreground">{t("Saved from another view")}</p>}
-          </div>
-          <Button size="icon" variant="ghost" onClick={() => onRemove(resource.id)} aria-label={t("Remove {name} from share list", { name: resource.name })}><X aria-hidden="true" /></Button>
-        </li>)}</ul>
-        <p className="text-sm leading-relaxed text-muted-foreground">{t("Changing your view never changes this list.")}</p>
-        <div className="flex flex-col gap-2">
-          <Button disabled={disabled} onClick={() => setPreview("list")}>{t("Share resource list")}<ArrowUpRight data-icon="inline-end" aria-hidden="true" /></Button>
-          <Button variant="outline" disabled={disabled || downloading} onClick={() => onDownload(false)}><Download data-icon="inline-start" aria-hidden="true" />{t(downloading ? "Preparing PDF…" : "Download resource list (PDF)")}</Button>
-          <Button variant="outline" disabled={disabled} onClick={() => printResourceText(t("Resident recommendations"), recommendationsText(resources, t), locale)}><Printer data-icon="inline-start" aria-hidden="true" />{t("Print resources")}</Button>
-          <Button variant="ghost" disabled={disabled} onClick={() => setPreview("note")}><FileText data-icon="inline-start" aria-hidden="true" />{t("Share case note")}</Button>
-          <p className="text-sm leading-relaxed text-muted-foreground">{t("Copy, email, and text are available in Share resource list. Quick download and print exclude the address.")}</p>
-        </div>
-      </>}
-      <p role="status" className="text-sm text-primary">{t(status)}</p>
+        <ListChecks className="mx-auto size-6 text-muted-foreground" aria-hidden="true" />
+        <EmptyTitle>{t("The resident's list is empty")}</EmptyTitle>
+        <EmptyDescription>{t("Select Add to share list on any resource to build the list.")}</EmptyDescription>
+      </EmptyHeader></Empty> : <div className="flex flex-col gap-4">
+        {CATEGORIES.map((category) => {
+          const items = resources.filter((resource) => resource.category === category);
+          if (!items.length) return null;
+          return <section key={category} data-category={category} className="bace-list-group" aria-labelledby={`list-${category}`}>
+            <h3 id={`list-${category}`} className="bace-list-group-title">{t(CATEGORY_LABELS[category])}<span className="tabular-nums">{items.length}</span></h3>
+            <ul className="flex flex-col">{items.map((resource) => <li key={resource.id} className="bace-list-item">
+              <div className="flex min-w-0 flex-col">
+                <p className="text-sm font-medium leading-relaxed">{resource.name}</p>
+                {focus !== "all" && focus !== resource.category && <p className="text-sm text-muted-foreground">{t("Saved from another view")}</p>}
+              </div>
+              <Button size="icon" variant="ghost" className="shrink-0" onClick={() => onRemove(resource.id)} aria-label={t("Remove {name} from share list", { name: resource.name })}><X aria-hidden="true" /></Button>
+            </li>)}</ul>
+          </section>;
+        })}
+      </div>}
+      <ShareActions resources={resources} onPrint={onPrint} disabled={disabled} />
+      <div className="flex flex-wrap gap-2">
+        {onOpenTable && <Button variant="outline" size="sm" onClick={onOpenTable}><Table2 data-icon="inline-start" aria-hidden="true" />{t("Open full results")}</Button>}
+        {resources.length > 0 && <Button variant="ghost" size="sm" disabled={disabled} onClick={() => setPreview(true)}><SlidersHorizontal data-icon="inline-start" aria-hidden="true" />{t("Preview and more options")}</Button>}
+      </div>
+      <p role="status" className="text-sm text-primary empty:hidden">{t(status)}</p>
     </div>
   );
 }
