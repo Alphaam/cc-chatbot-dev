@@ -97,6 +97,8 @@ export const redesignSpanish: Record<string, string> = {
   "Crisis 988": "Crisis 988",
   "Social services 211": "Servicios sociales 211",
   "In resident's list": "En la lista del residente",
+  "Minimize resident's list": "Minimizar la lista del residente",
+  "Open resident's list ({count} resources)": "Abrir la lista del residente ({count} recursos)",
   "Add to list": "Añadir a la lista",
   "Here's what I found near {address}.": "Esto es lo que encontré cerca de {address}.",
   "Internet plans, devices, and digital skills help are below. The first option in each is already in the resident's list; add or remove anything.": "Abajo hay planes de internet, dispositivos y ayuda con habilidades digitales. La primera opción de cada uno ya está en la lista del residente; añada o quite lo que necesite.",

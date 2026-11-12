@@ -20,6 +20,7 @@ export interface ResourceMapSession {
   hiddenCategories?: string[];
   dismissed?: string[];
   view?: "chat" | "table";
+  tableOrigin?: "chat" | "needs";
 }
 
 export function useResourceMapSession() {

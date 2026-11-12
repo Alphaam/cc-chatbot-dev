@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowUpRight, Check, MapPin, UsersRound, Wifi } from "lucide-react";
+import { Check, MapPin, PanelLeftClose, RotateCcw, Share2, UsersRound, Wifi } from "lucide-react";
 import ResourceCategories from "./ResourceCategories";
 import ResourceHome from "./ResourceHome";
 import ResourceConversation, { AssistantLabel } from "./ResourceConversation";
@@ -45,6 +45,8 @@ export default function ResourceFinder() {
   const [result, setResult] = useState<LookupResponse | null>(savedSession?.result ?? null);
   const [showHome, setShowHome] = useState(savedSession?.showHome ?? false);
   const [view, setView] = useState<View>(savedSession?.view ?? "chat");
+  const [tableOrigin, setTableOrigin] = useState<"chat" | "needs">(savedSession?.tableOrigin ?? "chat");
+  const [listOpen, setListOpen] = useState(true);
   const [focus, setFocus] = useState<ResourceFocus>(savedSession?.focus ?? "all");
   const [needs, setNeeds] = useState<Needs>(savedSession?.needs ?? EMPTY_NEEDS);
   const [needsDraft, setNeedsDraft] = useState<Needs>(savedSession?.needsDraft ?? EMPTY_NEEDS);
@@ -86,13 +88,13 @@ export default function ResourceFinder() {
   const effectiveSelected = useMemo(() => new Set([...selected, ...[...autoSelected].filter((id) => !optOut.has(id))]), [selected, autoSelected, optOut]);
   const shortlist = resources.filter((resource) => effectiveSelected.has(resource.id) && !hiddenCategories.has(resource.category) && !dismissed.has(resource.id));
   const hasSession = !!result || chat.messages.length > 0;
-  const home = showHome || !hasSession;
+  const home = !hasSession;
   const tableView = !home && view === "table" && !!result;
   const scopeLabel = focus === "all" ? "All resources" : CATEGORY_LABELS[focus];
   const categories = (focus === "all" ? CATEGORIES : CATEGORIES.filter((category) => category === focus)).slice().sort((a, b) => Number(!resources.some((resource) => resource.category === a)) - Number(!resources.some((resource) => resource.category === b)));
   const hasResidentNeeds = hasNeeds(needs);
   const hasConversation = chat.messages.some((message) => message.role === "assistant" && message.content);
-  const mapSnapshot = { result, address, focus, needs, needsDraft, selected: [...effectiveSelected], messages: chat.messages, showHome, lastQuestion, resultAnchor, optOut: [...optOut], hiddenCategories: [...hiddenCategories], dismissed: [...dismissed], view };
+  const mapSnapshot = { result, address, focus, needs, needsDraft, selected: [...effectiveSelected], messages: chat.messages, showHome, lastQuestion, resultAnchor, optOut: [...optOut], hiddenCategories: [...hiddenCategories], dismissed: [...dismissed], view, tableOrigin };
 
   useEffect(() => () => request.current?.abort(), []);
   useEffect(() => {
@@ -122,9 +124,13 @@ export default function ResourceFinder() {
     setSession((value) => value + 1);
   }, [clearChat, saveMapSession]);
 
+  function startOver() {
+    if (skipResetPrompt) reset(); else setResetOpen(true);
+  }
+
   function goHome() {
-    setShowHome(true);
     setPanel(null);
+    if (hasSession) { startOver(); return; }
     window.scrollTo({ top: 0, behavior: "instant" });
   }
 
@@ -154,6 +160,7 @@ export default function ResourceFinder() {
     generation.current += 1;
     const toTable = lookupIntent.current.toTable;
     setReport(null); setResult(data); setShowHome(false); setView(toTable ? "table" : "chat");
+    if (toTable) setTableOrigin("needs");
     const confirmed = data.address || data.confirmAddress || query;
     setAddress(confirmed); setNeedsAddress(confirmed);
     setFocus(lookupIntent.current.scope); setSelected(defaultShortlist(resourcesFromLookup(data)));
@@ -205,7 +212,7 @@ export default function ResourceFinder() {
     setNeeds(sanitizeNeeds(needsDraft));
     setPanel(null);
     const target = needsAddress.trim();
-    if (result && target === address) { setShowHome(false); setView("table"); requestAnimationFrame(() => { window.scrollTo({ top: 0, behavior: "instant" }); document.getElementById("table-title")?.focus({ preventScroll: true }); }); return; }
+    if (result && target === address) { setShowHome(false); setView("table"); setTableOrigin("needs"); requestAnimationFrame(() => { window.scrollTo({ top: 0, behavior: "instant" }); document.getElementById("table-title")?.focus({ preventScroll: true }); }); return; }
     lookupIntent.current = { question: "", scope: "all", original: "", toTable: true };
     pendingAnchor.current = null;
     void lookup(target);
@@ -248,7 +255,7 @@ export default function ResourceFinder() {
   }
 
   function openTable() {
-    setPanel(null); setShowHome(false); setView("table");
+    setPanel(null); setShowHome(false); setView("table"); setTableOrigin("chat");
     requestAnimationFrame(() => { window.scrollTo({ top: 0, behavior: "instant" }); document.getElementById("table-title")?.focus({ preventScroll: true }); });
   }
 
@@ -341,7 +348,7 @@ export default function ResourceFinder() {
   const showAside = !!result && !home && !tableView;
 
   return (
-    <div className={cn("resource-finder bace-app flex min-h-dvh flex-col bg-background font-sans text-foreground", !home && "finder-with-chat")} data-panel-open={panel !== null && panel !== "help"} data-list-aside={showAside || undefined}>
+    <div className={cn("resource-finder bace-app flex min-h-dvh flex-col bg-background font-sans text-foreground", !home && "finder-with-chat")} data-panel-open={panel !== null && panel !== "help"} data-list-aside={showAside ? (listOpen ? "open" : "collapsed") : undefined}>
       <SessionTimeout key={session} onExpire={reset} />
         <header ref={headerRef} className="bace-header">
           <button type="button" aria-label={t("BACE Hub home")} onClick={goHome} className="bace-brand">
@@ -349,11 +356,11 @@ export default function ResourceFinder() {
           </button>
           <nav aria-label={t("Workspace tools")} className="bace-header-nav">
             {result && tableView && <button type="button" className="bace-header-link bace-header-wide" aria-haspopup="dialog" onClick={() => openPanel("share")}>{t("Resident's list")}{shortlist.length > 0 && <span className="bace-header-count">{shortlist.length}</span>}</button>}
-            {hasSession && <button type="button" className="bace-header-link bace-header-wide" onClick={() => skipResetPrompt ? reset() : setResetOpen(true)}>{t("New resident")}</button>}
+            {hasSession && <button type="button" className="bace-header-icon" onClick={startOver} aria-label={t("Start new chat")} title={t("Start new chat")}><RotateCcw className="size-5" aria-hidden="true" /></button>}
             <ResourceMapLink snapshot={mapSnapshot} disabled={busy || chat.busy} variant="header" />
             <button type="button" className="bace-header-link" aria-haspopup="dialog" onClick={() => openPanel("help")}>{t("Guide")}</button>
             <LanguageLink className="bace-header-link" />
-            {hasSession && <span className="lg:hidden"><WorkspaceMenu hasResults={!!result} shareCount={shortlist.length} snapshot={mapSnapshot} mapDisabled={busy || chat.busy} onOpen={openPanel} onReset={() => skipResetPrompt ? reset() : setResetOpen(true)} /></span>}
+            {hasSession && <span className="lg:hidden"><WorkspaceMenu hasResults={!!result} shareCount={shortlist.length} snapshot={mapSnapshot} mapDisabled={busy || chat.busy} onOpen={openPanel} /></span>}
           </nav>
         </header>
       <div className="bace-main-shell">
@@ -365,13 +372,12 @@ export default function ResourceFinder() {
             onNeeds={() => openPanel("needs")}
             onTour={() => { openPanel("help"); setTourRequested(true); }}
             onStarter={(prompt) => send(prompt)}
-            returnAction={hasSession ? <Button variant="link" onClick={() => setShowHome(false)}>{t("Return to current session")}<ArrowUpRight data-icon="inline-end" aria-hidden="true" /></Button> : undefined}
           /> : tableView ? <div className="flex flex-1 flex-col gap-8">
             {(editing || busy || error || pending) && <div className="flex flex-col gap-4">{editing && input(true)}{lookupFeedback}</div>}
             <ResultsTable resources={resources} address={address} selected={effectiveSelected} shortlist={shortlist} hiddenCategories={hiddenCategories} dismissed={dismissed} hasConversation={chat.messages.length > 0} needsSummary={needsSummary}
               onToggle={toggle} onShare={shareResource} onReport={setReport} onDismiss={(id) => setDismissed((current) => new Set([...current, id]))} onRemoveCategory={removeCategory} onRestore={restoreRemoved} onPrint={() => setPrinting(true)}
-              onBack={chat.messages.length ? () => setView("chat") : undefined} onChangeAddress={() => { setEditing(!editing); setPending(null); setError(""); }} />
-            {chat.messages.some((message) => message.id !== resultAnchor) && <div className="flex flex-col gap-3 border-t border-dashed border-border pt-6">
+              onBack={tableOrigin === "chat" ? () => setView("chat") : undefined} onChangeAddress={() => { setEditing(!editing); setPending(null); setError(""); }} />
+            {tableOrigin === "needs" && chat.messages.length > 0 && <div className="flex flex-col gap-3 border-t border-dashed border-border pt-6">
               <h2 className="text-base font-semibold">{t("Questions about these results")}</h2>
               <ResourceConversation key={`table-${session}`} chat={chat} />
             </div>}
@@ -388,12 +394,19 @@ export default function ResourceFinder() {
           <a href="tel:211" className="bace-footer-meta">{t("Social services 211")}</a>
         </footer>}
         {!home && editing && !tableView && <div className="bace-feedback pb-5"><Button variant="link" size="sm" onClick={() => setReport("general")}>{t("Report a problem")}</Button></div>}
-        {!home && !editing && <div className="finder-chat-dock"><div className="finder-chat-composer">{input()}<p className="bace-composer-note">{t("Check eligibility and availability with the provider.")} <button type="button" className="bace-inline-action" onClick={() => setReport("general")}>{t("Report a problem")}</button></p></div></div>}
+        {!home && !editing && !(tableView && tableOrigin === "chat") && <div className="finder-chat-dock"><div className="finder-chat-composer">{input()}<p className="bace-composer-note">{t("Check eligibility and availability with the provider.")} <button type="button" className="bace-inline-action" onClick={() => setReport("general")}>{t("Report a problem")}</button></p></div></div>}
       </div>
-      {showAside && <aside className="bace-list-aside" aria-labelledby="list-aside-title">
-        <h2 id="list-aside-title" className="flex items-center gap-2 text-base font-semibold text-foreground">{t("Resident's list")}<span className="bace-count-pill">{shortlist.length}</span></h2>
+      {showAside && listOpen && <aside id="resident-list-panel" className="bace-list-aside" aria-labelledby="list-aside-title">
+        <div className="flex items-center justify-between gap-2">
+          <h2 id="list-aside-title" className="flex items-center gap-2 text-base font-semibold text-foreground">{t("Resident's list")}<span className="bace-count-pill">{shortlist.length}</span></h2>
+          <Button size="icon" variant="ghost" onClick={() => setListOpen(false)} aria-label={t("Minimize resident's list")} title={t("Minimize resident's list")} aria-controls="resident-list-panel" aria-expanded="true"><PanelLeftClose aria-hidden="true" /></Button>
+        </div>
         {listPanel}
       </aside>}
+      {showAside && <button type="button" className="bace-list-fab" onClick={() => { if (window.matchMedia("(min-width: 1024px)").matches) setListOpen(true); else openPanel("share"); }} aria-label={t("Open resident's list ({count} resources)", { count: shortlist.length })} title={t("Resident's list")}>
+        <Share2 className="size-5" aria-hidden="true" />
+        <span className="bace-list-fab-count" aria-hidden="true">{shortlist.length}</span>
+      </button>}
       <WorkspacePanel view={panel} hasResults={!!result} onViewChange={setPanel} onClose={() => { setPanel(null); setTourRequested(false); }} opener={panelOpener}>
         {panel === "help" && <HowToUse key={tourRequested ? "tour" : "intro"} startTour={tourRequested} />}
         {panel === "browse" && <ResourceCategories resources={resources} focus={focus} onFocusChange={changeFocus} onJump={jump} onDone={() => { setShowHome(false); setPanel(null); }} />}

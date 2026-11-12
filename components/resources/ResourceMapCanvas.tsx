@@ -26,10 +26,12 @@ export default function ResourceMapCanvas({ entries, selected, activeId, onActiv
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
       const colors = getComputedStyle(container.current);
-      const primary = colors.getPropertyValue("--primary").trim();
-      const white = colors.getPropertyValue("--card").trim();
-      const device = colors.getPropertyValue("--resource").trim();
-      const skills = colors.getPropertyValue("--skills").trim();
+      // Mapbox paint properties only accept hex/rgb, so fall back when a token resolves to oklch or is missing.
+      const hex = (name: string, fallback: string) => { const value = colors.getPropertyValue(name).trim(); return /^#[0-9a-f]{3,8}$/i.test(value) ? value : fallback; };
+      const primary = hex("--primary", "#1f4e9c");
+      const white = hex("--card", "#ffffff");
+      const device = hex("--devices", "#1f4e9c");
+      const skills = hex("--skills", "#8a4a16");
       map = new mapboxgl.Map({ container: container.current, accessToken: token, style: "mapbox://styles/mapbox/light-v11", center: [-115.14, 36.17], zoom: 8.3, attributionControl: false, locale: { "NavigationControl.ZoomIn": t("Zoom in"), "NavigationControl.ZoomOut": t("Zoom out"), "NavigationControl.ResetBearing": t("Reset bearing") } });
       mapRef.current = map;
       map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
