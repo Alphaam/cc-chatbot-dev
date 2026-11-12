@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useLanguage } from './LanguageProvider';
-import { ArrowRight, Send, MapPin, Loader2, Square, X } from 'lucide-react';
+import { ArrowRight, Search, MapPin, Loader2, Square, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AddressContext {
@@ -211,6 +211,7 @@ export default function ChatInput({ onSend, disabled, onDraftChange, placeholder
         </div>
       )}
       <form onSubmit={e => { e.preventDefault(); submit(); }} className={cn('bace-composer flex gap-2', addressOnly ? 'flex-col items-stretch min-[480px]:flex-row min-[480px]:items-center' : 'items-center')}>
+        {!addressOnly && <Search aria-hidden="true" size={20} className="bace-composer-icon shrink-0" />}
         <div className="bace-input-control">
         <input ref={inputRef} autoFocus={autoFocus} value={value} onChange={e => change(e.target.value)}
           onKeyDown={e => {
@@ -229,7 +230,7 @@ export default function ChatInput({ onSend, disabled, onDraftChange, placeholder
         </div>
         {onCancel && <button type="button" aria-label={t('Cancel address change')} title={t('Cancel address change')} onClick={onCancel} className="flex size-11 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring transition-colors"><X aria-hidden="true" size={20} /></button>}
         <button type={onStop ? 'button' : 'submit'} aria-label={t(onStop ? 'Stop' : addressOnly ? 'Find resources' : 'Send message')} title={t(onStop ? 'Stop' : addressOnly ? 'Find resources' : 'Send message')} onClick={onStop} disabled={!onStop && (disabled || !value.trim())} className={`shrink-0 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-40 flex items-center justify-center transition-colors motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${addressOnly ? 'h-14 px-4' : 'size-11'}`}>
-          {onStop ? <Square aria-hidden="true" size={18} className="fill-current" /> : addressOnly ? <span className="flex items-center gap-2 text-sm font-medium">{disabled ? <Loader2 aria-hidden="true" size={16} className="animate-spin motion-reduce:animate-none" /> : null}{t('Find resources')}{!disabled && <ArrowRight aria-hidden="true" size={16} />}</span> : <Send aria-hidden="true" size={18} />}
+          {onStop ? <Square aria-hidden="true" size={18} className="fill-current" /> : addressOnly ? <span className="flex items-center gap-2 text-sm font-medium">{disabled ? <Loader2 aria-hidden="true" size={16} className="animate-spin motion-reduce:animate-none" /> : null}{t('Find resources')}{!disabled && <ArrowRight aria-hidden="true" size={16} />}</span> : <ArrowRight aria-hidden="true" size={20} />}
         </button>
       </form>
     </div>

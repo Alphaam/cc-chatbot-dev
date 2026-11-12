@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowUpRight, Check, MapPin, RotateCcw, SlidersHorizontal, Table2, UsersRound } from "lucide-react";
+import { ArrowUpRight, Check, MapPin, SlidersHorizontal, Table2, UsersRound, Wifi } from "lucide-react";
 import ResourceCategories from "./ResourceCategories";
 import ResourceHome from "./ResourceHome";
 import ResourceConversation from "./ResourceConversation";
@@ -22,7 +22,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import ChatInput, { type SendOptions } from "@/components/chat/ChatInput";
 import SessionTimeout from "@/components/chat/SessionTimeout";
 import ResetConfirmation from "@/components/chat/ResetConfirmation";
-import { LanguageToggle, useLanguage } from "@/components/chat/LanguageProvider";
+import { LanguageLink, useLanguage } from "@/components/chat/LanguageProvider";
 import { CATEGORIES, CATEGORY_LABELS, isAddressQuery, defaultShortlist, recommendationsText, resourcesFromLookup, type LookupResponse, type Resource, type ResourceCategory } from "@/lib/resource-finder";
 import { EMPTY_NEEDS, hasNeeds, inferResourceFocus, sanitizeNeeds, splitResourceRequest, type ResidentNeeds as Needs, type ResourceFocus } from "@/lib/resident-needs";
 import { printHtml, qrPayload, residentListDocument, shortenAnswer, type PrintedExchange } from "@/lib/resource-print";
@@ -310,7 +310,7 @@ export default function ResourceFinder() {
     printHtml(t("Countywide resource sheet"), residentListDocument({ resources: directory, t, locale, area: t("Clark County"), date }));
   }
 
-  const input = (addressOnly = false) => <ChatInput key={`${session}:${draft.revision}:${addressOnly}`} initialValue={draft.text} autoFocus={draft.revision > 0} spacious={home || addressOnly} addressOnly={addressOnly} disabled={busy || chat.busy} onStop={chat.busy ? chat.cancel : undefined} onCancel={addressOnly ? () => { request.current?.abort(); setBusy(false); setEditing(false); setPending(null); setError(""); } : undefined} onSend={(text, options) => sendFromInput(text, options, addressOnly)} placeholder={t(addressOnly ? "Enter a new resident address…" : result ? "Ask a follow-up, or enter a new address…" : "Enter an address or ask a question…")} />;
+  const input = (addressOnly = false) => <ChatInput key={`${session}:${draft.revision}:${addressOnly}`} initialValue={draft.text} autoFocus={draft.revision > 0} spacious={home || addressOnly} addressOnly={addressOnly} disabled={busy || chat.busy} onStop={chat.busy ? chat.cancel : undefined} onCancel={addressOnly ? () => { request.current?.abort(); setBusy(false); setEditing(false); setPending(null); setError(""); } : undefined} onSend={(text, options) => sendFromInput(text, options, addressOnly)} placeholder={t(addressOnly ? "Enter a new resident address…" : result ? "Ask a follow-up, or enter a new address…" : "Enter an address or ask a question")} />;
   const lookupFeedback = <>
     {busy && <p role="status" className="text-sm text-muted-foreground">{t("Checking internet plans and nearby programs…")}</p>}
     {error && <Alert variant="destructive"><AlertTitle>{t("Address lookup")}</AlertTitle><AlertDescription><p>{t(error)}</p><Button variant="outline" size="sm" onClick={() => void lookup(lastQuery)}>{t("Retry")}</Button></AlertDescription></Alert>}
@@ -350,20 +350,17 @@ export default function ResourceFinder() {
     <div className={cn("resource-finder bace-app flex min-h-dvh flex-col bg-background font-sans text-foreground", !home && "finder-with-chat")} data-panel-open={panel !== null && panel !== "help"} data-list-aside={showAside || undefined}>
       <SessionTimeout key={session} onExpire={reset} />
         <header ref={headerRef} className="bace-header">
-          <button type="button" aria-label={t("BACE Hub home")} onClick={goHome} className="text-left">
-            <span className="bace-wordmark">BACE <span className="font-normal">Hub</span></span>
+          <button type="button" aria-label={t("BACE Hub home")} onClick={goHome} className="bace-brand">
+            <Wifi className="size-5" aria-hidden="true" /><span>BACE Hub</span>
           </button>
           <nav aria-label={t("Workspace tools")} className="bace-header-nav">
-            {result && <button type="button" className="bace-header-link" aria-haspopup="dialog" onClick={() => openPanel("share")}>{t("Resident's list")}{shortlist.length > 0 && <span className="bace-header-count">{shortlist.length}</span>}</button>}
+            {result && <button type="button" className="bace-header-link bace-header-wide" aria-haspopup="dialog" onClick={() => openPanel("share")}>{t("Resident's list")}{shortlist.length > 0 && <span className="bace-header-count">{shortlist.length}</span>}</button>}
+            {hasSession && <button type="button" className="bace-header-link bace-header-wide" onClick={() => skipResetPrompt ? reset() : setResetOpen(true)}>{t("New resident")}</button>}
             <ResourceMapLink snapshot={mapSnapshot} disabled={busy || chat.busy} variant="header" />
             <button type="button" className="bace-header-link" aria-haspopup="dialog" onClick={() => openPanel("help")}>{t("Guide")}</button>
-            {hasSession && <button type="button" className="bace-header-link" onClick={() => skipResetPrompt ? reset() : setResetOpen(true)}>{t("New resident")}</button>}
+            <LanguageLink className="bace-header-link" />
+            {hasSession && <span className="lg:hidden"><WorkspaceMenu hasResults={!!result} shareCount={shortlist.length} snapshot={mapSnapshot} mapDisabled={busy || chat.busy} onOpen={openPanel} onReset={() => skipResetPrompt ? reset() : setResetOpen(true)} /></span>}
           </nav>
-          <div className="bace-header-utilities flex items-center gap-1">
-            {hasSession && <Button variant="ghost" size="icon" className="lg:hidden" aria-label={t("Start new chat")} title={t("Start new chat")} onClick={() => skipResetPrompt ? reset() : setResetOpen(true)}><RotateCcw aria-hidden="true" /></Button>}
-            <WorkspaceMenu hasResults={!!result} shareCount={shortlist.length} snapshot={mapSnapshot} mapDisabled={busy || chat.busy} onOpen={openPanel} />
-            <LanguageToggle tone="inverse" />
-          </div>
         </header>
       <div className="bace-main-shell">
         <main className={cn("bace-main", home && "bace-home", tableView && "bace-main-wide")}>
@@ -393,9 +390,11 @@ export default function ResourceFinder() {
           </div>}
         </main>
         {home && <footer className="bace-home-footer">
-          <Button variant="link" size="sm" onClick={() => setReport("general")}>{t("Report a problem")}</Button>
-          <span aria-hidden="true" className="text-border">|</span>
-          <Button variant="link" size="sm" onClick={() => void printCountywide()}>{t("Printable countywide sheet")}</Button>
+          <button type="button" className="bace-footer-link" onClick={() => void printCountywide()}>{t("Printable countywide sheet")}</button>
+          <button type="button" className="bace-footer-link" onClick={() => setReport("general")}>{t("Report a problem")}</button>
+          <a href="tel:911" className="bace-footer-meta">{t("Emergency 911")}</a>
+          <a href="tel:988" className="bace-footer-meta">{t("Crisis 988")}</a>
+          <a href="tel:211" className="bace-footer-meta">{t("Social services 211")}</a>
         </footer>}
         {!home && editing && !tableView && <div className="bace-feedback pb-5"><Button variant="link" size="sm" onClick={() => setReport("general")}>{t("Report a problem")}</Button></div>}
         {!home && !editing && <div className="finder-chat-dock"><div className="finder-chat-composer"><p className="bace-composer-scope">{t("Answering about:")} {t(scopeLabel)}</p>{input()}<div className="bace-composer-note bace-feedback flex-wrap items-center gap-x-1 pb-0"><span>{t("Check eligibility and availability with the provider.")}</span><Button variant="link" size="sm" className="h-auto px-1 py-0" onClick={() => setReport("general")}>{t("Report a problem")}</Button></div></div></div>}

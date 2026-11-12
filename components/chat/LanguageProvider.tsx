@@ -30,6 +30,16 @@ export function LanguageProvider({ children, initialLocale, pageTitle }: { child
 
 export function useLanguage() { return useContext(LanguageContext); }
 
+export function LanguageLink({ className }: { className?: string }) {
+  const { locale, setLocale } = useLanguage();
+  const next = locale === 'es' ? 'en' : 'es';
+  return (
+    <button type="button" lang={next} className={className} onClick={() => setLocale(next)} aria-label={next === 'es' ? 'Ver en español' : 'View in English'}>
+      {next === 'es' ? 'Español' : 'English'}
+    </button>
+  );
+}
+
 export function LanguageToggle({ tone = 'inverse' }: { tone?: 'inverse' | 'neutral' }) {
   const { locale, setLocale, t } = useLanguage();
   return (

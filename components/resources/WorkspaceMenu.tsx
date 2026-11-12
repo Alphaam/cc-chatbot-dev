@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { Map as MapIcon, Menu, SlidersHorizontal, UsersRound, Share2, CircleHelp } from "lucide-react";
+import { Map as MapIcon, Menu, SlidersHorizontal, UsersRound, Share2, CircleHelp, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useLanguage } from "@/components/chat/LanguageProvider";
@@ -9,9 +9,9 @@ import { useOpenResourceMap } from "./ResourceMapLink";
 import type { ResourceMapSession } from "./useResourceMapSession";
 import type { PanelView } from "./WorkspacePanel";
 
-export default function WorkspaceMenu({ hasResults, shareCount, snapshot, mapDisabled, onOpen }: {
+export default function WorkspaceMenu({ hasResults, shareCount, snapshot, mapDisabled, onOpen, onReset }: {
   hasResults: boolean; shareCount: number; snapshot: ResourceMapSession; mapDisabled: boolean;
-  onOpen: (view: PanelView, opener: HTMLElement | null) => void;
+  onOpen: (view: PanelView, opener: HTMLElement | null) => void; onReset?: () => void;
 }) {
   const { t } = useLanguage();
   const trigger = useRef<HTMLButtonElement>(null);
@@ -28,6 +28,7 @@ export default function WorkspaceMenu({ hasResults, shareCount, snapshot, mapDis
         <DropdownMenuItem disabled={mapDisabled} onClick={map.open}><MapIcon aria-hidden="true" />{t("Map")}{map.count > 0 && <span className="bace-menu-count">{map.count}<span className="sr-only"> {t("mapped resources")}</span></span>}</DropdownMenuItem>
         {hasResults && <DropdownMenuItem onClick={() => open("share")}><Share2 aria-hidden="true" />{t("Share")}{shareCount > 0 && <span className="bace-menu-count">{shareCount}<span className="sr-only"> {t("selected")}</span></span>}</DropdownMenuItem>}
         <DropdownMenuItem onClick={() => open("help")}><CircleHelp aria-hidden="true" />{t("Guide")}</DropdownMenuItem>
+        {onReset && <DropdownMenuItem onClick={onReset}><RotateCcw aria-hidden="true" />{t("New resident")}</DropdownMenuItem>}
       </DropdownMenuContent>
     </DropdownMenu>
   );
