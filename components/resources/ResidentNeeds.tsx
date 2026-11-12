@@ -1,8 +1,9 @@
 "use client";
 
-import { Wifi, Laptop, GraduationCap, Layers } from "lucide-react";
+import { Wifi, Laptop, GraduationCap, Layers, MapPin, Table2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Field, FieldGroup, FieldLabel, FieldSet, FieldLegend } from "@/components/ui/field";
+import ChatInput from "@/components/chat/ChatInput";
+import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSet, FieldLegend } from "@/components/ui/field";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useLanguage } from "@/components/chat/LanguageProvider";
 import { ACCESS_OPTIONS, GOALS, PEOPLE_OPTIONS, BUDGET_OPTIONS, COMFORT_OPTIONS, FORMAT_OPTIONS, DEVICE_OPTIONS, DEVICE_COST_OPTIONS, LEARNING_OPTIONS, LANGUAGE_OPTIONS, type ResidentNeeds as Needs, type ResourceFocus } from "@/lib/resident-needs";
@@ -14,8 +15,9 @@ const options = [
   { value: "all", label: "A combination / general guidance", icon: Layers },
 ] as const;
 
-export default function ResidentNeeds({ draft, onChange, onApply, onClear }: {
+export default function ResidentNeeds({ draft, onChange, onApply, onClear, address, onAddressChange, onShowResources, busy }: {
   draft: Needs; onChange: (draft: Needs) => void; onApply: () => void; onClear: () => void;
+  address: string; onAddressChange: (address: string) => void; onShowResources: (address?: string) => void; busy?: boolean;
 }) {
   const { t } = useLanguage();
   const choices = (id: "access" | "people" | "budget" | "deviceType" | "deviceCost" | "comfort" | "format" | "language", label: string, values: readonly string[]) => (
@@ -40,7 +42,7 @@ export default function ResidentNeeds({ draft, onChange, onApply, onClear }: {
   const skills = draft.lookingFor === "all" || draft.lookingFor === "skills";
 
   return (
-    <form className="flex flex-col gap-6" onSubmit={(event) => { event.preventDefault(); onApply(); }}>
+    <div className="flex flex-col gap-6">
       <p className="text-sm leading-relaxed text-muted-foreground">{t("Choose the support they need. We’ll show just the relevant questions, and every answer is optional.")}</p>
       <details open className="bace-needs-selector">
         <summary className="cursor-pointer text-sm font-semibold">{t("What is the resident looking for?")}</summary>
@@ -67,8 +69,20 @@ export default function ResidentNeeds({ draft, onChange, onApply, onClear }: {
         <FieldLegend><GraduationCap className="size-4" aria-hidden="true" />{t("Training needs")}</FieldLegend>
         <FieldGroup>{multiple("learningTopics", "What would they like to learn?", LEARNING_OPTIONS)}{choices("comfort", "How comfortable are they with computers?", COMFORT_OPTIONS)}{choices("format", "Preferred learning format", FORMAT_OPTIONS)}{choices("language", "Preferred training language", LANGUAGE_OPTIONS)}</FieldGroup>
       </FieldSet>}
-      <p className="text-sm leading-relaxed text-muted-foreground">{t("This tailors guidance, not eligibility. Browse controls which results are visible. Details stay in this resident session.")}</p>
-      <div className="bace-needs-actions"><Button type="submit">{t("Apply needs")}</Button><Button type="button" variant="ghost" onClick={onClear}>{t("Clear needs")}</Button></div>
-    </form>
+      <FieldSet className="bace-needs-section bace-needs-address">
+        <FieldLegend><MapPin className="size-4" aria-hidden="true" />{t("Where does the resident live?")}</FieldLegend>
+        <Field>
+          <FieldLabel htmlFor="needs-address">{t("Resident address")}</FieldLabel>
+          <ChatInput addressOnly hideSubmit inputId="needs-address" initialValue={address} onValueChange={onAddressChange} onSend={(text) => { onAddressChange(text); onShowResources(text); }} disabled={busy} placeholder="@ to search address" />
+          <FieldDescription>{t("Used to find plans and nearby programs. It is not added to the printout unless you choose to.")}</FieldDescription>
+        </Field>
+      </FieldSet>
+      <p className="text-sm leading-relaxed text-muted-foreground">{t("This tailors guidance, not eligibility. Details stay in this resident session.")}</p>
+      <div className="bace-needs-actions">
+        <Button type="button" disabled={!address.trim() || busy} onClick={() => onShowResources()}><Table2 data-icon="inline-start" aria-hidden="true" />{t(busy ? "Finding resources…" : "Show resources")}</Button>
+        <Button type="button" variant="outline" onClick={onApply}>{t("Apply needs")}</Button>
+        <Button type="button" variant="ghost" onClick={onClear}>{t("Clear needs")}</Button>
+      </div>
+    </div>
   );
 }

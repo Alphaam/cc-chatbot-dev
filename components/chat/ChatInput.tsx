@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useLanguage } from './LanguageProvider';
-import { ArrowRight, Send, MapPin, Loader2, Square, X } from 'lucide-react';
+import { ArrowRight, Search, MapPin, Loader2, Square, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AddressContext {
@@ -45,6 +45,9 @@ interface ChatInputProps {
   addressOnly?: boolean;
   spacious?: boolean;
   initialValue?: string;
+  onValueChange?: (value: string) => void;
+  hideSubmit?: boolean;
+  inputId?: string;
 }
 type SearchState = 'idle' | 'short' | 'loading' | 'success' | 'empty' | 'unavailable' | 'outside';
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_API_KEY;
@@ -54,7 +57,7 @@ const DEBOUNCE_MS = 150;
 const CLARK_PROXIMITY = '-115.1398,36.1699';
 const CLARK_BBOX = '-115.9,35.0,-114.0,36.85';
 
-export default function ChatInput({ onSend, disabled, onDraftChange, placeholder = 'Enter an address or ask a question…', autoFocus, onStop, onCancel, addressOnly = false, spacious = false, initialValue = '' }: ChatInputProps) {
+export default function ChatInput({ onSend, disabled, onDraftChange, placeholder = 'Enter an address or ask a question…', autoFocus, onStop, onCancel, addressOnly = false, spacious = false, initialValue = '', onValueChange, hideSubmit = false, inputId }: ChatInputProps) {
   const { t } = useLanguage();
   const [value, setValue] = useState(initialValue);
   const valueRef = useRef(initialValue);
@@ -80,6 +83,7 @@ export default function ChatInput({ onSend, disabled, onDraftChange, placeholder
     valueRef.current = text;
     setValue(text);
     onDraftChange?.(!!text.trim());
+    onValueChange?.(text);
   };
   const dismiss = useCallback(() => { invalidate(); setOpen(false); }, [invalidate]);
   useEffect(() => () => invalidate(), [invalidate]);
@@ -175,7 +179,7 @@ export default function ChatInput({ onSend, disabled, onDraftChange, placeholder
     const addressConfirmed = selectedText.current === text;
     invalidate();
     selectedText.current = null;
-    updateValue('');
+    if (!hideSubmit) updateValue('');
     setOpen(false);
     setState('idle');
     setSuggestions([]);
@@ -211,8 +215,9 @@ export default function ChatInput({ onSend, disabled, onDraftChange, placeholder
         </div>
       )}
       <form onSubmit={e => { e.preventDefault(); submit(); }} className={cn('bace-composer flex gap-2', addressOnly ? 'flex-col items-stretch min-[480px]:flex-row min-[480px]:items-center' : 'items-center')}>
+        <Search aria-hidden="true" size={20} className={cn("bace-composer-icon shrink-0", addressOnly && "hidden min-[480px]:block")} />
         <div className="bace-input-control">
-        <input ref={inputRef} autoFocus={autoFocus} value={value} onChange={e => change(e.target.value)}
+        <input ref={inputRef} id={inputId} autoFocus={autoFocus} value={value} onChange={e => change(e.target.value)}
           onKeyDown={e => {
             if (e.nativeEvent.isComposing || e.keyCode === 229) { if (e.key === 'Enter') e.preventDefault(); return; }
             if (open && suggestions.length) {
@@ -228,9 +233,9 @@ export default function ChatInput({ onSend, disabled, onDraftChange, placeholder
         {!value && <span className="bace-input-placeholder" aria-hidden="true">{t(placeholder)}</span>}
         </div>
         {onCancel && <button type="button" aria-label={t('Cancel address change')} title={t('Cancel address change')} onClick={onCancel} className="flex size-11 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring transition-colors"><X aria-hidden="true" size={20} /></button>}
-        <button type={onStop ? 'button' : 'submit'} aria-label={t(onStop ? 'Stop' : addressOnly ? 'Find resources' : 'Send message')} title={t(onStop ? 'Stop' : addressOnly ? 'Find resources' : 'Send message')} onClick={onStop} disabled={!onStop && (disabled || !value.trim())} className={`shrink-0 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-40 flex items-center justify-center transition-colors motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${addressOnly ? 'h-14 px-4' : 'size-11'}`}>
-          {onStop ? <Square aria-hidden="true" size={18} className="fill-current" /> : addressOnly ? <span className="flex items-center gap-2 text-sm font-medium">{disabled ? <Loader2 aria-hidden="true" size={16} className="animate-spin motion-reduce:animate-none" /> : null}{t('Find resources')}{!disabled && <ArrowRight aria-hidden="true" size={16} />}</span> : <Send aria-hidden="true" size={18} />}
-        </button>
+        {!hideSubmit && <button type={onStop ? "button" : "submit"} aria-label={t(onStop ? 'Stop' : addressOnly ? 'Find resources' : 'Send message')} title={t(onStop ? 'Stop' : addressOnly ? 'Find resources' : 'Send message')} onClick={onStop} disabled={!onStop && (disabled || !value.trim())} className={`shrink-0 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-40 flex items-center justify-center transition-colors motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${addressOnly ? 'h-14 px-4' : 'size-11'}`}>
+          {onStop ? <Square aria-hidden="true" size={18} className="fill-current" /> : addressOnly ? <span className="flex items-center gap-2 text-sm font-medium">{disabled ? <Loader2 aria-hidden="true" size={16} className="animate-spin motion-reduce:animate-none" /> : null}{t('Find resources')}{!disabled && <ArrowRight aria-hidden="true" size={16} />}</span> : <ArrowRight aria-hidden="true" size={20} />}
+        </button>}
       </form>
     </div>
   );

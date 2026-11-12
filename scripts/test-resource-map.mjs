@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { SERVICES } from '../lib/services.ts';
-import { toMapEntries, mapServiceId, mapIdsFromResources, filterMapEntries, mapFeatures } from '../lib/resource-map.ts';
+import { toMapEntries, mapServiceId, mapIdsFromResources, mappedIdsFromResources, filterMapEntries, mapFeatures } from '../lib/resource-map.ts';
 
 const entries = toMapEntries(SERVICES);
 test('map uses actual directory records and excludes unrelated categories', () => {
@@ -42,4 +42,11 @@ test('map feature coordinates and selection flags are correct', () => {
   assert.deepEqual(data.features[0].geometry.coordinates, [local.long, local.lat]);
   assert.equal(data.features[0].properties.selected, true);
   assert.equal(data.features[0].properties.entryId, local.id);
+});
+test('map badge counts only resources with real map pins', () => {
+  const online = SERVICES.find(s => s.name === 'Compudopt – Las Vegas');
+  const local = SERVICES.find(s => s.name === 'Alexander Library' && /device/i.test(s.type));
+  assert.equal(mappedIdsFromResources([{ id: 'o', category: 'devices', service: online }]).size, 0);
+  assert.equal(mappedIdsFromResources([{ id: 'o', category: 'devices', service: online }, { id: 'l', category: 'devices', service: local }]).size, 1);
+  assert.equal(mappedIdsFromResources([{ id: 'i', category: 'internet', plan: {} }]).size, 0);
 });

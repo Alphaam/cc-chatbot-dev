@@ -1,5 +1,8 @@
 export const workspaceSpanish: Record<string, string> = {
   "BACE Hub home": "Inicio de BACE Hub",
+  "Show only selected resources": "Mostrar solo recursos seleccionados",
+  "mapped resources": "recursos en el mapa",
+  "selected": "seleccionados",
   "Skip": "Omitir",
   "Step {step} / {total}": "Paso {step} / {total}",
   "Alternatively, choose a resource to draft a question": "Como alternativa, elija un recurso para redactar una pregunta",

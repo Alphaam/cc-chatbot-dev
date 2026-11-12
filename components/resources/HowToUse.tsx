@@ -8,9 +8,9 @@ import { useLanguage } from "@/components/chat/LanguageProvider";
 import ResourceIntro from "./ResourceIntro";
 import ResourceWalkthrough from "./ResourceWalkthrough";
 
-export default function HowToUse() {
+export default function HowToUse({ startTour = false }: { startTour?: boolean }) {
   const { t } = useLanguage();
-  const [tourStarted, setTourStarted] = useState(false);
+  const [tourStarted, setTourStarted] = useState(startTour);
   const titleRef = useRef<HTMLHeadingElement>(null);
   return (
     <>

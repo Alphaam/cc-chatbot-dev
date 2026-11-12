@@ -39,9 +39,9 @@ export function ActionRail({ hasResults, count, active, onOpen, mapAction }: { h
   );
 }
 
-export default function WorkspacePanel({ view, hasResults, onViewChange, onClose, opener, children, mapAction }: {
+export default function WorkspacePanel({ view, hasResults, onViewChange, onClose, opener, children }: {
   view: PanelView | null; hasResults: boolean; onViewChange: (view: PanelView) => void; onClose: () => void;
-  opener: React.RefObject<HTMLElement | null>; children: ReactNode; mapAction?: ReactNode;
+  opener: React.RefObject<HTMLElement | null>; children: ReactNode;
 }) {
   const { t } = useLanguage();
   const compact = useSyncExternalStore(subscribe, () => window.matchMedia(mediaQuery).matches, () => true);
@@ -50,7 +50,7 @@ export default function WorkspacePanel({ view, hasResults, onViewChange, onClose
   const popup = (
     <Dialog.Popup className={cn("resource-finder font-sans", isGuide ? "bace-guide-dialog" : "bace-workspace-panel")} initialFocus={isGuide ? () => document.querySelector<HTMLButtonElement>(".bace-guide-dialog [data-guide-close]") : closeRef} finalFocus={opener}>
       {!isGuide && <div className="bace-panel-heading flex shrink-0 items-center justify-between border-b border-border p-5">
-        <Dialog.Title className="text-lg font-semibold tracking-tight">{t(view === "needs" ? "Resident needs" : view === "share" ? "Share resources" : "Browse resources")}</Dialog.Title>
+        <Dialog.Title className="text-lg font-semibold tracking-tight">{t(view === "needs" ? "Resident needs" : view === "share" ? "Resident's list" : "Browse resources")}</Dialog.Title>
         <Dialog.Close ref={closeRef} render={<Button size="icon" variant="ghost" />} aria-label={t("Close panel")}>
           <PanelLeftClose aria-hidden="true" className="hidden sm:block" /><X aria-hidden="true" className="sm:hidden" />
         </Dialog.Close>
@@ -61,7 +61,6 @@ export default function WorkspacePanel({ view, hasResults, onViewChange, onClose
           {views.filter(({ id }) => hasResults || id === "needs" || id === "help").map(({ id, label }) => <ToggleGroupItem key={id} value={id}>{t(id === "needs" ? "Needs" : label)}</ToggleGroupItem>)}
         </ToggleGroup>
       </div>}
-      {!isGuide && mapAction && <div className="flex items-center justify-between border-b border-border px-5 py-2 lg:hidden"><span className="text-sm font-medium">{t("Resource map")}</span>{mapAction}</div>}
       <div className={isGuide ? "bace-guide-content" : "bace-panel-content"}>{children}</div>
     </Dialog.Popup>
   );
