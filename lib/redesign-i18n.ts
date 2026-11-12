@@ -100,6 +100,7 @@ export const redesignSpanish: Record<string, string> = {
   "Minimize resident's list": "Minimizar la lista del residente",
   "Edit resident needs": "Editar las necesidades del residente",
   "@ to search address or ask a question": "@ para buscar una dirección o haga una pregunta",
+  "@ to search address": "@ para buscar una dirección",
   "Type an address to see nearby resources, ask the assistant a question or": "Escriba una dirección para ver recursos cercanos, hágale una pregunta al asistente o",
   "Earlier search": "Búsqueda anterior",
   "Near {place}": "Cerca de {place}",

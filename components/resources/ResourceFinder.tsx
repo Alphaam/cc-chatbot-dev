@@ -235,11 +235,12 @@ export default function ResourceFinder() {
     send(text, addressOnly ? { ...options, addressSearch: true } : options);
   }
 
-  function showNeedsResults() {
+  function showNeedsResults(typed?: string) {
     if (chat.busy) chat.cancel();
     setNeeds(sanitizeNeeds(needsDraft));
     setPanel(null);
-    const target = needsAddress.trim();
+    const target = (typed ?? needsAddress).trim();
+    if (!target) return;
     if (result && target === address) { setView("table"); setTableOrigin("needs"); requestAnimationFrame(() => { window.scrollTo({ top: 0, behavior: "instant" }); document.getElementById("table-title")?.focus({ preventScroll: true }); }); return; }
     lookupIntent.current = { question: "", scope: "all", original: "", toTable: true };
     pendingAnchor.current = null;
@@ -258,7 +259,7 @@ export default function ResourceFinder() {
       const data: LookupResponse = await response.json();
       if (controller.signal.aborted) return;
       if (!data.validated) { setError("We could not locate that address. Include the street, city, state, and ZIP code."); return; }
-      if (!options?.addressConfirmed && !options?.exact && data.confirmAddress) setPending(data);
+      if (!options?.addressConfirmed && !options?.exact && !lookupIntent.current.toTable && data.confirmAddress) setPending(data);
       else accept(data, text);
     } catch {
       if (!controller.signal.aborted) setError("The lookup is unavailable right now. Please try again.");
@@ -348,7 +349,7 @@ export default function ResourceFinder() {
     setDraft((value) => ({ text: "", revision: value.revision + 1 }));
   }
 
-  const input = (addressOnly = false) => <ChatInput key={`${session}:${draft.revision}:${addressOnly}`} initialValue={draft.text} autoFocus={draft.revision > 0} spacious={home || addressOnly} addressOnly={addressOnly} disabled={busy || chat.busy} onStop={chat.busy ? chat.cancel : undefined} onCancel={addressOnly ? () => { request.current?.abort(); setBusy(false); setEditing(false); setPending(null); setError(""); } : undefined} onSend={(text, options) => sendFromInput(text, options, addressOnly)} placeholder={t(addressOnly ? "Enter a new resident address…" : result ? "Ask a follow-up, or enter a new address…" : "@ to search address or ask a question")} />;
+  const input = (addressOnly = false) => <ChatInput key={`${session}:${draft.revision}:${addressOnly}`} initialValue={draft.text} autoFocus={draft.revision > 0} spacious={home || addressOnly} addressOnly={addressOnly} disabled={busy || chat.busy} onStop={chat.busy ? chat.cancel : undefined} onCancel={addressOnly ? () => { request.current?.abort(); setBusy(false); setEditing(false); setPending(null); setError(""); } : undefined} onSend={(text, options) => sendFromInput(text, options, addressOnly)} placeholder={t(addressOnly ? "@ to search address" : "@ to search address or ask a question")} />;
   const lookupFeedback = <>
     {busy && <p role="status" className="text-sm text-muted-foreground">{t("Checking internet plans and nearby programs…")}</p>}
     {error && <Alert variant="destructive"><AlertTitle>{t("Address lookup")}</AlertTitle><AlertDescription><p>{t(error)}</p><Button variant="outline" size="sm" onClick={() => void lookup(lastQuery)}>{t("Retry")}</Button></AlertDescription></Alert>}

@@ -2,7 +2,7 @@
 
 import { Wifi, Laptop, GraduationCap, Layers, MapPin, Table2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import ChatInput from "@/components/chat/ChatInput";
 import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSet, FieldLegend } from "@/components/ui/field";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useLanguage } from "@/components/chat/LanguageProvider";
@@ -17,7 +17,7 @@ const options = [
 
 export default function ResidentNeeds({ draft, onChange, onApply, onClear, address, onAddressChange, onShowResources, busy }: {
   draft: Needs; onChange: (draft: Needs) => void; onApply: () => void; onClear: () => void;
-  address: string; onAddressChange: (address: string) => void; onShowResources: () => void; busy?: boolean;
+  address: string; onAddressChange: (address: string) => void; onShowResources: (address?: string) => void; busy?: boolean;
 }) {
   const { t } = useLanguage();
   const choices = (id: "access" | "people" | "budget" | "deviceType" | "deviceCost" | "comfort" | "format" | "language", label: string, values: readonly string[]) => (
@@ -42,7 +42,7 @@ export default function ResidentNeeds({ draft, onChange, onApply, onClear, addre
   const skills = draft.lookingFor === "all" || draft.lookingFor === "skills";
 
   return (
-    <form className="flex flex-col gap-6" onSubmit={(event) => { event.preventDefault(); if (address.trim()) onShowResources(); else onApply(); }}>
+    <div className="flex flex-col gap-6">
       <p className="text-sm leading-relaxed text-muted-foreground">{t("Choose the support they need. We’ll show just the relevant questions, and every answer is optional.")}</p>
       <details open className="bace-needs-selector">
         <summary className="cursor-pointer text-sm font-semibold">{t("What is the resident looking for?")}</summary>
@@ -73,16 +73,16 @@ export default function ResidentNeeds({ draft, onChange, onApply, onClear, addre
         <FieldLegend><MapPin className="size-4" aria-hidden="true" />{t("Where does the resident live?")}</FieldLegend>
         <Field>
           <FieldLabel htmlFor="needs-address">{t("Resident address")}</FieldLabel>
-          <Input id="needs-address" value={address} autoComplete="street-address" placeholder={t("Street, city, state, ZIP")} onChange={(event) => onAddressChange(event.target.value)} className="min-h-11" />
+          <ChatInput addressOnly hideSubmit inputId="needs-address" initialValue={address} onValueChange={onAddressChange} onSend={(text) => { onAddressChange(text); onShowResources(text); }} disabled={busy} placeholder="@ to search address" />
           <FieldDescription>{t("Used to find plans and nearby programs. It is not added to the printout unless you choose to.")}</FieldDescription>
         </Field>
       </FieldSet>
       <p className="text-sm leading-relaxed text-muted-foreground">{t("This tailors guidance, not eligibility. Details stay in this resident session.")}</p>
       <div className="bace-needs-actions">
-        <Button type="button" disabled={!address.trim() || busy} onClick={onShowResources}><Table2 data-icon="inline-start" aria-hidden="true" />{t(busy ? "Finding resources…" : "Show resources")}</Button>
+        <Button type="button" disabled={!address.trim() || busy} onClick={() => onShowResources()}><Table2 data-icon="inline-start" aria-hidden="true" />{t(busy ? "Finding resources…" : "Show resources")}</Button>
         <Button type="button" variant="outline" onClick={onApply}>{t("Apply needs")}</Button>
         <Button type="button" variant="ghost" onClick={onClear}>{t("Clear needs")}</Button>
       </div>
-    </form>
+    </div>
   );
 }
