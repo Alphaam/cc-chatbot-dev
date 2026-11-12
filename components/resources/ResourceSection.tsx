@@ -93,8 +93,8 @@ export default function ResourceSection({
     >
       <div className="flex flex-col gap-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 id={`${category}-title`} tabIndex={-1} className="flex items-center gap-3 text-xl font-medium tracking-tight focus:outline-none">
-            <CategoryIcon className="size-5 shrink-0" aria-hidden="true" />
+          <h2 id={`${category}-title`} tabIndex={-1} className="flex items-center gap-2 text-base font-semibold focus:outline-none">
+            <CategoryIcon className="size-4 shrink-0" aria-hidden="true" />
             {t(CATEGORY_LABELS[category])}
             <span className="text-sm font-normal tabular-nums text-muted-foreground">{resources.length}</span>
           </h2>
@@ -225,7 +225,7 @@ export function ResourceRow({
   return (
     <li className="min-w-0">
       <article aria-label={resource.name} className="h-full">
-        <Card className="resource-card h-full [--card-spacing:--spacing(5)]" data-selected={selected}>
+        <Card className="resource-card h-full [--card-spacing:--spacing(4)]" data-selected={selected}>
           <CardHeader>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="flex min-w-0 flex-1 flex-col gap-1">

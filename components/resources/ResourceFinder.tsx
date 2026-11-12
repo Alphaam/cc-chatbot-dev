@@ -11,7 +11,7 @@ import ShareActions from "./ShareActions";
 import ResidentNeeds from "./ResidentNeeds";
 import ResultsTable from "./ResultsTable";
 import PrintDialog from "./PrintDialog";
-import WorkspacePanel, { ActionRail, type PanelView } from "./WorkspacePanel";
+import WorkspacePanel, { type PanelView } from "./WorkspacePanel";
 import HowToUse from "./HowToUse";
 import ResourceMapLink from "./ResourceMapLink";
 import WorkspaceMenu from "./WorkspaceMenu";
@@ -353,13 +353,15 @@ export default function ResourceFinder() {
           <button type="button" aria-label={t("BACE Hub home")} onClick={goHome} className="text-left">
             <span className="bace-wordmark">BACE <span className="font-normal">Hub</span></span>
           </button>
-          <div className="bace-header-utilities flex items-center gap-1 sm:gap-2">
-            {hasSession && <>
-                <Button variant="ghost" size="icon" className="rounded-full" aria-label={t("Start new chat")} title={t("Start new chat")} onClick={() => skipResetPrompt ? reset() : setResetOpen(true)}><RotateCcw aria-hidden="true" /></Button>
-            </>}
+          <nav aria-label={t("Workspace tools")} className="bace-header-nav">
+            {result && <button type="button" className="bace-header-link" aria-haspopup="dialog" onClick={() => openPanel("share")}>{t("Resident's list")}{shortlist.length > 0 && <span className="bace-header-count">{shortlist.length}</span>}</button>}
+            <ResourceMapLink snapshot={mapSnapshot} disabled={busy || chat.busy} variant="header" />
+            <button type="button" className="bace-header-link" aria-haspopup="dialog" onClick={() => openPanel("help")}>{t("Guide")}</button>
+            {hasSession && <button type="button" className="bace-header-link" onClick={() => skipResetPrompt ? reset() : setResetOpen(true)}>{t("New resident")}</button>}
+          </nav>
+          <div className="bace-header-utilities flex items-center gap-1">
+            {hasSession && <Button variant="ghost" size="icon" className="lg:hidden" aria-label={t("Start new chat")} title={t("Start new chat")} onClick={() => skipResetPrompt ? reset() : setResetOpen(true)}><RotateCcw aria-hidden="true" /></Button>}
             <WorkspaceMenu hasResults={!!result} shareCount={shortlist.length} snapshot={mapSnapshot} mapDisabled={busy || chat.busy} onOpen={openPanel} />
-          </div>
-          <div className="bace-header-help flex items-center gap-2">
             <LanguageToggle tone="inverse" />
           </div>
         </header>
@@ -402,7 +404,6 @@ export default function ResourceFinder() {
         <h2 id="list-aside-title" className="flex items-center justify-between text-lg font-semibold tracking-tight text-primary">{t("Resident's list")}<span className="bace-count-pill">{shortlist.length}</span></h2>
         {listPanel}
       </aside>}
-      <ActionRail hasResults={!!result} count={shortlist.length} active={panel} onOpen={openPanel} mapAction={<ResourceMapLink snapshot={mapSnapshot} disabled={busy || chat.busy} />} />
       <WorkspacePanel view={panel} hasResults={!!result} onViewChange={setPanel} onClose={() => { setPanel(null); setTourRequested(false); }} opener={panelOpener}>
         {panel === "help" && <HowToUse key={tourRequested ? "tour" : "intro"} startTour={tourRequested} />}
         {panel === "browse" && <ResourceCategories resources={resources} focus={focus} onFocusChange={changeFocus} onJump={jump} onDone={() => { setShowHome(false); setPanel(null); }} />}
